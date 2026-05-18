@@ -77,6 +77,8 @@ cd qresto
 ```yml
 version: '3.8'
 
+name: qresto
+
 services:
   postgres:
     image: postgres:15-alpine
