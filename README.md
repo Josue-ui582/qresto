@@ -170,7 +170,7 @@ EXPOSE 3000
 CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
 ```
 
-### 3. Configure environment variables
+### 3. Configure environment variables
 
 Create a .env file:
 
@@ -221,7 +221,7 @@ QResto includes:
 - Environment variable protection
 - Database validation with Prisma
 
-### 📈 Future Improvements
+### 📈 Future Improvements
 
 - Online payments integration
 - Real-time notifications
@@ -247,7 +247,7 @@ git checkout -b feature/amazing-feature
 git commit -m "Add amazing feature"
 ````
 
-### 4. Push to the branch
+#### 4. Push to the branch
 
 ```bash
 git push origin <your-branch>
