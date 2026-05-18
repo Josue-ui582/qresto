@@ -186,7 +186,7 @@ Run PostgreSQL with Docker:
 docker compose up -d
 ```
 
-### 🗄️ Prisma Setup
+### 🗄️ Prisma Setup
 
 Run migrations:
 
