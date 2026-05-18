@@ -2,10 +2,10 @@
 
 ## 📌 Overview
 
-**QResto** is a modern SaaS platform designed for restaurants to simplify digital ordering and restaurant management.
-The platform allows restaurants to generate unique QR codes for tables, manage customer orders in real time, organize menus, and improve the dining experience through a fast and contactless ordering system.
+**QResto** is a modern SaaS platform designed to simplify digital ordering and restaurant management for restaurants.
+The platform allows restaurants to generate unique QR codes for tables, manage customer orders in real time, organize menus, and enhance the dining experience with a fast, contactless ordering system.
 
-Built with a modern full-stack architecture using Next.js, Prisma ORM, Docker and PostgreSQL, QResto provides scalability, performance, and a clean developer experience.
+Built with a modern full-stack architecture using Next.js, Prisma ORM, Docker, and PostgreSQL, QResto provides scalability, performance, and a clean developer experience.
 
 
 ### Features
@@ -185,7 +185,7 @@ DATABASE_URL="postgresql://postgres:password@localhost:5432/qresto"
 Run PostgreSQL with Docker:
 
 ```bash
-docker compose up -d
+docker compose up -build
 ```
 
 ### 🗄️ Prisma Setup
