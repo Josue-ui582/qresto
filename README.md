@@ -58,7 +58,7 @@ QResto/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/qresto.git
+git clone git@github.com:Josue-ui582/qresto.git
 cd qresto
 ```
 
@@ -105,7 +105,7 @@ services:
       - postgres
 
 volumes:
-  postgres_data:
+  - .:/app
 ```
 
 #### create your Dockerfile
