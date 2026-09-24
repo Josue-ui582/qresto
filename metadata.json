@@ -1,0 +1,8 @@
+{
+  "name": "QResto - Digitalisation Restaurants & Menus QR Afrique",
+  "description": "Plateforme SaaS complète pour les restaurants au Bénin et en Afrique : menus digitaux QR interactifs, commandes sans inscription, suivi en temps réel, dashboard multi-tenant sécurisé.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
