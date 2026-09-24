@@ -13,6 +13,7 @@ import {
   Utensils,
 } from 'lucide-react';
 import { useNavigation } from '@/context/NavigationContext';
+import Link from 'next/link';
 import { storage } from '@/lib/storage';
 import { Badge, Button, Card, Heading } from '@/components/ui';
 
@@ -145,12 +146,8 @@ export const RestaurantsPage: React.FC = () => {
       {filteredRestaurants.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredRestaurants.map((resto, index) => (
-            <Card
-              key={resto.id}
-              as="article"
-              className="overflow-hidden flex flex-col justify-between group cursor-pointer"
-              onClick={() => navigateTo('restaurant-detail', { slug: resto.slug })}
-            >
+            <Link key={resto.id} href={`/restaurant/${resto.slug}`} className="overflow-hidden flex flex-col justify-between group cursor-pointer">
+              <Card as="article" className="overflow-hidden flex flex-col justify-between group">
               <div>
                 {/* Image Banner */}
                 <div className="relative h-52 overflow-hidden bg-stone-100">
@@ -212,8 +209,8 @@ export const RestaurantsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Card Footer Actions */}
-              <div className="p-6 pt-0 mt-2 flex items-center justify-between border-t border-stone-100">
+                {/* Card Footer Actions */}
+                <div className="p-6 pt-0 mt-2 flex items-center justify-between border-t border-stone-100">
                 <span className="text-xs font-bold text-stone-700 group-hover:text-stone-950">
                   Accéder à la carte
                 </span>
@@ -224,7 +221,8 @@ export const RestaurantsPage: React.FC = () => {
                   <ArrowRight className="w-4 h-4" />
                 </motion.div>
               </div>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
       ) : (

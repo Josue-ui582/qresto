@@ -220,3 +220,21 @@ export interface KanbanColumn {
   next?: OrderStatus;
   btnLabel?: string;
 }
+
+export type DishModelType =
+  | 'poulet_braise'
+  | 'poisson_grille'
+  | 'igname_pile'
+  | 'burger'
+  | 'alloco'
+  | 'cocktail';
+ 
+export interface Dish3DSelection {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  modelType: DishModelType;
+  ingredients: string[];
+  prepTime: string;
+}

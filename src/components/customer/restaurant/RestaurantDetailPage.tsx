@@ -9,6 +9,8 @@ import { RestaurantHero } from './RestaurantHero';
 import { RestaurantMenuTabs } from './RestaurantMenuTabs';
 import { RestaurantDishCard } from './RestaurantDishCard';
 import { useNavigation } from '@/context/NavigationContext';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import { storage } from '@/lib/storage';
@@ -16,7 +18,8 @@ import { Dish } from '@/types';
 import { Dish3DViewer } from '@/components/3d/Dish3DViewer';
 
 export const RestaurantDetailPage: React.FC = () => {
-  const { navigateTo, viewParams } = useNavigation();
+  const { viewParams } = useNavigation();
+  const router = useRouter();
   const { addToCart, cartCount } = useCart();
   const { showToast } = useToast();
   
@@ -66,12 +69,9 @@ export const RestaurantDetailPage: React.FC = () => {
     return (
       <div className="py-24 text-center">
         <p className="text-stone-500 mb-4">Restaurant non trouvé.</p>
-        <button
-          onClick={() => navigateTo('restaurants')}
-          className="px-5 py-2.5 bg-stone-900 text-white rounded-xl text-xs font-bold"
-        >
+        <Link href="/restaurants" className="px-5 py-2.5 bg-stone-900 text-white rounded-xl text-xs font-bold inline-block">
           Retour aux restaurants
-        </button>
+        </Link>
       </div>
     );
   }
@@ -81,7 +81,7 @@ export const RestaurantDetailPage: React.FC = () => {
       {/* 1. HERO SECTION */}
       <RestaurantHero 
         restaurant={restaurant}
-        onBack={() => navigateTo('restaurants')}
+        onBack={() => router.push('/restaurants')}
         onShareMenu={handleShareMenu}
         onShareWhatsApp={handleShareWhatsApp}
       />
@@ -150,7 +150,7 @@ export const RestaurantDetailPage: React.FC = () => {
               type="button"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => navigateTo('cart', { table: tableParam })}
+                onClick={() => router.push(`/cart?table=${encodeURIComponent(tableParam || '')}`)}
               className="w-full py-4 px-6 rounded-2xl bg-stone-950 text-white font-black text-sm shadow-2xl flex items-center justify-between border border-amber-500/50 hover:bg-black transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import Link from 'next/link';
 import {
   Search,
   ShoppingBag,
@@ -13,28 +14,30 @@ import {
   Menu as MenuIcon,
   X,
   Compass,
-  QrCode,
-  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useNavigation } from '../../context/NavigationContext';
+import { useRouter } from 'next/navigation';
 
 export const Navbar: React.FC = () => {
   const { currentUser, currentRestaurant, logout } = useAuth();
   const { cartCount } = useCart();
-  const { currentView, navigateTo } = useNavigation();
+  const { currentView } = useNavigation();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
+  const router = useRouter();
+
   const handleSearchSubmit = (e: React.FormEvent) => {
+    // keep fallback behavior when JS-driven navigation is desired
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigateTo('restaurants', { search: searchQuery.trim() });
+      router.push(`/restaurants?search=${encodeURIComponent(searchQuery.trim())}`);
     } else {
-      navigateTo('restaurants');
+      router.push('/restaurants');
     }
     setMobileMenuOpen(false);
   };
@@ -44,13 +47,12 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-3">
           {/* Brand Logo with animated emblem */}
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigateTo('landing')}
-            className="flex items-center gap-2 cursor-pointer select-none shrink-0 group focus:outline-hidden"
-          >
+          <Link href="/" className="group flex items-center gap-2 cursor-pointer select-none shrink-0">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex items-center gap-2 cursor-pointer select-none shrink-0 group focus:outline-hidden"
+            >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-linear-to-tr from-amber-600 via-amber-500 to-orange-400 text-stone-950 flex items-center justify-center font-black text-lg sm:text-xl shadow-md shadow-amber-500/20 group-hover:shadow-amber-500/35 transition-all">
               Q
             </div>
@@ -62,15 +64,17 @@ export const Navbar: React.FC = () => {
                 Africa · Digital
               </span>
             </div>
-          </motion.button>
+            </motion.div>
+          </Link>
 
           {/* Central Search Bar with micro-interaction */}
           <div className="hidden md:flex flex-1 max-w-md mx-6">
-            <form onSubmit={handleSearchSubmit} className="relative w-full group">
+            <form action="/restaurants" method="get" className="relative w-full group">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-amber-600 transition-colors">
                 <Search className="w-4 h-4" />
               </div>
               <input
+                name="search"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -82,9 +86,8 @@ export const Navbar: React.FC = () => {
 
           {/* Right Navigation Links & Action Button */}
           <div className="flex items-center gap-3 sm:gap-5">
-            <button
-              type="button"
-              onClick={() => navigateTo('restaurants')}
+            <Link
+              href="/restaurants"
               className={`hidden sm:flex items-center gap-1.5 text-xs sm:text-sm font-semibold transition-all px-3 py-1.5 rounded-full ${
                 currentView === 'restaurants'
                   ? 'bg-amber-100/70 text-amber-800'
@@ -93,11 +96,10 @@ export const Navbar: React.FC = () => {
             >
               <Compass className="w-3.5 h-3.5 text-amber-600" />
               <span>Restaurants</span>
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => navigateTo('order-tracking')}
+            <Link
+              href="/order-tracking"
               className={`hidden md:flex items-center gap-1.5 text-xs sm:text-sm font-semibold transition-all px-3 py-1.5 rounded-full ${
                 currentView === 'order-tracking'
                   ? 'bg-amber-100/70 text-amber-800'
@@ -106,17 +108,10 @@ export const Navbar: React.FC = () => {
             >
               <Clock className="w-3.5 h-3.5 text-stone-500" />
               <span>Suivre commande</span>
-            </button>
+            </Link>
 
             {/* Cart Icon with bouncing counter */}
-            <motion.button
-              type="button"
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.94 }}
-              onClick={() => navigateTo('cart')}
-              className="relative p-2.5 rounded-full bg-stone-100/90 hover:bg-stone-200/90 text-stone-800 hover:text-stone-950 transition-colors cursor-pointer"
-              title="Mon panier"
-            >
+            <Link href="/cart" className="relative p-2.5 rounded-full bg-stone-100/90 hover:bg-stone-200/90 text-stone-800 hover:text-stone-950 transition-colors cursor-pointer" title="Mon panier">
               <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-stone-800" />
               {cartCount > 0 && (
                 <motion.span
@@ -127,7 +122,7 @@ export const Navbar: React.FC = () => {
                   {cartCount}
                 </motion.span>
               )}
-            </motion.button>
+            </Link>
 
             {/* Connexion or Profile Button */}
             {currentUser ? (
@@ -164,29 +159,23 @@ export const Navbar: React.FC = () => {
                         <p className="text-[11px] text-stone-400 truncate">{currentUser.email}</p>
                       </div>
                       {currentRestaurant && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUserDropdownOpen(false);
-                            navigateTo('dashboard');
-                          }}
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setUserDropdownOpen(false)}
                           className="w-full text-left px-4 py-2.5 text-xs font-semibold text-stone-800 hover:bg-amber-50 hover:text-amber-800 flex items-center gap-2.5 transition-colors"
                         >
                           <LayoutDashboard className="w-4 h-4 text-amber-600" />
                           <span>Mon Dashboard Restaurant</span>
-                        </button>
+                        </Link>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUserDropdownOpen(false);
-                          navigateTo('order-tracking');
-                        }}
+                      <Link
+                        href="/order-tracking"
+                        onClick={() => setUserDropdownOpen(false)}
                         className="w-full text-left px-4 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 flex items-center gap-2.5 transition-colors"
                       >
                         <Clock className="w-4 h-4 text-stone-500" />
                         <span>Mes Commandes</span>
-                      </button>
+                      </Link>
                       <div className="border-t border-stone-100 my-1" />
                       <button
                         type="button"
@@ -205,23 +194,13 @@ export const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => navigateTo('login')}
-                  className="hidden sm:inline-block px-3 py-1.5 text-xs font-semibold text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-full transition-colors"
-                >
+                <Link href="/login" className="hidden sm:inline-block px-3 py-1.5 text-xs font-semibold text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-full transition-colors">
                   Connexion
-                </button>
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => navigateTo('register-restaurant')}
-                  className="btn-primary px-3.5 sm:px-4 py-2 text-xs"
-                >
+                </Link>
+                <Link href="/register-restaurant" className="btn-primary px-3.5 sm:px-4 py-2 text-xs">
                   <Store className="w-3.5 h-3.5" />
                   <span>Inscrire mon resto</span>
-                </motion.button>
+                </Link>
               </div>
             )}
 
@@ -239,11 +218,12 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Search Bar */}
         <div className="md:hidden pb-3">
-          <form onSubmit={handleSearchSubmit} className="relative w-full">
+          <form action="/restaurants" method="get" className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
               <Search className="w-3.5 h-3.5" />
             </div>
             <input
+              name="search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -263,51 +243,23 @@ export const Navbar: React.FC = () => {
             exit={{ height: 0, opacity: 0 }}
             className="md:hidden border-t border-stone-200 bg-white/95 backdrop-blur-lg px-4 pt-3 pb-6 flex flex-col gap-3 overflow-hidden"
           >
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                navigateTo('restaurants');
-              }}
-              className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2"
-            >
+            <Link href="/restaurants" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2">
               <Compass className="w-4 h-4 text-amber-600" />
               <span>Explorer les restaurants</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                navigateTo('order-tracking');
-              }}
-              className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2"
-            >
+            </Link>
+            <Link href="/order-tracking" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2">
               <Clock className="w-4 h-4 text-stone-500" />
               <span>Suivre une commande</span>
-            </button>
+            </Link>
 
             {!currentUser && (
               <div className="pt-2 border-t border-stone-100 flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigateTo('login');
-                  }}
-                  className="w-full py-2.5 rounded-xl border border-stone-200 text-stone-800 font-bold text-xs"
-                >
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="w-full py-2.5 rounded-xl border border-stone-200 text-stone-800 font-bold text-xs text-center">
                   Connexion gérant
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigateTo('register-restaurant');
-                  }}
-                  className="w-full py-2.5 rounded-xl bg-linear-to-r from-amber-600 to-orange-500 text-white font-bold text-xs"
-                >
+                </Link>
+                <Link href="/register-restaurant" onClick={() => setMobileMenuOpen(false)} className="w-full py-2.5 rounded-xl bg-linear-to-r from-amber-600 to-orange-500 text-white font-bold text-xs text-center">
                   Digitaliser mon restaurant gratuitement
-                </button>
+                </Link>
               </div>
             )}
           </motion.div>

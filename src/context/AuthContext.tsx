@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User, Restaurant, RegisterOwnerDTO, RegisterRestaurantDTO } from '../types';
 import { storage } from '../lib/storage';
 import { useToast } from './ToastContext';
-import { useNavigation } from './NavigationContext';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentRestaurant, setCurrentRestaurant] = useState<Restaurant | null>(null);
   
   const { showToast } = useToast();
-  const { navigateTo } = useNavigation();
+  const router = useRouter();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCurrentUser(null);
     setCurrentRestaurant(null);
     showToast('Vous êtes déconnecté.', 'info');
-    navigateTo('landing');
+    router.push('/');
   };
 
   const reloadRestaurantData = () => {

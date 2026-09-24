@@ -1,10 +1,9 @@
 'use client';
 
 import React from 'react';
-import { useNavigation } from '../../context/NavigationContext';
+import Link from 'next/link';
 
 export const Footer: React.FC = () => {
-  const { navigateTo } = useNavigation();
 
   return (
     <footer className="bg-surface border-t border-soft pt-16 pb-12 text-text-muted">
@@ -12,14 +11,11 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12">
           {/* Brand Col - EXACT as Screenshot 8 */}
           <div className="space-y-3">
-            <div
-              onClick={() => navigateTo('landing')}
-              className="cursor-pointer inline-block group"
-            >
+            <Link href="/" className="inline-block group cursor-pointer">
               <span className="text-2xl font-black tracking-tight text-text">
                 Q<span className="text-brand">Resto</span>
               </span>
-            </div>
+            </Link>
             <p className="text-sm text-muted max-w-xs leading-relaxed">
               La digitalisation des restaurants en Afrique, simplement.
             </p>
@@ -30,31 +26,19 @@ export const Footer: React.FC = () => {
             <h4 className="text-sm font-bold text-text mb-4">Plateforme</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <button
-                  type="button"
-                  onClick={() => navigateTo('restaurants')}
-                  className="text-stone-600 hover:text-stone-900 transition-colors"
-                >
+                <Link href="/restaurants" className="text-stone-600 hover:text-stone-900 transition-colors">
                   Restaurants
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => navigateTo('order-tracking')}
-                  className="text-stone-600 hover:text-stone-900 transition-colors"
-                >
+                <Link href="/order-tracking" className="text-stone-600 hover:text-stone-900 transition-colors">
                   Suivre une commande
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => navigateTo('register-restaurant')}
-                  className="text-stone-600 hover:text-stone-900 transition-colors"
-                >
+                <Link href="/register-restaurant" className="text-stone-600 hover:text-stone-900 transition-colors">
                   Créer un restaurant
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -64,31 +48,19 @@ export const Footer: React.FC = () => {
             <h4 className="text-sm font-bold text-stone-900 mb-4">Légal</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <button
-                  type="button"
-                  onClick={() => navigateTo('cgu')}
-                  className="text-stone-600 hover:text-stone-900 transition-colors"
-                >
+                <Link href="/cgu" className="text-stone-600 hover:text-stone-900 transition-colors">
                   Conditions d'utilisation
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => navigateTo('privacy')}
-                  className="text-stone-600 hover:text-stone-900 transition-colors"
-                >
+                <Link href="/privacy" className="text-stone-600 hover:text-stone-900 transition-colors">
                   Confidentialité
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => navigateTo('contact')}
-                  className="text-stone-600 hover:text-stone-900 transition-colors"
-                >
+                <Link href="/contact" className="text-stone-600 hover:text-stone-900 transition-colors">
                   Contact
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
