@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useNavigation } from '../../context/NavigationContext';
+import Link from 'next/link';
 import { useToast } from '../../context/ToastContext';
 import { FaIcon } from '../common/Icon';
 
@@ -10,14 +11,10 @@ export const CguPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-      <button
-        type="button"
-        onClick={() => navigateTo('landing')}
-        className="mb-6 flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-stone-900"
-      >
+      <Link href="/" className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-stone-900">
         <FaIcon name="fa-solid fa-arrow-left" />
         <span>Retour à l'accueil</span>
-      </button>
+      </Link>
 
       <div className="card p-8 sm:p-12 space-y-6">
         <h1 className="heading-lg text-text">Conditions Générales d'Utilisation (CGU)</h1>
@@ -49,14 +46,10 @@ export const PrivacyPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-      <button
-        type="button"
-        onClick={() => navigateTo('landing')}
-        className="mb-6 flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-stone-900"
-      >
+      <Link href="/" className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-stone-900">
         <FaIcon name="fa-solid fa-arrow-left" />
         <span>Retour à l'accueil</span>
-      </button>
+      </Link>
 
       <div className="bg-white p-8 sm:p-12 rounded-3xl border border-stone-200 shadow-sm space-y-6">
         <h1 className="text-3xl font-extrabold text-stone-900">Politique de Confidentialité</h1>
@@ -92,14 +85,10 @@ export const ContactPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-      <button
-        type="button"
-        onClick={() => navigateTo('landing')}
-        className="mb-6 flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-stone-900"
-      >
+      <Link href="/" className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-stone-900">
         <FaIcon name="fa-solid fa-arrow-left" />
         <span>Retour à l'accueil</span>
-      </button>
+      </Link>
 
       <div className="bg-white p-8 sm:p-12 rounded-3xl border border-stone-200 shadow-sm space-y-8">
         <div>

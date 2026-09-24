@@ -1,16 +1,12 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
 import { Toast } from '@/components/common/Toast';
-import { LandingPage } from '@/components/pages/LandingPage/LandingPage';
+import { LandingPage } from '@/components/pages/LandingPage';
 
-export default function HomePage() {
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
+export default function LandingRoute() {
   return (
     <div className="min-h-screen flex flex-col font-sans bg-stone-50 text-stone-900 selection:bg-amber-500 selection:text-white">
       <Navbar />

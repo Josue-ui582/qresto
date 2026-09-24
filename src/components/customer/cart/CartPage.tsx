@@ -8,16 +8,18 @@ import { CartItemsSummary } from './CartItemsSummary';
 import { OrderTypeSelector } from './OrderTypeSelector';
 import { CustomerInfoFields } from './CustomerInfoFields';
 import { PaymentMethodSelector } from './PaymentMethodSelector';
-import { useNavigation } from '@/context/NavigationContext';
+import { useRouter } from 'next/navigation';
 import { useOrder } from '@/context/OrderContext';
 import { storage } from '@/lib/storage';
 import { OrderType, PaymentMethod } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { FaIcon } from '@/components/common/Icon';
+import { useNavigation } from '@/context/NavigationContext';
 
 export const CartPage: React.FC = () => {
   const { cart, cartRestaurantId, cartTotal, updateCartQuantity, removeFromCart, clearCart } = useCart();
-  const { navigateTo, viewParams } = useNavigation();
+  const router = useRouter();
+  const { viewParams } = useNavigation();
   const { placeOrder } = useOrder();
 
   const restaurant = cartRestaurantId ? storage.getRestaurantById(cartRestaurantId) : null;
@@ -76,7 +78,7 @@ export const CartPage: React.FC = () => {
         // Ignorer les erreurs éventuelles du confetti
       }
 
-      navigateTo('order-tracking', { trackingCode: newOrder.trackingCode });
+      router.push(`/order-tracking?trackingCode=${encodeURIComponent(newOrder.trackingCode)}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Une erreur est survenue lors de la validation.';
       setFormError(message);
@@ -86,7 +88,7 @@ export const CartPage: React.FC = () => {
   };
 
   if (cart.length === 0) {
-    return <EmptyCart onExplore={() => navigateTo('restaurants')} />;
+    return <EmptyCart onExplore={() => router.push('/restaurants')} />;
   }
 
   return (

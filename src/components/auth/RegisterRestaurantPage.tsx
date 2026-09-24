@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useNavigation } from '@/context/NavigationContext';
+import { useRouter } from 'next/navigation';
 import { FaIcon } from '@/components/common/Icon';
 import { OwnerSection } from './register/OwnerSection';
 import { RestaurantSection } from './register/RestaurantSection';
@@ -12,7 +12,7 @@ import { RegisterFormData, UpdateFormFn } from '@/types';
 
 export const RegisterRestaurantPage: React.FC = () => {
   const { registerOwnerAndRestaurant } = useAuth();
-  const { navigateTo } = useNavigation();
+  const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +77,7 @@ export const RegisterRestaurantPage: React.FC = () => {
         }
       );
 
-      navigateTo('dashboard');
+      router.push('/dashboard');
     } catch (err) {
       // CORRECTION TYPESCRIPT : Plus de "err: any"
       if (err instanceof Error) {
