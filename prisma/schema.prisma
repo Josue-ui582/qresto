@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -12,4 +6,251 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  RESTAURANT_OWNER
+  RESTAURANT_STAFF
+  DELIVERY_PARTNER
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER_5000
+  PRO_8000
+}
+
+enum OrderType {
+  DINE_IN
+  PICKUP
+  DELIVERY
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  MTN_MOMO
+  MOOV_MONEY
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+}
+
+enum Model3DType {
+  poulet_braise
+  poisson_grille
+  igname_pile
+  burger
+  alloco
+  cocktail
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String?
+  firstName String
+  lastName  String
+  phone     String
+  role      UserRole @default(RESTAURANT_OWNER)
+
+  // 1. Relation Propriétaire : Le restaurant que détient cet utilisateur (si OWNER)
+  ownedRestaurant Restaurant? @relation("RestaurantOwner")
+
+  // 2. Relation Personnel : Le restaurant dans lequel travaille cet utilisateur (si STAFF)
+  restaurantId String?
+  restaurant   Restaurant? @relation("RestaurantStaff", fields: [restaurantId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("users")
+}
+
+model Restaurant {
+  id           String  @id @default(cuid())
+  name         String
+  slug         String  @unique
+  description  String?
+  address      String
+  city         String
+  phone        String?
+  email        String?
+  logo         String?
+  coverImage   String?
+  openingHours String?
+  isOpen       Boolean @default(true)
+  currency     String  @default("FCFA")
+  deliveryFee  Int     @default(0)
+  minOrder     Int     @default(0)
+  rating       Float   @default(0)
+  reviewCount  Int     @default(0)
+  category     String?
+  cuisineType  String?
+
+  // 1. Relation Propriétaire : L'utilisateur qui possède le restaurant
+  ownerId String @unique
+  owner   User   @relation("RestaurantOwner", fields: [ownerId], references: [id])
+
+  // 2. Relation Personnel : La liste des employés/staff du restaurant
+  staff User[] @relation("RestaurantStaff")
+
+  subscriptionPlan      SubscriptionPlan @default(FREE)
+  subscriptionExpiresAt DateTime?
+  settings              Json             @default("{}")
+  createdAt             DateTime         @default(now())
+
+  categories Category[]
+  dishes     Dish[]
+  tables     RestaurantTable[]
+  orders     Order[]
+
+  @@map("restaurants")
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  icon         String?
+  order        Int        @default(0)
+  active       Boolean    @default(true)
+  dishes       Dish[]
+
+  @@index([restaurantId])
+  @@map("categories")
+}
+
+model Dish {
+  id                 String       @id @default(cuid())
+  restaurantId       String
+  restaurant         Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categoryId         String
+  category           Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name               String
+  slug               String
+  description        String?
+  price              Int
+  originalPrice      Int?
+  image              String?
+  isAvailable        Boolean      @default(true)
+  preparationTimeMin Int          @default(15)
+  allergens          String[]     @default([])
+  isPopular          Boolean      @default(false)
+  isChefSpecial      Boolean      @default(false)
+  isSpecialty        Boolean      @default(false)
+  has3DModel         Boolean      @default(false)
+  model3DType        Model3DType?
+  createdAt          DateTime     @default(now())
+
+  @@unique([restaurantId, slug])
+  @@index([restaurantId])
+  @@map("dishes")
+}
+
+model RestaurantTable {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  number       String
+  name         String?
+  capacity     Int        @default(4)
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId])
+  @@map("restaurant_tables")
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  trackingCode    String        @unique
+  restaurantId    String
+  restaurant      Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantName  String
+  restaurantPhone String?
+  type            OrderType
+  tableNumber     String?
+  subtotal        Int
+  deliveryFee     Int           @default(0)
+  total           Int
+  status          OrderStatus   @default(NEW)
+  customerName    String
+  customerPhone   String
+  customerAddress String?
+  customerNotes   String?
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+
+  @@index([restaurantId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id       String  @id @default(cuid())
+  orderId  String
+  order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dishId   String?
+  name     String
+  price    Int
+  quantity Int
+  notes    String?
+  image    String?
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  timestamp DateTime    @default(now())
+  note      String?
+
+  @@index([orderId])
+  @@map("order_status_history")
+}
+
+model Testimonial {
+  id             String   @id @default(cuid())
+  name           String
+  role           String
+  restaurantName String?
+  city           String
+  avatar         String?
+  rating         Int      @default(5)
+  text           String
+  createdAt      DateTime @default(now())
+
+  @@map("testimonials")
+}
+
+model FAQItem {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String
+  createdAt DateTime @default(now())
+
+  @@map("faq_items")
 }
