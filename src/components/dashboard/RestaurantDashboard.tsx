@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation, DashboardTab } from '../../context/NavigationContext';
+import { useRouter } from 'next/navigation';
 import { useToast } from '../../context/ToastContext';
 import { storage } from '../../lib/storage';
 
@@ -15,7 +16,7 @@ import { Dish, OrderStatus, RestaurantTable } from '@/types';
 
 export const RestaurantDashboard: React.FC = () => {
   const { currentUser, currentRestaurant, logout } = useAuth();
-  const { dashboardTab, setDashboardTab, navigateTo } = useNavigation();
+  const { dashboardTab, setDashboardTab } = useNavigation();
   const { showToast } = useToast();
 
   // Navigation & UI state
@@ -46,8 +47,10 @@ export const RestaurantDashboard: React.FC = () => {
 
   const [activeQrTable, setActiveQrTable] = useState<RestaurantTable | null>(null);
 
+  const router = useRouter();
+
   if (!currentUser || !currentRestaurant) {
-    return <RestrictedAccess onLogin={() => navigateTo('login')} />;
+    return <RestrictedAccess onLogin={() => router.push('/login')} />;
   }
 
   const restaurantId = currentRestaurant.id;
@@ -102,7 +105,7 @@ export const RestaurantDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col md:flex-row text-stone-900 font-sans">
-      <DashboardSidebar
+        <DashboardSidebar
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
         dashboardTab={dashboardTab}
@@ -111,7 +114,7 @@ export const RestaurantDashboard: React.FC = () => {
         restaurantName={currentRestaurant.name}
         userEmail={currentUser.email}
         onLogout={logout}
-        onNavigateHome={() => navigateTo('landing')}
+        onNavigateHome={() => router.push('/')}
       />
 
       <div className="flex-1 flex flex-col min-w-0 bg-stone-50/50">
@@ -133,7 +136,7 @@ export const RestaurantDashboard: React.FC = () => {
           onSelectRestaurant={handleSelectRestaurant}
           onViewMenu={() => {
             setRestaurantDropdownOpen(false);
-            navigateTo('restaurant-detail', { slug: currentRestaurant.slug });
+            router.push(`/restaurant/${currentRestaurant.slug}`);
           }}
           pendingOrdersCount={pendingOrdersCount}
           onNotificationClick={() => setDashboardTab('orders')}

@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { LogIn, AlertCircle, Loader2, Lock, Mail, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigation } from '../../context/NavigationContext';
+import { useRouter } from 'next/navigation';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
-  const { navigateTo } = useNavigation();
+  const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +21,7 @@ export const LoginPage: React.FC = () => {
     try {
       setIsLoading(true);
       await login(email, password);
-      navigateTo('dashboard');
+      router.push('/dashboard');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Identifiants incorrects.';
       setError(message);
@@ -36,7 +36,7 @@ export const LoginPage: React.FC = () => {
     try {
       setIsLoading(true);
       await login(demoEmail, demoPass);
-      navigateTo('dashboard');
+      router.push('/dashboard');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Identifiants incorrects.';
       setError(message);
@@ -58,7 +58,7 @@ export const LoginPage: React.FC = () => {
             type="button"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigateTo('landing')}
+            onClick={() => router.push('/')}
             className="inline-flex items-center gap-2 cursor-pointer mb-4"
           >
             <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-amber-600 via-amber-500 to-orange-400 text-text-inverse flex items-center justify-center text-xl font-black shadow-lg shadow-amber-500/25">
@@ -164,7 +164,7 @@ export const LoginPage: React.FC = () => {
             Vous n’avez pas encore digitalisé votre établissement ?{' '}
             <button
               type="button"
-              onClick={() => navigateTo('register-restaurant')}
+              onClick={() => router.push('/register-restaurant')}
               className="font-bold text-brand hover:underline cursor-pointer"
             >
               Créer mon restaurant
