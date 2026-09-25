@@ -130,6 +130,18 @@ export const RegisterRestaurantPage: React.FC = () => {
             )}
           </button>
         </form>
+        <div className="text-center mt-4">
+          <p className="text-xs text-muted">
+            Vous avez déjà un compte ?{' '}
+            <button
+              type="button"
+              onClick={() => router.push('/login')}
+              className="font-bold text-brand hover:underline cursor-pointer"
+            >
+              Se connecter
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

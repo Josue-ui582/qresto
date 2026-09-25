@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { QrCode, ArrowRight, X, RotateCw, ShoppingBag } from 'lucide-react';
+import { QrCode, ArrowRight, X, RotateCw, ShoppingBag, Loader2, UtensilsCrossed } from 'lucide-react';
+import { useParams, useSearchParams } from 'next/navigation';
 
 // Import des sous-composants
 import { RestaurantHero } from './RestaurantHero';
@@ -13,26 +14,83 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
-import { storage } from '@/lib/storage';
-import { Dish } from '@/types';
+import { Dish, Category, Restaurant } from '@/types';
 import { Dish3DViewer } from '@/components/3d/Dish3DViewer';
 
 export const RestaurantDetailPage: React.FC = () => {
   const { viewParams } = useNavigation();
   const router = useRouter();
+  const nextParams = useParams();
+  const searchParams = useSearchParams();
   const { addToCart, cartCount } = useCart();
   const { showToast } = useToast();
-  
-  // CORRECTION TYPESCRIPT ICI
-  const slug = (viewParams.slug as string) || 'chez-mama-benin';
-  const tableParam = viewParams.table as string; 
 
-  const restaurant = storage.getRestaurantBySlug(slug) || storage.getRestaurants()[0];
-  const categories = storage.getCategories(restaurant?.id);
-  const dishes = storage.getDishes(restaurant?.id);
+  // Extraction du slug et de la table depuis les paramètres de navigation ou de l'URL
+  const slug =
+    (nextParams?.slug as string) ||
+    (viewParams?.slug as string) ||
+    '';
+
+  const tableParam =
+    (searchParams?.get('table') as string) ||
+    (viewParams?.table as string) ||
+    '';
+
+  // États locaux pour les données réelles BDD
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>('all');
   const [active3DDish, setActive3DDish] = useState<Dish | null>(null);
+
+  // 1. Récupération des données réelles depuis l'API
+  useEffect(() => {
+    if (!slug) return;
+
+    const fetchRestaurantDetails = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const res = await fetch(`/api/restaurants/${slug}`);
+
+        if (res.status === 404) {
+          throw new Error('Restaurant introuvable.');
+        }
+
+        if (!res.ok) {
+          throw new Error('Erreur lors de la récupération des données.');
+        }
+
+        const data = await res.json();
+        const fetchedRestaurant = data.restaurant;
+
+        if (fetchedRestaurant) {
+          setRestaurant(fetchedRestaurant);
+          const fetchedCategories: Category[] = fetchedRestaurant.categories || [];
+          setCategories(fetchedCategories);
+
+          // Extraction et mise à plat des plats contenus dans les catégories
+          const allDishes: Dish[] = fetchedCategories.flatMap((cat: any) =>
+            (cat.dishes || []).map((d: any) => ({
+              ...d,
+              categoryId: d.categoryId || cat.id,
+            }))
+          );
+          setDishes(allDishes);
+        }
+      } catch (err: any) {
+        console.error('Erreur API detail restaurant:', err);
+        setError(err.message || 'Impossible de charger le menu du restaurant.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRestaurantDetails();
+  }, [slug]);
 
   const filteredDishes = useMemo(() => {
     if (activeCategoryId === 'all') return dishes;
@@ -55,7 +113,7 @@ export const RestaurantDetailPage: React.FC = () => {
   const handleShareWhatsApp = () => {
     if (typeof window === 'undefined') return;
     const text = encodeURIComponent(
-      `Regarde le menu digital de ${restaurant?.name || 'ce restaurant'} sur QResto : ${window.location.origin}/#menu-${restaurant?.slug || slug}`
+      `Regarde le menu digital de ${restaurant?.name || 'ce restaurant'} sur QResto : ${window.location.origin}/restaurant/${restaurant?.slug || slug}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -65,11 +123,25 @@ export const RestaurantDetailPage: React.FC = () => {
     showToast(`"${dish.name}" ajouté à votre panier !`, 'success');
   };
 
-  if (!restaurant) {
+  // Chargement
+  if (isLoading) {
     return (
-      <div className="py-24 text-center">
-        <p className="text-stone-500 mb-4">Restaurant non trouvé.</p>
-        <Link href="/restaurants" className="px-5 py-2.5 bg-stone-900 text-white rounded-xl text-xs font-bold inline-block">
+      <div className="min-h-screen bg-[#fbf9f5] flex flex-col items-center justify-center py-24">
+        <Loader2 className="w-10 h-10 text-amber-500 animate-spin mb-4" />
+        <p className="text-sm font-medium text-stone-600">Chargement du menu...</p>
+      </div>
+    );
+  }
+
+  // Erreur ou restaurant inexistant
+  if (error || !restaurant) {
+    return (
+      <div className="min-h-screen bg-[#fbf9f5] flex flex-col items-center justify-center py-24 px-4 text-center">
+        <p className="text-stone-500 mb-4 font-medium">{error || 'Restaurant non trouvé.'}</p>
+        <Link
+          href="/restaurants"
+          className="px-5 py-2.5 bg-stone-900 text-white rounded-xl text-xs font-bold inline-block hover:bg-stone-800 transition-colors"
+        >
           Retour aux restaurants
         </Link>
       </div>
@@ -115,26 +187,38 @@ export const RestaurantDetailPage: React.FC = () => {
       )}
 
       {/* 3. MENU CATEGORIES TABS */}
-      <RestaurantMenuTabs 
-        categories={categories}
-        dishes={dishes}
-        activeCategoryId={activeCategoryId}
-        setActiveCategoryId={setActiveCategoryId}
-      />
+      {categories.length > 0 && (
+        <RestaurantMenuTabs 
+          categories={categories}
+          dishes={dishes}
+          activeCategoryId={activeCategoryId}
+          setActiveCategoryId={setActiveCategoryId}
+        />
+      )}
 
-      {/* 4. DISHES LIST / GRID */}
+      {/* 4. DISHES LIST / GRID OU ÉTAT VIDE PROFESSIONNEL */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDishes.map((dish, idx) => (
-            <RestaurantDishCard 
-              key={dish.id} 
-              dish={dish} 
-              index={idx}
-              onOpen3D={setActive3DDish}
-              onAddToCart={handleAddToCart}
-            />
-          ))}
-        </div>
+        {filteredDishes.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredDishes.map((dish, idx) => (
+              <RestaurantDishCard 
+                key={dish.id} 
+                dish={dish} 
+                index={idx}
+                onOpen3D={setActive3DDish}
+                onAddToCart={handleAddToCart}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl p-10 text-center border border-stone-200 max-w-lg mx-auto my-8">
+            <UtensilsCrossed className="w-12 h-12 text-stone-300 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-stone-900 mb-1">Menu en cours de configuration</h3>
+            <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
+              Cet établissement prépare sa carte. Les plats seront bientôt disponibles en ligne.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 5. FLOATING CART BAR ON MOBILE */}
@@ -150,7 +234,7 @@ export const RestaurantDetailPage: React.FC = () => {
               type="button"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-                onClick={() => router.push(`/cart?table=${encodeURIComponent(tableParam || '')}`)}
+              onClick={() => router.push(`/cart?table=${encodeURIComponent(tableParam || '')}`)}
               className="w-full py-4 px-6 rounded-2xl bg-stone-950 text-white font-black text-sm shadow-2xl flex items-center justify-between border border-amber-500/50 hover:bg-black transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
