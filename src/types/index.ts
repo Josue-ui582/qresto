@@ -235,6 +235,25 @@ export interface Dish3DSelection {
   price: number;
   description: string;
   modelType: DishModelType;
+  image: string;
   ingredients: string[];
   prepTime: string;
+}
+export interface RestaurantItem {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  logo?: string;
+  coverImage?: string;
+  isOpen: boolean;
+  rating: number;
+  reviewCount: number;
+  category?: string;
+  cuisineType?: string;
+  _count?: {
+    tables: number;
+  };
 }

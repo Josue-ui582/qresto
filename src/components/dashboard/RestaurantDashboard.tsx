@@ -12,10 +12,20 @@ import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardTopbar } from './DashboardTopbar';
 import { OverviewTab } from './OverviewTab';
 import { OrdersTab } from './OrdersTab';
+import { CategoriesTab } from './CategoriesTab';
+import { DishesTab } from './DishesTab';
+import { TablesTab } from './TablesTab';
+import { QrCodesTab } from './QrCodesTab';
+import { RestaurantInfoTab } from './RestaurantInfoTab';
+import { AnalyticsTab } from './AnalyticsTab';
+import { TeamTab } from './TeamTab';
+import { SubscriptionTab } from './SubscriptionTab';
+import { SettingsTab } from './SettingsTab';
 import { Dish, OrderStatus, RestaurantTable } from '@/types';
 
 export const RestaurantDashboard: React.FC = () => {
-  const { currentUser, currentRestaurant, logout } = useAuth();
+  // 1. On récupère isLoading depuis le contexte
+  const { currentUser, currentRestaurant, isLoading, logout } = useAuth();
   const { dashboardTab, setDashboardTab } = useNavigation();
   const { showToast } = useToast();
 
@@ -49,6 +59,17 @@ export const RestaurantDashboard: React.FC = () => {
 
   const router = useRouter();
 
+  // 2. GESTION DE L'ATTENTE : Affiche un loader le temps que la session soit vérifiée
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-medium text-stone-600">Chargement de votre espace...</p>
+      </div>
+    );
+  }
+
+  // 3. VÉRIFICATION FINALE : Affiche l'erreur SEULEMENT si le chargement est fini et qu'il n'y a pas d'utilisateur
   if (!currentUser || !currentRestaurant) {
     return <RestrictedAccess onLogin={() => router.push('/login')} />;
   }
@@ -105,7 +126,7 @@ export const RestaurantDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col md:flex-row text-stone-900 font-sans">
-        <DashboardSidebar
+      <DashboardSidebar
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
         dashboardTab={dashboardTab}
@@ -160,6 +181,42 @@ export const RestaurantDashboard: React.FC = () => {
               orders={orders}
               onAdvanceOrderStatus={advanceOrderStatus}
             />
+          )}
+
+          {dashboardTab === 'categories' && (
+            <CategoriesTab categories={categories} onOpenCategoryModal={() => setCategoryModalOpen(true)} />
+          )}
+
+          {dashboardTab === 'dishes' && (
+            <DishesTab dishes={dishes} onOpenDishModal={(d) => { setEditingDish(d || null); setDishModalOpen(true); }} />
+          )}
+
+          {dashboardTab === 'tables' && (
+            <TablesTab tables={tables} onOpenTableModal={() => setTableModalOpen(true)} onOpenQr={(t) => setActiveQrTable(t)} />
+          )}
+
+          {dashboardTab === 'qrcodes' && (
+            <QrCodesTab tables={tables} onOpenQr={(t) => setActiveQrTable(t)} />
+          )}
+
+          {dashboardTab === 'restaurant' && (
+            <RestaurantInfoTab restaurant={currentRestaurant} />
+          )}
+
+          {dashboardTab === 'analytics' && (
+            <AnalyticsTab stats={{ totalRevenue, totalOrdersCount, averageOrderValue }} />
+          )}
+
+          {dashboardTab === 'team' && (
+            <TeamTab members={(currentRestaurant as any)?.team || []} />
+          )}
+
+          {dashboardTab === 'subscription' && (
+            <SubscriptionTab plan={(currentRestaurant as any)?.plan} />
+          )}
+
+          {dashboardTab === 'settings' && (
+            <SettingsTab onOpenSettings={() => { /* noop for now */ }} />
           )}
         </main>
       </div>
