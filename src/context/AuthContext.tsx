@@ -2,17 +2,20 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Restaurant, RegisterOwnerDTO, RegisterRestaurantDTO } from '../types';
-import { storage } from '../lib/storage';
 import { useToast } from './ToastContext';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   currentUser: User | null;
   currentRestaurant: Restaurant | null;
+  isLoading: boolean; // Utile pour savoir si la session est en cours de vérification
   login: (email: string, password?: string) => Promise<User>;
-  registerOwnerAndRestaurant: (ownerData: RegisterOwnerDTO, restaurantData: RegisterRestaurantDTO) => Promise<{ user: User; restaurant: Restaurant }>;
-  logout: () => void;
-  reloadRestaurantData: () => void;
+  registerOwnerAndRestaurant: (
+    ownerData: RegisterOwnerDTO,
+    restaurantData: RegisterRestaurantDTO
+  ) => Promise<{ user: User; restaurant: Restaurant }>;
+  logout: () => Promise<void>;
+  reloadRestaurantData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,71 +23,133 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentRestaurant, setCurrentRestaurant] = useState<Restaurant | null>(null);
-  
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
   const { showToast } = useToast();
   const router = useRouter();
 
+  // 1. Charger la session actuelle au démarrage de l'application
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const user = storage.getCurrentUser();
-    setCurrentUser(user);
-    if (user?.restaurantId) {
-      setCurrentRestaurant(storage.getRestaurantById(user.restaurantId) || null);
-    }
+    const checkAuthStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentUser(data.user || null);
+          setCurrentRestaurant(data.restaurant || null);
+        } else {
+          setCurrentUser(null);
+          setCurrentRestaurant(null);
+        }
+      } catch (error) {
+        console.error('Erreur de vérification de session:', error);
+        setCurrentUser(null);
+        setCurrentRestaurant(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthStatus();
   }, []);
 
+  // 2. Connexion via API
   const login = async (email: string, password?: string): Promise<User> => {
-    const user = storage.loginUser(email, password);
-    setCurrentUser(user);
-    if (user.restaurantId) {
-      setCurrentRestaurant(storage.getRestaurantById(user.restaurantId) || null);
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMsg = data.error || 'Identifiants invalides.';
+      showToast(errorMsg, 'error');
+      throw new Error(errorMsg);
     }
-    showToast(`Bienvenue ${user.firstName} !`, 'success');
-    return user;
+
+    setCurrentUser(data.user);
+    setCurrentRestaurant(data.restaurant || null);
+    showToast(`Bienvenue ${data.user.firstName} !`, 'success');
+    return data.user;
   };
 
-  const registerOwnerAndRestaurant = async (ownerData: RegisterOwnerDTO, restaurantData: RegisterRestaurantDTO) => {
-    const slug = restaurantData.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    
-    // Simplifié ici pour l'exemple : copiez la logique exacte de création depuis votre fichier original
-    const newRestaurant = storage.createRestaurant({
-       name: restaurantData.name, 
-       slug: slug || `restaurant-${Date.now()}`,
-       ownerId: 'temp',
-       // ... autres champs
-    } as any);
+  // 3. Inscription Utilisateur + Restaurant via API
+  const registerOwnerAndRestaurant = async (
+    ownerData: RegisterOwnerDTO,
+    restaurantData: RegisterRestaurantDTO
+  ) => {
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        owner: ownerData,
+        restaurant: restaurantData,
+      }),
+    });
 
-    const newUser = storage.registerUser({
-      ...ownerData,
-      role: 'RESTAURANT_OWNER',
-      restaurantId: newRestaurant.id,
-    } as any);
+    const data = await response.json();
 
-    storage.updateRestaurant(newRestaurant.id, { ownerId: newUser.id });
-    newRestaurant.ownerId = newUser.id;
+    if (!response.ok) {
+      const errorMsg = data.error || 'Erreur lors de la création du compte.';
+      showToast(errorMsg, 'error');
+      throw new Error(errorMsg);
+    }
 
-    setCurrentUser(newUser);
-    setCurrentRestaurant(newRestaurant);
-    showToast(`Votre restaurant ${newRestaurant.name} est créé.`, 'success');
-    return { user: newUser, restaurant: newRestaurant };
+    // Mise à jour de l'état global
+    setCurrentUser(data.user);
+    setCurrentRestaurant(data.restaurant);
+
+    showToast(`Votre restaurant ${data.restaurant.name} a été créé avec succès !`, 'success');
+    return { user: data.user, restaurant: data.restaurant };
   };
 
-  const logout = () => {
-    storage.logout();
-    setCurrentUser(null);
-    setCurrentRestaurant(null);
-    showToast('Vous êtes déconnecté.', 'info');
-    router.push('/');
+  // 4. Déconnexion via API
+  const logout = async () => {
+    try {
+      // On retire le finally pour s'assurer que l'UI ne se vide que si la requête part bien
+      await fetch('/api/auth/logout', { method: 'POST' });
+
+      setCurrentUser(null);
+      setCurrentRestaurant(null);
+      showToast('Vous êtes déconnecté.', 'info');
+
+      // Remplacement de router.push par un rechargement complet de l'URL
+      // Cela détruit tout le cache React/Next.js côté client
+      window.location.href = '/login';
+
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      showToast('Erreur lors de la déconnexion.', 'error');
+    }
   };
 
-  const reloadRestaurantData = () => {
-    if (currentUser?.restaurantId) {
-      setCurrentRestaurant(storage.getRestaurantById(currentUser.restaurantId) || null);
+  // 5. Recharger les données du restaurant à jour
+  const reloadRestaurantData = async () => {
+    try {
+      const response = await fetch('/api/restaurant/me');
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentRestaurant(data.restaurant);
+      }
+    } catch (error) {
+      console.error('Erreur lors du rechargement des données du restaurant:', error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, currentRestaurant, login, registerOwnerAndRestaurant, logout, reloadRestaurantData }}>
+    <AuthContext.Provider
+      value={{
+        currentUser,
+        currentRestaurant,
+        isLoading,
+        login,
+        registerOwnerAndRestaurant,
+        logout,
+        reloadRestaurantData,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
