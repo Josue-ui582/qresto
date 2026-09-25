@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        sortOrder: 'asc',
+        order: 'asc',
       },
     });
 

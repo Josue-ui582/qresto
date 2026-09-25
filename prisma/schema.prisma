@@ -19,6 +19,14 @@ enum UserRole {
   DELIVERY_PARTNER
 }
 
+enum StaffRole {
+  MANAGER
+  CHEF
+  WAITER
+  CASHIER
+  DELIVERY
+}
+
 enum SubscriptionPlan {
   FREE
   STARTER_5000
@@ -78,9 +86,12 @@ model User {
   // 1. Relation Propriétaire
   ownedRestaurant Restaurant? @relation("RestaurantOwner")
 
-  // 2. Relation Personnel
+  // 2. Relation Personnel (ancien lien direct)
   restaurantId String?
   restaurant   Restaurant? @relation("RestaurantStaff", fields: [restaurantId], references: [id])
+
+  // 3. Membre d'équipe associé (profil staff dédié)
+  teamMemberships TeamMember[]
 
   createdAt DateTime @default(now())
 
@@ -96,6 +107,7 @@ model Restaurant {
   city         String
   phone        String?
   email        String?
+  subscription Subscription?
   logo         String?
   coverImage   String?
   openingHours String?
@@ -112,8 +124,11 @@ model Restaurant {
   ownerId String @unique
   owner   User   @relation("RestaurantOwner", fields: [ownerId], references: [id])
 
-  // 2. Relation Personnel
+  // 2. Relation Personnel (Utilisateurs direct)
   staff User[] @relation("RestaurantStaff")
+
+  // 3. Relation Membres de l'Équipe (Gestion avancée du personnel)
+  teamMembers TeamMember[]
 
   subscriptionPlan      SubscriptionPlan @default(FREE)
   subscriptionExpiresAt DateTime?
@@ -131,6 +146,32 @@ model Restaurant {
   notifications Notification[]
 
   @@map("restaurants")
+}
+
+// --- Membres de l'équipe du restaurant ---
+model TeamMember {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Lien optionnel vers un compte utilisateur principal
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  name        String?
+  email       String?
+  phone       String?
+  role        StaffRole @default(WAITER)
+  pinCode     String?   // Code PIN court (ex: 4 chiffres) pour connexion rapide Caisse/POS
+  permissions String[]  @default([]) // Ex: ["VIEW_STATS", "MANAGE_MENU", "CANCEL_ORDERS"]
+  active      Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+  @@index([userId])
+  @@map("team_members")
 }
 
 // --- Paramètres détaillés du restaurant ---
@@ -348,6 +389,55 @@ model SubscriptionHistory {
 
   @@index([restaurantId])
   @@map("subscription_history")
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+model Subscription {
+  id           String             @id @default(cuid())
+  restaurantId String             @unique
+  restaurant   Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  
+  planId       String             // "STARTER", "PRO", "ENTERPRISE"
+  status       SubscriptionStatus @default(TRIAL)
+  billingCycle BillingCycle       @default(MONTHLY)
+  startDate    DateTime           @default(now())
+  endDate      DateTime
+  autoRenew    Boolean            @default(true)
+
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  invoices     Invoice[]
+
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  amount         Int
+  currency       String       @default("FCFA")
+  status         String       @default("PAID")
+  description    String
+
+  createdAt      DateTime     @default(now())
+
+  @@index([subscriptionId])
+  @@map("invoices")
 }
 
 // --- Notifications Internes ---

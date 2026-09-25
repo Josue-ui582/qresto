@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { dishesSlugify } from '@/utils';
 
 // GET : Récupérer tous les plats (filtrable par restaurantId et categoryId)
 export async function GET(request: NextRequest) {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description, price, imageUrl, isAvailable, categoryId, restaurantId } = body;
+    const { name, description, price, imageUrl, image, isAvailable, categoryId, restaurantId } = body;
 
     if (!name || price === undefined || !categoryId || !restaurantId) {
       return NextResponse.json(
@@ -50,12 +51,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // On accepte soit 'imageUrl' soit 'image' du body pour la compatibilité
+    const dishImage = imageUrl || image;
+
+    // Génération automatique d'un slug unique pour le restaurant
+    const baseSlug = dishesSlugify(name);
+    const uniqueSlug = `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
+
     const dish = await prisma.dish.create({
       data: {
         name: name.trim(),
+        slug: uniqueSlug,
         description: description?.trim() || null,
-        price: parseFloat(price),
-        imageUrl: imageUrl?.trim() || null,
+        price: Math.round(Number(price)),
+        image: dishImage?.trim() || null,
         isAvailable: isAvailable ?? true,
         categoryId,
         restaurantId,
@@ -77,11 +86,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT / PATCH : Mettre à jour un plat (ex: modification complète ou bascule isAvailable)
+// PUT / PATCH : Mettre à jour un plat
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, description, price, imageUrl, isAvailable, categoryId } = body;
+    const { id, name, description, price, imageUrl, image, isAvailable, categoryId } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -90,13 +99,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const dishImage = imageUrl !== undefined ? imageUrl : image;
+
     const updatedDish = await prisma.dish.update({
       where: { id },
       data: {
         ...(name !== undefined && { name: name.trim() }),
         ...(description !== undefined && { description: description?.trim() || null }),
-        ...(price !== undefined && { price: parseFloat(price) }),
-        ...(imageUrl !== undefined && { imageUrl: imageUrl?.trim() || null }),
+        ...(price !== undefined && { price: Math.round(Number(price)) }),
+        ...(dishImage !== undefined && { image: dishImage?.trim() || null }),
         ...(isAvailable !== undefined && { isAvailable }),
         ...(categoryId !== undefined && { categoryId }),
       },

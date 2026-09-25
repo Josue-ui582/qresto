@@ -56,10 +56,10 @@ export async function POST(request: NextRequest) {
 
     const member = await prisma.teamMember.create({
       data: {
-        name: name.trim(),
+        name: name.trim() || null,
         email: email.trim().toLowerCase(),
         phone: phone?.trim() || null,
-        role: role || 'WAITER',
+        role: role,
         pinCode: pinCode?.trim() || null,
         restaurantId,
       },
