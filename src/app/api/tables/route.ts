@@ -48,25 +48,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const formattedNumber = String(number).trim();
+
     // Vérifier si le numéro de table existe déjà pour ce restaurant
     const existingTable = await prisma.restaurantTable.findFirst({
       where: {
         restaurantId,
-        number: parseInt(number, 10),
+        number: formattedNumber,
       },
     });
 
     if (existingTable) {
       return NextResponse.json(
-        { success: false, error: `La table #${number} existe déjà dans cet établissement.` },
+        { success: false, error: `La table #${formattedNumber} existe déjà dans cet établissement.` },
         { status: 400 }
       );
     }
 
     const table = await prisma.restaurantTable.create({
       data: {
-        number: parseInt(number, 10),
-        capacity: capacity ? parseInt(capacity, 10) : 4,
+        number: formattedNumber,
+        capacity: capacity ? parseInt(String(capacity), 10) : 4,
         name: name?.trim() || null,
         restaurantId,
       },
@@ -107,8 +109,8 @@ export async function PUT(request: NextRequest) {
     const updatedTable = await prisma.restaurantTable.update({
       where: { id },
       data: {
-        ...(number !== undefined && { number: parseInt(number, 10) }),
-        ...(capacity !== undefined && { capacity: parseInt(capacity, 10) }),
+        ...(number !== undefined && { number: String(number).trim() }),
+        ...(capacity !== undefined && { capacity: parseInt(String(capacity), 10) }),
         ...(name !== undefined && { name: name?.trim() || null }),
       },
       include: {

@@ -12,19 +12,18 @@ import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardTopbar } from './DashboardTopbar';
 import { OverviewTab } from './OverviewTab';
 import { OrdersTab } from './OrdersTab';
-import { CategoriesTab } from './CategoriesTab';
-import { DishesTab } from './DishesTab';
-import { TablesTab } from './TablesTab';
-import { QrCodesTab } from './QrCodesTab';
 import { RestaurantInfoTab } from './RestaurantInfoTab';
-import { AnalyticsTab } from './AnalyticsTab';
-import { TeamTab } from './TeamTab';
-import { SubscriptionTab } from './SubscriptionTab';
-import { SettingsTab } from './SettingsTab';
 import { Dish, OrderStatus, RestaurantTable } from '@/types';
+import { TeamTab } from './team/TeamTab';
+import { AnalyticsTab } from './analytics/AnalyticsTab';
+import { CategoriesTab } from './categories/CategoriesTab';
+import { DishesTab } from './dishes/DishesTab';
+import { QrCodesTab } from './qr-codes/QrCodesTab';
+import { SettingsTab } from './settings/SettingsTab';
+import { SubscriptionTab } from './subscription/SubscriptionTab';
+import { TablesTab } from './tables/TablesTab';
 
 export const RestaurantDashboard: React.FC = () => {
-  // 1. On récupère isLoading depuis le contexte
   const { currentUser, currentRestaurant, isLoading, logout } = useAuth();
   const { dashboardTab, setDashboardTab } = useNavigation();
   const { showToast } = useToast();
@@ -38,28 +37,13 @@ export const RestaurantDashboard: React.FC = () => {
   // Form Modals State
   const [dishModalOpen, setDishModalOpen] = useState(false);
   const [editingDish, setEditingDish] = useState<Dish | null>(null);
-  const [dishName, setDishName] = useState('');
-  const [dishDesc, setDishDesc] = useState('');
-  const [dishPrice, setDishPrice] = useState<number>(3500);
-  const [dishCategoryId, setDishCategoryId] = useState<string>('');
-  const [dishPrepTime, setDishPrepTime] = useState<number>(20);
-  const [dishImage, setDishImage] = useState<string>('/src/assets/images/poulet_braise_1790196218496.jpg');
-  const [dishHas3D, setDishHas3D] = useState<boolean>(false);
-  const [dish3DType, setDish3DType] = useState<string>('poulet_braise');
 
   const [tableModalOpen, setTableModalOpen] = useState(false);
-  const [tableNumberInput, setTableNumberInput] = useState<string>('');
-  const [tableNameInput, setTableNameInput] = useState<string>('');
-  const [tableCapacityInput, setTableCapacityInput] = useState<number>(4);
-
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
-  const [categoryNameInput, setCategoryNameInput] = useState<string>('');
-
   const [activeQrTable, setActiveQrTable] = useState<RestaurantTable | null>(null);
 
   const router = useRouter();
 
-  // 2. GESTION DE L'ATTENTE : Affiche un loader le temps que la session soit vérifiée
   if (isLoading) {
     return (
       <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
@@ -69,7 +53,6 @@ export const RestaurantDashboard: React.FC = () => {
     );
   }
 
-  // 3. VÉRIFICATION FINALE : Affiche l'erreur SEULEMENT si le chargement est fini et qu'il n'y a pas d'utilisateur
   if (!currentUser || !currentRestaurant) {
     return <RestrictedAccess onLogin={() => router.push('/login')} />;
   }
@@ -129,7 +112,7 @@ export const RestaurantDashboard: React.FC = () => {
       <DashboardSidebar
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
-        dashboardTab={dashboardTab}
+        dashboardTab={dashboardTab as DashboardTab}
         setDashboardTab={setDashboardTab}
         navItems={navItems}
         restaurantName={currentRestaurant.name}
@@ -188,15 +171,20 @@ export const RestaurantDashboard: React.FC = () => {
           )}
 
           {dashboardTab === 'dishes' && (
-            <DishesTab dishes={dishes} onOpenDishModal={(d) => { setEditingDish(d || null); setDishModalOpen(true); }} />
+            <DishesTab dishes={dishes} />
           )}
 
           {dashboardTab === 'tables' && (
-            <TablesTab tables={tables} onOpenTableModal={() => setTableModalOpen(true)} onOpenQr={(t) => setActiveQrTable(t)} />
+            <TablesTab
+              restaurantId={restaurantId}
+              restaurantSlug={currentRestaurant.slug}
+              restaurantName={currentRestaurant.name}
+              tables={tables as any}
+            />
           )}
 
           {dashboardTab === 'qrcodes' && (
-            <QrCodesTab tables={tables} onOpenQr={(t) => setActiveQrTable(t)} />
+            <QrCodesTab tables={tables as any} onOpenQr={(t: any) => setActiveQrTable(t)} />
           )}
 
           {dashboardTab === 'restaurant' && (
@@ -204,7 +192,35 @@ export const RestaurantDashboard: React.FC = () => {
           )}
 
           {dashboardTab === 'analytics' && (
-            <AnalyticsTab stats={{ totalRevenue, totalOrdersCount, averageOrderValue }} />
+            <AnalyticsTab
+              stats={{
+                totalRevenue,
+                totalOrders: totalOrdersCount,
+                averageOrderValue,
+                activeTablesCount: tables.length,
+                ordersByStatus: [
+                  { status: 'Nouveau', count: orders.filter((o) => o.status === 'NEW').length },
+                  { status: 'Confirmé', count: orders.filter((o) => o.status === 'CONFIRMED').length },
+                  { status: 'En préparation', count: orders.filter((o) => o.status === 'PREPARING').length },
+                  { status: 'Prêt', count: orders.filter((o) => o.status === 'READY').length },
+                  { status: 'Annulé', count: orders.filter((o) => o.status === 'CANCELLED').length },
+                ],
+                topItems: dishes.slice(0, 5).map((dish) => {
+                  const totalQty = orders.reduce((acc, order) => {
+                    const item = order.items?.find((i) => i.dishId === dish.id);
+                    return acc + (item?.quantity || 0);
+                  }, 0);
+
+                  return {
+                    id: dish.id,
+                    name: dish.name,
+                    category: dish.categoryId || 'Général',
+                    quantity: totalQty,
+                    revenue: totalQty * (dish.price || 0),
+                  };
+                }),
+              }}
+            />
           )}
 
           {dashboardTab === 'team' && (
@@ -216,7 +232,7 @@ export const RestaurantDashboard: React.FC = () => {
           )}
 
           {dashboardTab === 'settings' && (
-            <SettingsTab onOpenSettings={() => { /* noop for now */ }} />
+            <SettingsTab onOpenSettings={() => { /* noop */ }} />
           )}
         </main>
       </div>
