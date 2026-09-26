@@ -1,17 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { EmptyCart } from './EmptyCart';
 import { CartHeader } from './CartHeader';
 import { CartItemsSummary } from './CartItemsSummary';
 import { OrderTypeSelector } from './OrderTypeSelector';
 import { CustomerInfoFields } from './CustomerInfoFields';
 import { PaymentMethodSelector } from './PaymentMethodSelector';
-import { useRouter } from 'next/navigation';
 import { useOrder } from '@/context/OrderContext';
-import { storage } from '@/lib/storage';
-import { OrderType, PaymentMethod } from '@/types';
+import { OrderType, PaymentMethod, Restaurant } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { FaIcon } from '@/components/common/Icon';
 import { useNavigation } from '@/context/NavigationContext';
@@ -19,15 +18,21 @@ import { useNavigation } from '@/context/NavigationContext';
 export const CartPage: React.FC = () => {
   const { cart, cartRestaurantId, cartTotal, updateCartQuantity, removeFromCart, clearCart } = useCart();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { viewParams } = useNavigation();
   const { placeOrder } = useOrder();
 
-  const restaurant = cartRestaurantId ? storage.getRestaurantById(cartRestaurantId) : null;
-  const initialTable = viewParams.table || '';
+  // Extraction de la table et du restaurant depuis l'URL ou les paramètres de vue
+  const tableUrlParam = searchParams.get('table') || (viewParams.table as string) || '';
+  const restaurantUrlParam = searchParams.get('restaurantId') || cartRestaurantId || '';
 
-  // Form state
-  const [orderType, setOrderType] = useState<OrderType>(initialTable ? 'DINE_IN' : 'DELIVERY');
-  const [tableNumber, setTableNumber] = useState<string>(initialTable ? String(initialTable) : '');
+  // État local pour le restaurant récupéré depuis PostgreSQL
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [isLoadingRestaurant, setIsLoadingRestaurant] = useState<boolean>(false);
+
+  // Form states
+  const [orderType, setOrderType] = useState<OrderType>(tableUrlParam ? 'DINE_IN' : 'DELIVERY');
+  const [tableNumber, setTableNumber] = useState<string>(tableUrlParam ? String(tableUrlParam) : '');
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [customerAddress, setCustomerAddress] = useState<string>('');
@@ -36,13 +41,47 @@ export const CartPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const deliveryFee = orderType === 'DELIVERY' && restaurant ? restaurant.deliveryFee : 0;
+  // 1. Récupération dynamique des infos du restaurant depuis PostgreSQL
+  useEffect(() => {
+    const targetRestaurantId = cartRestaurantId || restaurantUrlParam;
+    if (!targetRestaurantId) return;
+
+    const fetchRestaurantInfo = async () => {
+      try {
+        setIsLoadingRestaurant(true);
+        const res = await fetch(`/api/restaurants/${targetRestaurantId}`);
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const fetchedRest = data.restaurant || data.data || data;
+        if (fetchedRest) {
+          setRestaurant(fetchedRest);
+        }
+      } catch (err) {
+        console.error('Erreur lors du chargement du restaurant:', err);
+      } finally {
+        setIsLoadingRestaurant(false);
+      }
+    };
+
+    fetchRestaurantInfo();
+  }, [cartRestaurantId, restaurantUrlParam]);
+
+  // Calcul du total avec frais de livraison
+  const deliveryFee = orderType === 'DELIVERY' && restaurant ? (restaurant.deliveryFee || 0) : 0;
   const grandTotal = cartTotal + deliveryFee;
 
+  // 2. Soumission de la commande vers l'API PostgreSQL
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
+    const activeRestaurantId = restaurant?.id || cartRestaurantId || restaurantUrlParam;
+
+    if (!activeRestaurantId) {
+      setFormError('Restaurant introuvable. Veuillez sélectionner à nouveau vos plats.');
+      return;
+    }
     if (!customerName.trim()) {
       setFormError('Veuillez renseigner votre nom complet.');
       return;
@@ -62,6 +101,8 @@ export const CartPage: React.FC = () => {
 
     try {
       setIsSubmitting(true);
+
+      // Appel de placeOrder (connecté à POST /api/orders)
       const newOrder = await placeOrder({
         type: orderType,
         tableNumber: orderType === 'DINE_IN' ? tableNumber : undefined,
@@ -75,9 +116,10 @@ export const CartPage: React.FC = () => {
       try {
         confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       } catch {
-        // Ignorer les erreurs éventuelles du confetti
+        // Fallback discret si canvas-confetti échoue
       }
 
+      // Redirection vers le suivi en direct
       router.push(`/order-tracking?trackingCode=${encodeURIComponent(newOrder.trackingCode)}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Une erreur est survenue lors de la validation.';
@@ -100,7 +142,7 @@ export const CartPage: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Colonne de gauche : Articles */}
+        {/* Colonne de gauche : Résumé des articles */}
         <div className="lg:col-span-5 space-y-4">
           <CartItemsSummary
             cart={cart}
@@ -114,9 +156,9 @@ export const CartPage: React.FC = () => {
           />
         </div>
 
-        {/* Colonne de droite : Formulaire */}
+        {/* Colonne de droite : Formulaire de livraison/table & paiement */}
         <div className="lg:col-span-7">
-          <form onSubmit={handleCheckout} className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-sm space-y-6">
+          <form onSubmit={handleCheckout} className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-xs space-y-6">
             {formError && (
               <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
                 <FaIcon name="fa-solid fa-circle-exclamation" />
@@ -150,8 +192,8 @@ export const CartPage: React.FC = () => {
 
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="btn-primary w-full"
+              disabled={isSubmitting || isLoadingRestaurant}
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

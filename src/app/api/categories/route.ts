@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST : Créer une nouvelle catégorie
+// POST : Créer une nouvelle catégorie
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         description: description?.trim() || null,
         restaurantId,
-        sortOrder: typeof sortOrder === 'number' ? sortOrder : 0,
+        order: typeof sortOrder === 'number' ? sortOrder : 0, // 👈 Remplacer sortOrder par order
       },
       include: {
         _count: {
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT / PATCH : Mettre à jour une catégorie
+// PUT : Mettre à jour une catégorie
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
@@ -86,7 +87,7 @@ export async function PUT(request: NextRequest) {
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        sortOrder: typeof sortOrder === 'number' ? sortOrder : undefined,
+        order: typeof sortOrder === 'number' ? sortOrder : undefined, // 👈 Remplacer sortOrder par order
       },
       include: {
         _count: {

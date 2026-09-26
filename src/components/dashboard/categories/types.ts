@@ -2,7 +2,7 @@ export interface CategoryData {
   id: string;
   name: string;
   description?: string | null;
-  sortOrder?: number;
+  order?: number;
   restaurantId: string;
   _count?: {
     dishes: number;

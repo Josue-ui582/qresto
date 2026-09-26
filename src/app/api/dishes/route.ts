@@ -44,17 +44,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, description, price, imageUrl, image, isAvailable, categoryId, restaurantId } = body;
 
-    if (!name || price === undefined || !categoryId || !restaurantId) {
+    const dishImage = imageUrl || image;
+
+    // Validation stricte incluant l'image
+    if (!name || price === undefined || !categoryId || !restaurantId || !dishImage) {
       return NextResponse.json(
-        { success: false, error: 'Le nom, le prix, la catégorie et le restaurant sont requis.' },
+        { success: false, error: 'Le nom, le prix, la catégorie, le restaurant et l\'image sont requis.' },
         { status: 400 }
       );
     }
 
-    // On accepte soit 'imageUrl' soit 'image' du body pour la compatibilité
-    const dishImage = imageUrl || image;
-
-    // Génération automatique d'un slug unique pour le restaurant
     const baseSlug = dishesSlugify(name);
     const uniqueSlug = `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -64,7 +63,7 @@ export async function POST(request: NextRequest) {
         slug: uniqueSlug,
         description: description?.trim() || null,
         price: Math.round(Number(price)),
-        image: dishImage?.trim() || null,
+        image: dishImage.trim(),
         isAvailable: isAvailable ?? true,
         categoryId,
         restaurantId,

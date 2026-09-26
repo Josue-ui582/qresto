@@ -32,20 +32,18 @@ export const DishCard: React.FC<DishCardProps> = ({
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.96 }}
-      className={`bg-white rounded-3xl border overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group ${
-        dish.isAvailable ? 'border-stone-200/90' : 'border-stone-200 bg-stone-50/50'
-      }`}
+      className={`bg-white rounded-3xl border overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group ${dish.isAvailable ? 'border-stone-200/90' : 'border-stone-200 bg-stone-50/50'
+        }`}
     >
       <div>
         {/* Visuel principal / Placeholder */}
         <div className="relative h-44 bg-stone-100 w-full overflow-hidden">
-          {dish.imageUrl ? (
+          {dish.image || dish.imageUrl ? (
             <img
-              src={dish.imageUrl}
+              src={dish.image || dish.imageUrl}
               alt={dish.name}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-                !dish.isAvailable ? 'grayscale opacity-75' : ''
-              }`}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${!dish.isAvailable ? 'grayscale opacity-75' : ''
+                }`}
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-stone-300">
@@ -60,11 +58,10 @@ export const DishCard: React.FC<DishCardProps> = ({
           <div className="absolute top-3 right-3">
             <button
               onClick={() => onToggleAvailability(dish)}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md backdrop-blur-md flex items-center gap-1.5 cursor-pointer transition-all ${
-                dish.isAvailable
+              className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md backdrop-blur-md flex items-center gap-1.5 cursor-pointer transition-all ${dish.isAvailable
                   ? 'bg-emerald-500/90 text-white hover:bg-emerald-600'
                   : 'bg-stone-900/80 text-amber-400 hover:bg-stone-900'
-              }`}
+                }`}
             >
               {dish.isAvailable ? (
                 <>

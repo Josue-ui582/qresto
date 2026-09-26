@@ -1,17 +1,15 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion'; // ou 'motion/react' selon votre package
 import { QrCode, ArrowRight, X, RotateCw, ShoppingBag, Loader2, UtensilsCrossed } from 'lucide-react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-// Import des sous-composants
 import { RestaurantHero } from './RestaurantHero';
 import { RestaurantMenuTabs } from './RestaurantMenuTabs';
 import { RestaurantDishCard } from './RestaurantDishCard';
 import { useNavigation } from '@/context/NavigationContext';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import { Dish, Category, Restaurant } from '@/types';
@@ -22,21 +20,12 @@ export const RestaurantDetailPage: React.FC = () => {
   const router = useRouter();
   const nextParams = useParams();
   const searchParams = useSearchParams();
-  const { addToCart, cartCount } = useCart();
+  const { addToCart, cartCount, cartRestaurantId } = useCart();
   const { showToast } = useToast();
 
-  // Extraction du slug et de la table depuis les paramètres de navigation ou de l'URL
-  const slug =
-    (nextParams?.slug as string) ||
-    (viewParams?.slug as string) ||
-    '';
+  const slug = (nextParams?.slug as string) || (viewParams?.slug as string) || '';
+  const tableParam = (searchParams?.get('table') as string) || (viewParams?.table as string) || '';
 
-  const tableParam =
-    (searchParams?.get('table') as string) ||
-    (viewParams?.table as string) ||
-    '';
-
-  // États locaux pour les données réelles BDD
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -46,7 +35,6 @@ export const RestaurantDetailPage: React.FC = () => {
   const [activeCategoryId, setActiveCategoryId] = useState<string>('all');
   const [active3DDish, setActive3DDish] = useState<Dish | null>(null);
 
-  // 1. Récupération des données réelles depuis l'API
   useEffect(() => {
     if (!slug) return;
 
@@ -54,6 +42,7 @@ export const RestaurantDetailPage: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
+        
         const res = await fetch(`/api/restaurants/${slug}`);
 
         if (res.status === 404) {
@@ -61,29 +50,38 @@ export const RestaurantDetailPage: React.FC = () => {
         }
 
         if (!res.ok) {
-          throw new Error('Erreur lors de la récupération des données.');
+          throw new Error('Erreur lors du chargement de la carte.');
         }
 
         const data = await res.json();
-        const fetchedRestaurant = data.restaurant;
+        // Supporte { success: true, restaurant: ... } ou { data: ... }
+        const fetchedRestaurant = data.restaurant || data.data || data;
 
         if (fetchedRestaurant) {
           setRestaurant(fetchedRestaurant);
+
           const fetchedCategories: Category[] = fetchedRestaurant.categories || [];
           setCategories(fetchedCategories);
 
-          // Extraction et mise à plat des plats contenus dans les catégories
-          const allDishes: Dish[] = fetchedCategories.flatMap((cat: any) =>
-            (cat.dishes || []).map((d: any) => ({
-              ...d,
-              categoryId: d.categoryId || cat.id,
-            }))
-          );
-          setDishes(allDishes);
+          // Extraction ultra-sécurisée des plats (qu'ils soient dans categories[].dishes ou restaurant.dishes)
+          let extractedDishes: Dish[] = [];
+          
+          if (fetchedRestaurant.dishes && fetchedRestaurant.dishes.length > 0) {
+            extractedDishes = fetchedRestaurant.dishes;
+          } else if (fetchedCategories.length > 0) {
+            extractedDishes = fetchedCategories.flatMap((cat: any) =>
+              (cat.dishes || []).map((d: any) => ({
+                ...d,
+                categoryId: d.categoryId || cat.id,
+              }))
+            );
+          }
+
+          setDishes(extractedDishes);
         }
       } catch (err: any) {
         console.error('Erreur API detail restaurant:', err);
-        setError(err.message || 'Impossible de charger le menu du restaurant.');
+        setError(err.message || 'Impossible de charger le menu.');
       } finally {
         setIsLoading(false);
       }
@@ -99,41 +97,37 @@ export const RestaurantDetailPage: React.FC = () => {
 
   const handleShareMenu = async () => {
     if (typeof window === 'undefined') return;
-    const url = window.location.href;
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      try {
-        await navigator.clipboard.writeText(url);
-        showToast('Lien du menu copié ! Partagez-le avec vos amis.', 'success');
-      } catch {
-        showToast('Impossible de copier le lien dans ce navigateur.', 'error');
-      }
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showToast('Lien du menu copié !', 'success');
+    } catch {
+      showToast('Impossible de copier le lien.', 'error');
     }
   };
 
   const handleShareWhatsApp = () => {
     if (typeof window === 'undefined') return;
     const text = encodeURIComponent(
-      `Regarde le menu digital de ${restaurant?.name || 'ce restaurant'} sur QResto : ${window.location.origin}/restaurant/${restaurant?.slug || slug}`
+      `Découvrez le menu de ${restaurant?.name || 'ce restaurant'} sur QResto : ${window.location.href}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   const handleAddToCart = (dish: Dish) => {
-    addToCart(dish, 1);
-    showToast(`"${dish.name}" ajouté à votre panier !`, 'success');
+    // Si le plat appartient à ce restaurant, on passe aussi l'ID du restaurant
+    addToCart(dish, 1, restaurant?.id);
+    showToast(`"${dish.name}" ajouté au panier !`, 'success');
   };
 
-  // Chargement
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#fbf9f5] flex flex-col items-center justify-center py-24">
         <Loader2 className="w-10 h-10 text-amber-500 animate-spin mb-4" />
-        <p className="text-sm font-medium text-stone-600">Chargement du menu...</p>
+        <p className="text-sm font-medium text-stone-600">Chargement du menu en direct...</p>
       </div>
     );
   }
 
-  // Erreur ou restaurant inexistant
   if (error || !restaurant) {
     return (
       <div className="min-h-screen bg-[#fbf9f5] flex flex-col items-center justify-center py-24 px-4 text-center">
@@ -150,7 +144,7 @@ export const RestaurantDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#fbf9f5] pb-28">
-      {/* 1. HERO SECTION */}
+      {/* 1. HERO */}
       <RestaurantHero 
         restaurant={restaurant}
         onBack={() => router.push('/restaurants')}
@@ -158,12 +152,12 @@ export const RestaurantDetailPage: React.FC = () => {
         onShareWhatsApp={handleShareWhatsApp}
       />
 
-      {/* 2. DINE-IN TABLE ALERT BANNER */}
+      {/* 2. ALERTE TABLE SCANNE (DINE-IN) */}
       {tableParam && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-linear-to-r from-amber-500 to-orange-500 text-stone-950 font-bold py-3.5 px-4 shadow-md"
+          className="bg-gradient-to-r from-amber-500 to-orange-500 text-stone-950 font-bold py-3.5 px-4 shadow-md"
         >
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -175,7 +169,7 @@ export const RestaurantDetailPage: React.FC = () => {
                   Bienvenue à la Table #{tableParam} !
                 </p>
                 <p className="text-xs text-stone-900/80 font-medium">
-                  Votre commande sera transmise directement en cuisine et servie à cette table.
+                  Vos commandes seront envoyées directement en cuisine pour la Table #{tableParam}.
                 </p>
               </div>
             </div>
@@ -186,7 +180,7 @@ export const RestaurantDetailPage: React.FC = () => {
         </motion.div>
       )}
 
-      {/* 3. MENU CATEGORIES TABS */}
+      {/* 3. TABS CATEGORIES */}
       {categories.length > 0 && (
         <RestaurantMenuTabs 
           categories={categories}
@@ -196,7 +190,7 @@ export const RestaurantDetailPage: React.FC = () => {
         />
       )}
 
-      {/* 4. DISHES LIST / GRID OU ÉTAT VIDE PROFESSIONNEL */}
+      {/* 4. GRILLE DE PLATS */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {filteredDishes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -215,13 +209,13 @@ export const RestaurantDetailPage: React.FC = () => {
             <UtensilsCrossed className="w-12 h-12 text-stone-300 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-stone-900 mb-1">Menu en cours de configuration</h3>
             <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
-              Cet établissement prépare sa carte. Les plats seront bientôt disponibles en ligne.
+              Aucun plat n'est encore enregistré pour cette catégorie dans la base de données.
             </p>
           </div>
         )}
       </div>
 
-      {/* 5. FLOATING CART BAR ON MOBILE */}
+      {/* 5. BARRE FLOTTANTE PANIER */}
       <AnimatePresence>
         {cartCount > 0 && (
           <motion.div
@@ -234,11 +228,11 @@ export const RestaurantDetailPage: React.FC = () => {
               type="button"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => router.push(`/cart?table=${encodeURIComponent(tableParam || '')}`)}
+              onClick={() => router.push(`/cart?table=${encodeURIComponent(tableParam || '')}&restaurantId=${restaurant.id}`)}
               className="w-full py-4 px-6 rounded-2xl bg-stone-950 text-white font-black text-sm shadow-2xl flex items-center justify-between border border-amber-500/50 hover:bg-black transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-linear-to-r from-amber-500 to-orange-500 text-stone-950 flex items-center justify-center font-black text-xs">
+                <span className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-stone-950 flex items-center justify-center font-black text-xs">
                   {cartCount}
                 </span>
                 <span>Voir mon panier</span>
@@ -252,7 +246,7 @@ export const RestaurantDetailPage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* 6. MODAL 3D DISH VIEWER */}
+      {/* 6. MODAL 3D */}
       <AnimatePresence>
         {active3DDish && (
           <div className="fixed inset-0 z-50 bg-stone-950/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -299,7 +293,7 @@ export const RestaurantDetailPage: React.FC = () => {
                     handleAddToCart(active3DDish);
                     setActive3DDish(null);
                   }}
-                  className="px-6 py-3 rounded-xl bg-linear-to-r from-amber-500 to-orange-500 text-stone-950 font-black text-xs flex items-center gap-2 shadow-lg hover:shadow-amber-500/30 transition-all cursor-pointer"
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-stone-950 font-black text-xs flex items-center gap-2 shadow-lg hover:shadow-amber-500/30 transition-all cursor-pointer"
                 >
                   <ShoppingBag className="w-4 h-4" />
                   <span>Ajouter au panier</span>

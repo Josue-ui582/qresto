@@ -200,6 +200,7 @@ model RestaurantSettings {
 model Category {
   id           String     @id @default(cuid())
   restaurantId String
+  description  String?
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   name         String
   icon         String?
@@ -331,6 +332,7 @@ model OrderItem {
 model OrderStatusHistory {
   id        String      @id @default(cuid())
   orderId   String
+  comment   String
   order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
   status    OrderStatus
   timestamp DateTime    @default(now())

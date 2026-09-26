@@ -26,6 +26,7 @@ import { TablesTab } from './tables/TablesTab';
 export const RestaurantDashboard: React.FC = () => {
   const { currentUser, currentRestaurant, isLoading, logout } = useAuth();
   const { dashboardTab, setDashboardTab } = useNavigation();
+  const [orderss, setOrders] = useState<any[]>([]);
   const { showToast } = useToast();
 
   // Navigation & UI state
@@ -34,11 +35,6 @@ export const RestaurantDashboard: React.FC = () => {
   const [demoModeWithData, setDemoModeWithData] = useState<boolean>(false);
   const [topSearch, setTopSearch] = useState('');
 
-  // Form Modals State
-  const [dishModalOpen, setDishModalOpen] = useState(false);
-  const [editingDish, setEditingDish] = useState<Dish | null>(null);
-
-  const [tableModalOpen, setTableModalOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [activeQrTable, setActiveQrTable] = useState<RestaurantTable | null>(null);
 
@@ -93,9 +89,23 @@ export const RestaurantDashboard: React.FC = () => {
     { id: 'settings', label: 'Paramètres', icon: 'fa-solid fa-gear' },
   ];
 
-  const advanceOrderStatus = (orderId: string, nextStatus: OrderStatus) => {
-    storage.updateOrderStatus(orderId, nextStatus);
-    showToast(`Commande passée en "${nextStatus}"`, 'success');
+  const advanceOrderStatus = async (orderId: string, nextStatus: OrderStatus) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+
+      if (res.ok) {
+        // Met à jour le state React local pour faire bouger la carte en direct
+        setOrders((prevOrders) =>
+          prevOrders.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
+        );
+      }
+    } catch (err) {
+      console.error('Erreur lors du changement de statut:', err);
+    }
   };
 
   const handleSelectRestaurant = (selectedId: string) => {
@@ -166,12 +176,12 @@ export const RestaurantDashboard: React.FC = () => {
             />
           )}
 
-          {dashboardTab === 'categories' && (
-            <CategoriesTab categories={categories} onOpenCategoryModal={() => setCategoryModalOpen(true)} />
+          {restaurantId && dashboardTab === 'categories' && (
+            <CategoriesTab restaurantId={restaurantId} categories={categories} onOpenCategoryModal={() => setCategoryModalOpen(true)} />
           )}
 
-          {dashboardTab === 'dishes' && (
-            <DishesTab dishes={dishes} />
+          {restaurantId && dashboardTab === 'dishes' && (
+            <DishesTab dishes={dishes} categories={categories} restaurantId={restaurantId} />
           )}
 
           {dashboardTab === 'tables' && (

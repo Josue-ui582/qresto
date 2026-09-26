@@ -9,6 +9,7 @@ export interface DishData {
   description?: string | null;
   price: number;
   imageUrl?: string | null;
+  image?: string | null;
   isAvailable: boolean;
   categoryId: string;
   restaurantId: string;

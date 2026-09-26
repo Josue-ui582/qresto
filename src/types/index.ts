@@ -257,3 +257,12 @@ export interface RestaurantItem {
     tables: number;
   };
 }
+
+export interface OverviewTabProps {
+  restaurantName: string;
+  totalRevenue: number;
+  totalOrdersCount: number;
+  averageOrderValue: number;
+  totalClientsCount: number;
+  demoModeWithData: boolean;
+}

@@ -86,7 +86,7 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
     setFormData({
       name: category.name,
       description: category.description || '',
-      sortOrder: category.sortOrder || 0,
+      sortOrder: category.order || 0,
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -96,6 +96,11 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
     e.preventDefault();
     if (!formData.name.trim()) {
       setFormError('Le nom de la catégorie est obligatoire.');
+      return;
+    }
+
+    if (!editingCategory && !restaurantId) {
+      setFormError('Identifiant du restaurant introuvable. Veuillez recharger la page.');
       return;
     }
 
@@ -167,11 +172,10 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className={`p-4 rounded-2xl flex items-center justify-between border text-xs sm:text-sm font-bold shadow-lg ${
-              actionNotice.type === 'success'
+            className={`p-4 rounded-2xl flex items-center justify-between border text-xs sm:text-sm font-bold shadow-lg ${actionNotice.type === 'success'
                 ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
                 : 'bg-rose-50 text-rose-900 border-rose-200'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2">
               {actionNotice.type === 'success' ? (

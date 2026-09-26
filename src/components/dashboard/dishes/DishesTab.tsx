@@ -187,6 +187,10 @@ export const DishesTab: React.FC<DishesTabProps> = ({
       setFormError('Veuillez sélectionner une catégorie.');
       return;
     }
+    if (!formData.imageUrl || !formData.imageUrl.trim()) {
+      setFormError('L\'image du plat est obligatoire (fichier ou URL).');
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -253,11 +257,10 @@ export const DishesTab: React.FC<DishesTabProps> = ({
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className={`p-4 rounded-2xl flex items-center justify-between border text-xs sm:text-sm font-bold shadow-lg ${
-              actionNotice.type === 'success'
-                ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                : 'bg-rose-50 text-rose-900 border-rose-200'
-            }`}
+            className={`p-4 rounded-2xl flex items-center justify-between border text-xs sm:text-sm font-bold shadow-lg ${actionNotice.type === 'success'
+              ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+              : 'bg-rose-50 text-rose-900 border-rose-200'
+              }`}
           >
             <div className="flex items-center gap-2">
               {actionNotice.type === 'success' ? (

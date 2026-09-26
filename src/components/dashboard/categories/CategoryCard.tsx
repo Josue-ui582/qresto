@@ -30,7 +30,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold text-xs">
-              #{category.sortOrder || 0}
+              #{category.order || 0}
             </div>
             <h3 className="text-base font-bold text-stone-950 group-hover:text-amber-700 transition-colors font-display">
               {category.name}
@@ -50,7 +50,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
 
       <div className="pt-4 border-t border-stone-100 flex items-center justify-between">
         <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-          Ordre : {category.sortOrder || 0}
+          Ordre : {category.order || 0}
         </span>
 
         <div className="flex items-center gap-2">
