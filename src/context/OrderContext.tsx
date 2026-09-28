@@ -2,18 +2,27 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Order, OrderType, PaymentMethod, OrderStatus } from '../types';
-import { storage } from '../lib/storage';
 import { useToast } from './ToastContext';
 import { useCart } from './CartContext';
 
+interface OrderData {
+  type: OrderType;
+  tableNumber?: string | number;
+  customerName: string;
+  customerPhone: string;
+  customerAddress?: string;
+  customerNotes?: string;
+  paymentMethod: PaymentMethod;
+}
+
 interface OrderContextType {
-  placeOrder: (orderData: { type: OrderType; tableNumber?: string | number; customerName: string; customerPhone: string; customerAddress?: string; customerNotes?: string; paymentMethod: PaymentMethod; }) => Promise<Order>;
+  placeOrder: (orderData: OrderData) => Promise<Order>;
   trackedOrder: Order | null;
   trackingCodeInput: string;
   setTrackingCodeInput: (code: string) => void;
-  searchTrackedOrder: (code: string) => Order | null;
-  refreshTrackedOrder: () => void;
-  updateRestaurantStatus: (status: OrderStatus, orderId: string) => void;
+  searchTrackedOrder: (code: string) => Promise<Order | null>;
+  refreshTrackedOrder: () => Promise<void>;
+  updateRestaurantStatus: (status: OrderStatus, orderId: string) => Promise<void>;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -21,74 +30,117 @@ const OrderContext = createContext<OrderContextType | undefined>(undefined);
 export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
   const [trackingCodeInput, setTrackingCodeInput] = useState<string>('');
-  
+
   const { showToast } = useToast();
-  const { cart, cartRestaurantId, cartTotal, clearCart } = useCart();
+  const { cart, cartRestaurantId, clearCart } = useCart();
 
-  const placeOrder = async (orderData: any): Promise<Order> => {
-    if (!cartRestaurantId || cart.length === 0) throw new Error('Votre panier est vide');
-    const rest = storage.getRestaurantById(cartRestaurantId);
-    if (!rest) throw new Error('Restaurant introuvable');
+  // 1. Passage de commande via API Next.js -> PostgreSQL
+  const placeOrder = async (orderData: OrderData): Promise<Order> => {
+    if (!cartRestaurantId || cart.length === 0) {
+      throw new Error('Votre panier est vide');
+    }
 
-    const subtotal = cartTotal;
-    const deliveryFee = orderData.type === 'DELIVERY' ? rest.deliveryFee : 0;
-    
     const items = cart.map((item) => ({
-      dishId: item.dish.id, name: item.dish.name, price: item.dish.price,
-      quantity: item.quantity, notes: item.notes, image: item.dish.image,
+      dishId: item.dish.id,
+      name: item.dish.name,
+      price: item.dish.price,
+      quantity: item.quantity,
+      notes: item.notes,
     }));
 
-    const order = storage.createOrder({
-      restaurantId: rest.id,
-      restaurantName: rest.name,
-      restaurantPhone: rest.phone,
-      type: orderData.type,
-      items,
-      subtotal,
-      deliveryFee,
-      total: subtotal + deliveryFee,
-      status: rest.settings.autoConfirmOrders ? 'CONFIRMED' : 'NEW',
-      ...orderData
+    const response = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        restaurantId: cartRestaurantId,
+        items,
+        ...orderData,
+      }),
     });
 
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      const errorMsg = result.error || 'Erreur lors de la création de la commande.';
+      showToast(errorMsg, 'error');
+      throw new Error(errorMsg);
+    }
+
+    const newOrder: Order = result.data;
     clearCart();
-    setTrackedOrder(order);
-    setTrackingCodeInput(order.trackingCode);
-    showToast(`Commande ${order.trackingCode} enregistrée !`, 'success');
-    return order;
+    setTrackedOrder(newOrder);
+    setTrackingCodeInput(newOrder.trackingCode);
+    showToast(`Commande ${newOrder.trackingCode} enregistrée !`, 'success');
+    return newOrder;
   };
 
-  const searchTrackedOrder = (code: string): Order | null => {
-    if (!code) return null;
-    const found = storage.getOrderByTrackingCode(code);
-    if (found) {
-      setTrackedOrder(found);
-      setTrackingCodeInput(found.trackingCode);
-      return found;
+  // 2. Recherche d'une commande par code de suivi via API
+  const searchTrackedOrder = async (code: string): Promise<Order | null> => {
+    if (!code.trim()) return null;
+
+    try {
+      const response = await fetch(`/api/orders?trackingCode=${encodeURIComponent(code.trim())}`);
+      const result = await response.json();
+
+      if (!response.ok || !result.data) {
+        showToast('Aucune commande trouvée.', 'error');
+        return null;
+      }
+
+      const foundOrder = result.data;
+      setTrackedOrder(foundOrder);
+      setTrackingCodeInput(foundOrder.trackingCode);
+      return foundOrder;
+    } catch (err) {
+      console.error('Erreur lors de la recherche de la commande:', err);
+      showToast('Impossible de récupérer la commande.', 'error');
+      return null;
     }
-    showToast('Aucune commande trouvée.', 'error');
-    return null;
   };
 
-  const refreshTrackedOrder = () => {
+  // 3. Rafraîchir le suivi de la commande active
+  const refreshTrackedOrder = async (): Promise<void> => {
     if (!trackedOrder) return;
-    const updated = storage.getOrderByTrackingCode(trackedOrder.trackingCode);
-    if (updated) {
-      setTrackedOrder(updated);
-      showToast('Statut actualisé.', 'info');
-    }
+    await searchTrackedOrder(trackedOrder.trackingCode);
+    showToast('Statut actualisé.', 'info');
   };
 
-  const updateRestaurantStatus = (status: OrderStatus, orderId: string) => {
-    const updated = storage.updateOrderStatus(orderId, status);
-    if (updated) {
+  // 4. Mise à jour du statut (Admin / Restaurant) via API
+  const updateRestaurantStatus = async (status: OrderStatus, orderId: string): Promise<void> => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erreur de mise à jour.');
+      }
+
       showToast(`Statut mis à jour : ${status}`, 'success');
-      if (trackedOrder?.id === orderId) setTrackedOrder(updated);
+      if (trackedOrder?.id === orderId) {
+        setTrackedOrder(result.data);
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Erreur lors de la mise à jour du statut', 'error');
     }
   };
 
   return (
-    <OrderContext.Provider value={{ placeOrder, trackedOrder, trackingCodeInput, setTrackingCodeInput, searchTrackedOrder, refreshTrackedOrder, updateRestaurantStatus }}>
+    <OrderContext.Provider
+      value={{
+        placeOrder,
+        trackedOrder,
+        trackingCodeInput,
+        setTrackingCodeInput,
+        searchTrackedOrder,
+        refreshTrackedOrder,
+        updateRestaurantStatus,
+      }}
+    >
       {children}
     </OrderContext.Provider>
   );

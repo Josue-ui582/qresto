@@ -133,3 +133,64 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const restaurantId = searchParams.get('restaurantId');
+    const trackingCode = searchParams.get('trackingCode');
+
+    // Cas A : Recherche par code de suivi (Page de suivi client)
+    if (trackingCode) {
+      const cleanCode = trackingCode.trim();
+
+      const order = await prisma.order.findFirst({
+        where: {
+          OR: [
+            { trackingCode: cleanCode },
+            { trackingCode: cleanCode.toUpperCase() },
+            { trackingCode: cleanCode.replace('QR-', 'QR- ') },
+          ],
+        },
+        include: {
+          items: true,
+          statusHistory: true, // ✅ On inclut l'historique sans forcer un orderBy sur un champ inexistant
+        },
+      });
+
+      if (!order) {
+        return NextResponse.json(
+          { success: false, error: 'Commande introuvable.', data: null },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ success: true, data: order });
+    }
+
+    // Cas B : Récupération par restaurant (Dashboard Administrateur)
+    if (restaurantId) {
+      const orders = await prisma.order.findMany({
+        where: { restaurantId },
+        include: {
+          items: true,
+          statusHistory: true, // ✅ Correct ici aussi
+        },
+        orderBy: { createdAt: 'desc' }, // 'createdAt' existe sur la table Order
+      });
+
+      return NextResponse.json({ success: true, data: orders });
+    }
+
+    return NextResponse.json(
+      { success: false, error: 'Paramètre restaurantId ou trackingCode requis' },
+      { status: 400 }
+    );
+  } catch (error: any) {
+    console.error('Erreur API GET /api/orders :', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Erreur serveur.' },
+      { status: 500 }
+    );
+  }
+}

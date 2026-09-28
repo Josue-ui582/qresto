@@ -2,7 +2,6 @@
 
 import { useNavigation } from '@/context/NavigationContext';
 import { useOrder } from '@/context/OrderContext';
-import { storage } from '@/lib/storage';
 import { Order } from '@/types';
 import React, { useState, useEffect } from 'react';
 import { OrderTrackingSearch } from './OrderTrackingSearch';
@@ -19,60 +18,65 @@ export const OrderTrackingPage: React.FC = () => {
     refreshTrackedOrder,
   } = useOrder();
 
-  // CORRECTION TYPESCRIPT ICI : (viewParams.trackingCode as string)
   const [searchInput, setSearchInput] = useState<string>(
     (viewParams.trackingCode as string) || trackingCodeInput || ''
   );
   const [currentOrder, setCurrentOrder] = useState<Order | null>(trackedOrder);
   const [autoRefresh] = useState<boolean>(true);
 
-  // Initial lookup if tracking code was passed in viewParams or app state
+  // 1. Recherche initiale (si un code est dans l'URL ou le contexte)
   useEffect(() => {
-    // CORRECTION TYPESCRIPT ICI : (viewParams.trackingCode as string)
     const code = (viewParams.trackingCode as string) || trackingCodeInput;
-    if (code) {
-      const found = storage.getOrderByTrackingCode(code);
-      if (found) {
-        setCurrentOrder(found);
-      }
+    if (code && !currentOrder) {
+      // searchTrackedOrder interroge maintenant l'API (PostgreSQL)
+      searchTrackedOrder(code).then((found) => {
+        if (found) setCurrentOrder(found);
+      });
     }
   }, [viewParams.trackingCode, trackingCodeInput]);
 
-  // Polling effect every 4 seconds to catch kitchen updates in real time
+  // 2. Polling : Actualisation silencieuse en arrière-plan toutes les 5 secondes
   useEffect(() => {
     if (!currentOrder || !autoRefresh) return;
-    const interval = setInterval(() => {
-      const updated = storage.getOrderByTrackingCode(currentOrder.trackingCode);
-      if (updated && updated.status !== currentOrder.status) {
-        setCurrentOrder(updated);
+    
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/orders?trackingCode=${currentOrder.trackingCode}`);
+        if (res.ok) {
+          const result = await res.json();
+          // Si le statut a changé en cuisine, on met à jour l'affichage
+          if (result.data && result.data.status !== currentOrder.status) {
+            setCurrentOrder(result.data);
+          }
+        }
+      } catch (err) {
+        console.error('Erreur lors du rafraîchissement silencieux', err);
       }
-    }, 4000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [currentOrder, autoRefresh]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  // 3. Recherche manuelle
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchInput.trim()) return;
-    const found = searchTrackedOrder(searchInput);
-    if (found) {
-      setCurrentOrder(found);
-    }
-  };
-
-  const handleDemoCodeClick = (code: string) => {
-    setSearchInput(code);
-    const found = searchTrackedOrder(code);
+    const found = await searchTrackedOrder(searchInput);
     if (found) setCurrentOrder(found);
   };
 
-  const handleManualRefresh = () => {
+  const handleDemoCodeClick = async (code: string) => {
+    setSearchInput(code);
+    const found = await searchTrackedOrder(code);
+    if (found) setCurrentOrder(found);
+  };
+
+  // 4. Bouton de rafraîchissement manuel
+  const handleManualRefresh = async () => {
     if (!currentOrder) return;
-    refreshTrackedOrder();
-    const updated = storage.getOrderByTrackingCode(currentOrder.trackingCode);
-    if (updated) {
-      setCurrentOrder(updated);
-    }
+    await refreshTrackedOrder();
+    const updated = await searchTrackedOrder(currentOrder.trackingCode);
+    if (updated) setCurrentOrder(updated);
   };
 
   return (

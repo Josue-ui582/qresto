@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation, DashboardTab } from '../../context/NavigationContext';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ import { DashboardTopbar } from './DashboardTopbar';
 import { OverviewTab } from './OverviewTab';
 import { OrdersTab } from './OrdersTab';
 import { RestaurantInfoTab } from './RestaurantInfoTab';
-import { Dish, OrderStatus, RestaurantTable } from '@/types';
+import { Dish, Order, OrderStatus, RestaurantTable } from '@/types';
 import { TeamTab } from './team/TeamTab';
 import { AnalyticsTab } from './analytics/AnalyticsTab';
 import { CategoriesTab } from './categories/CategoriesTab';
@@ -26,8 +26,8 @@ import { TablesTab } from './tables/TablesTab';
 export const RestaurantDashboard: React.FC = () => {
   const { currentUser, currentRestaurant, isLoading, logout } = useAuth();
   const { dashboardTab, setDashboardTab } = useNavigation();
-  const [orderss, setOrders] = useState<any[]>([]);
   const { showToast } = useToast();
+  const router = useRouter();
 
   // Navigation & UI state
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
@@ -38,7 +38,32 @@ export const RestaurantDashboard: React.FC = () => {
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [activeQrTable, setActiveQrTable] = useState<RestaurantTable | null>(null);
 
-  const router = useRouter();
+  // 1. Nouvel État pour stocker les vraies commandes de la base de données
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  // 2. Fetch des commandes via API (PostgreSQL)
+  useEffect(() => {
+    if (!currentRestaurant?.id) return;
+
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch(`/api/orders?restaurantId=${currentRestaurant.id}`);
+        const data = await response.json();
+        
+        if (response.ok && data.data) {
+          setOrders(data.data);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des commandes :', error);
+      }
+    };
+
+    fetchOrders(); // Premier chargement
+
+    // Polling toutes les 10 secondes pour actualiser le Kanban en temps réel
+    const interval = setInterval(fetchOrders, 10000);
+    return () => clearInterval(interval);
+  }, [currentRestaurant?.id]);
 
   if (isLoading) {
     return (
@@ -55,22 +80,20 @@ export const RestaurantDashboard: React.FC = () => {
 
   const restaurantId = currentRestaurant.id;
   const allRestaurants = storage.getRestaurants();
-  const rawOrders = storage.getOrders(restaurantId);
-  const rawDishes = storage.getDishes(restaurantId);
-  const rawCategories = storage.getCategories(restaurantId);
-  const rawTables = storage.getTables(restaurantId);
 
-  const orders = demoModeWithData ? rawOrders : [];
-  const dishes = rawDishes;
-  const categories = rawCategories;
-  const tables = rawTables;
+  // TODO : Dans un second temps, faire la même chose (Fetch API) pour ces ressources
+  const dishes = storage.getDishes(restaurantId);
+  const categories = storage.getCategories(restaurantId);
+  const tables = storage.getTables(restaurantId);
 
+  // 3. Calcul des statistiques basées sur les VRAIES commandes récupérées (orders)
   const totalRevenue = orders
     .filter((o) => o.status !== 'CANCELLED')
-    .reduce((sum, o) => sum + o.total, 0);
+    .reduce((sum, o) => sum + (o.total || 0), 0);
   const totalOrdersCount = orders.length;
   const averageOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
   const totalClientsCount = orders.length > 0 ? new Set(orders.map((o) => o.customerPhone || o.customerName)).size : 0;
+  
   const pendingOrdersCount = orders.filter(
     (o) => o.status === 'NEW' || o.status === 'CONFIRMED' || o.status === 'PREPARING'
   ).length;
@@ -89,6 +112,7 @@ export const RestaurantDashboard: React.FC = () => {
     { id: 'settings', label: 'Paramètres', icon: 'fa-solid fa-gear' },
   ];
 
+  // 4. Fonction pour faire avancer le Kanban (qui met à jour la base de données via API)
   const advanceOrderStatus = async (orderId: string, nextStatus: OrderStatus) => {
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
@@ -98,7 +122,7 @@ export const RestaurantDashboard: React.FC = () => {
       });
 
       if (res.ok) {
-        // Met à jour le state React local pour faire bouger la carte en direct
+        // Met à jour l'interface immédiatement sans attendre le prochain polling (10s)
         setOrders((prevOrders) =>
           prevOrders.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
         );
