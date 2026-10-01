@@ -132,7 +132,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
       <div>
-        <h1 className="heading-lg">Bonjour 👋</h1>
+        <h1>Bonjour 👋</h1>
         <p className="text-sm text-muted mt-1">
           Voici l'activité de <span className="font-semibold text-text">{restaurantName}</span>.
         </p>

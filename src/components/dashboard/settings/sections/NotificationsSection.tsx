@@ -13,7 +13,7 @@ export const NotificationsSection: React.FC<NotificationsSectionProps> = ({ form
   return (
     <div className="space-y-6">
       <div className="border-b border-stone-100 pb-4">
-        <h3 className="text-lg font-bold text-stone-950 font-display">Alertes & Notifications Sonores</h3>
+        <h3 className="text-lg font-bold text-stone-950">Alertes & Notifications Sonores</h3>
         <p className="text-xs text-stone-500">Soyez immédiatement informé des nouvelles commandes entrantes.</p>
       </div>
 

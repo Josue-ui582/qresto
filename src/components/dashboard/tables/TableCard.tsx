@@ -34,11 +34,11 @@ export const TableCard: React.FC<TableCardProps> = ({
       <div>
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-stone-950 font-black text-lg flex items-center justify-center shadow-md shadow-amber-500/20 font-display">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-stone-950 font-black text-lg flex items-center justify-center shadow-md shadow-amber-500/20">
               #{table.number}
             </div>
             <div>
-              <h3 className="text-base font-bold text-stone-950 font-display leading-tight">
+              <h3 className="text-base font-bold text-stone-950 leading-tight">
                 {table.name || `Table #${table.number}`}
               </h3>
               <div className="flex items-center gap-1.5 text-xs text-stone-500 font-medium mt-0.5">

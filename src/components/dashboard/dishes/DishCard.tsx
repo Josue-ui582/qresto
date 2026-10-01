@@ -91,10 +91,10 @@ export const DishCard: React.FC<DishCardProps> = ({
         {/* Détails du plat */}
         <div className="p-5">
           <div className="flex items-start justify-between gap-2 mb-1.5">
-            <h3 className="text-base font-bold text-stone-950 font-display group-hover:text-amber-700 transition-colors line-clamp-1">
+            <h3 className="text-base font-bold text-stone-950 group-hover:text-amber-700 transition-colors line-clamp-1">
               {dish.name}
             </h3>
-            <span className="text-sm font-black text-amber-700 font-display shrink-0">
+            <span className="text-sm font-black text-amber-700 shrink-0">
               {dish.price.toLocaleString('fr-FR')} FCFA
             </span>
           </div>

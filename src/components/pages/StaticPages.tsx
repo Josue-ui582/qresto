@@ -17,7 +17,7 @@ export const CguPage: React.FC = () => {
       </Link>
 
       <div className="card p-8 sm:p-12 space-y-6">
-        <h1 className="heading-lg text-text">Conditions Générales d'Utilisation (CGU)</h1>
+        <h1 className="text-text">Conditions Générales d'Utilisation (CGU)</h1>
         <p className="text-xs text-muted">Dernière mise à jour : 23 Septembre 2026 • Cotonou, Bénin</p>
 
         <section className="space-y-3 text-sm text-text-muted leading-relaxed">

@@ -25,7 +25,7 @@ export const TopItemsCard: React.FC<TopItemsCardProps> = ({ items = [], formatCu
               <Award className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-stone-950 font-display">
+              <h3 className="text-lg font-bold text-stone-950">
                 Top 5 des Plats les plus vendus
               </h3>
               <p className="text-xs text-stone-500">

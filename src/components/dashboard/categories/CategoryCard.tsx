@@ -32,7 +32,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
             <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold text-xs">
               #{category.order || 0}
             </div>
-            <h3 className="text-base font-bold text-stone-950 group-hover:text-amber-700 transition-colors font-display">
+            <h3 className="text-base font-bold text-stone-950 group-hover:text-amber-700 transition-colors">
               {category.name}
             </h3>
           </div>

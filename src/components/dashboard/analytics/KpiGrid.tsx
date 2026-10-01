@@ -27,7 +27,7 @@ export const KpiGrid: React.FC<KpiGridProps> = ({ stats, formatCurrency }) => {
             <DollarSign className="w-5 h-5" />
           </div>
         </div>
-        <div className="text-2xl sm:text-3xl font-black text-stone-950 font-display">
+        <div className="text-2xl sm:text-3xl font-black text-stone-950">
           {formatCurrency(stats?.totalRevenue || 0)}
         </div>
         <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 mt-2">
@@ -51,7 +51,7 @@ export const KpiGrid: React.FC<KpiGridProps> = ({ stats, formatCurrency }) => {
             <ShoppingBag className="w-5 h-5" />
           </div>
         </div>
-        <div className="text-2xl sm:text-3xl font-black text-stone-950 font-display">
+        <div className="text-2xl sm:text-3xl font-black text-stone-950">
           {stats?.totalOrders || 0}
         </div>
         <div className="flex items-center gap-1 text-[11px] font-bold text-stone-400 mt-2">
@@ -74,7 +74,7 @@ export const KpiGrid: React.FC<KpiGridProps> = ({ stats, formatCurrency }) => {
             <TrendingUp className="w-5 h-5" />
           </div>
         </div>
-        <div className="text-2xl sm:text-3xl font-black text-stone-950 font-display">
+        <div className="text-2xl sm:text-3xl font-black text-stone-950">
           {formatCurrency(stats?.averageOrderValue || 0)}
         </div>
         <div className="flex items-center gap-1 text-[11px] font-bold text-stone-400 mt-2">
@@ -97,7 +97,7 @@ export const KpiGrid: React.FC<KpiGridProps> = ({ stats, formatCurrency }) => {
             <Users className="w-5 h-5" />
           </div>
         </div>
-        <div className="text-2xl sm:text-3xl font-black text-stone-950 font-display">
+        <div className="text-2xl sm:text-3xl font-black text-stone-950">
           {stats?.activeTablesCount || 0}
         </div>
         <div className="flex items-center gap-1 text-[11px] font-bold text-stone-400 mt-2">

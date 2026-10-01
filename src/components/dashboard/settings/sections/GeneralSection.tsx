@@ -13,7 +13,7 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({ formData, onChan
   return (
     <div className="space-y-6">
       <div className="border-b border-stone-100 pb-4">
-        <h3 className="text-lg font-bold text-stone-950 font-display">Informations Générales</h3>
+        <h3 className="text-lg font-bold text-stone-950">Informations Générales</h3>
         <p className="text-xs text-stone-500">Coordonnées publiques affichées sur les menus QR et reçus.</p>
       </div>
 

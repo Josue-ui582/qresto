@@ -11,7 +11,7 @@ export const SecuritySection: React.FC<SecuritySectionProps> = ({ onOpenSettings
   return (
     <div className="space-y-6">
       <div className="border-b border-stone-100 pb-4">
-        <h3 className="text-lg font-bold text-stone-950 font-display">Sécurité & Accès</h3>
+        <h3 className="text-lg font-bold text-stone-950">Sécurité & Accès</h3>
         <p className="text-xs text-stone-500">Protégez le compte administrateur du restaurant.</p>
       </div>
 

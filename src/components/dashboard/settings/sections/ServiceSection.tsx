@@ -13,7 +13,7 @@ export const ServiceSection: React.FC<ServiceSectionProps> = ({ formData, onChan
   return (
     <div className="space-y-6">
       <div className="border-b border-stone-100 pb-4">
-        <h3 className="text-lg font-bold text-stone-950 font-display">Service en Salle & QR Code</h3>
+        <h3 className="text-lg font-bold text-stone-950">Service en Salle & QR Code</h3>
         <p className="text-xs text-stone-500">
           Ajustez les modalités de prise de commande à table et les services additionnels.
         </p>

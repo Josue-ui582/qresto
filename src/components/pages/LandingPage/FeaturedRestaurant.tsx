@@ -44,7 +44,7 @@ export const FeaturedRestaurants: React.FC = () => {
             <div className="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-2">
               Établissements Certifiés
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-stone-950 font-display">
+            <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
               Restaurants digitalisés à Cotonou
             </h2>
             <p className="text-sm sm:text-base text-stone-500 mt-2 font-normal">
@@ -116,7 +116,7 @@ export const FeaturedRestaurants: React.FC = () => {
                         </div>
                       </div>
 
-                      <h3 className="text-xl font-bold text-stone-950 mb-2 group-hover:text-amber-700 transition-colors font-display">
+                      <h3 className="text-xl font-bold text-stone-950 mb-2 group-hover:text-amber-700 transition-colors">
                         {resto.name}
                       </h3>
                       <p className="text-xs text-stone-600 leading-relaxed font-normal mb-4 line-clamp-2">

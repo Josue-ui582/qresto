@@ -39,7 +39,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
       )}
 
       <div>
-        <h4 className="text-xl font-bold text-stone-950 font-display mb-1">
+        <h4 className="text-xl font-bold text-stone-950 mb-1">
           {plan.name}
         </h4>
         <p className="text-xs text-stone-500 mb-6 leading-relaxed min-h-9">
@@ -49,7 +49,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
         {/* Affichage du Tarif */}
         <div className="mb-6 pb-6 border-b border-stone-100">
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl sm:text-4xl font-black text-stone-950 font-display">
+            <span className="text-3xl sm:text-4xl font-black text-stone-950">
               {formatPrice(price)}
             </span>
             <span className="text-xs text-stone-400 font-bold">/ mois</span>

@@ -22,7 +22,7 @@ export const OpeningHoursSection: React.FC<OpeningHoursSectionProps> = ({ openin
   return (
     <div className="space-y-6">
       <div className="border-b border-stone-100 pb-4">
-        <h3 className="text-lg font-bold text-stone-950 font-display">Horaires d'Ouverture</h3>
+        <h3 className="text-lg font-bold text-stone-950">Horaires d'Ouverture</h3>
         <p className="text-xs text-stone-500">
           Définissez les créneaux pendant lesquels les clients peuvent commander sur place.
         </p>

@@ -22,7 +22,7 @@ export const TeamHeader: React.FC<TeamHeaderProps> = ({
           <Users className="w-4 h-4 text-amber-600" />
           <span>Personnel & Rôles</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-950 font-display">
+        <h2 className="text-2xl sm:text-3xl font-black text-stone-950">
           Gestion de l'Équipe
         </h2>
         <p className="text-xs sm:text-sm text-stone-500 mt-1 font-normal">
@@ -32,7 +32,7 @@ export const TeamHeader: React.FC<TeamHeaderProps> = ({
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="px-4 py-3 rounded-2xl bg-[#fbf9f5] border border-stone-200/80 text-center min-w-27.5">
-          <span className="block text-2xl font-black text-stone-950 font-display">
+          <span className="block text-2xl font-black text-stone-950">
             {totalCount}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
@@ -40,7 +40,7 @@ export const TeamHeader: React.FC<TeamHeaderProps> = ({
           </span>
         </div>
         <div className="px-4 py-3 rounded-2xl bg-[#fbf9f5] border border-stone-200/80 text-center min-w-27.5">
-          <span className="block text-2xl font-black text-emerald-600 font-display">
+          <span className="block text-2xl font-black text-emerald-600">
             {activeCount}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">

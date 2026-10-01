@@ -43,7 +43,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
                 <FolderPlus className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-stone-950 font-display">
+                <h3 className="text-lg font-bold text-stone-950">
                   {editingCategory ? 'Éditer la catégorie' : 'Nouvelle catégorie'}
                 </h3>
                 <p className="text-[11px] text-stone-500">

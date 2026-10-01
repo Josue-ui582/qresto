@@ -18,7 +18,7 @@ export const FinalCTA: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl sm:text-5xl text-gray-200 mb-6 font-display tracking-tight leading-tight"
+          className="text-3xl sm:text-5xl text-gray-200 mb-6 tracking-tight leading-tight"
         >
           Prêt à transformer l’expérience de votre restaurant ?
         </motion.h2>

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-// Importez votre nouveau composant AppProviders (ajustez le chemin selon votre structure)
+
 import { AppProviders } from '@/context/AppProviders'; 
 
 export const metadata: Metadata = {

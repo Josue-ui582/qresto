@@ -16,7 +16,7 @@ export const Header: React.FC<HeaderProps> = ({ isLoading, onRefresh }) => {
           <CreditCard className="w-4 h-4 text-amber-600" />
           <span>Offres & Licence</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-950 font-display">
+        <h2 className="text-2xl sm:text-3xl font-black text-stone-950">
           Gestion de l'Abonnement
         </h2>
         <p className="text-xs sm:text-sm text-stone-500 mt-1 font-normal">

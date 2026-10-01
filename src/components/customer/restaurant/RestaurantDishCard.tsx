@@ -49,7 +49,7 @@ export const RestaurantDishCard: React.FC<RestaurantDishCardProps> = ({
           )}
         </div>
         <div className="p-5 text-left">
-          <h3 className="text-base sm:text-lg font-bold text-stone-950 leading-snug mb-1 font-display group-hover:text-amber-700 transition-colors">
+          <h3 className="text-base sm:text-lg font-bold text-stone-950 leading-snug mb-1 group-hover:text-amber-700 transition-colors">
             {dish.name}
           </h3>
           <p className="text-xs text-stone-500 leading-relaxed mb-4 line-clamp-2 font-normal">
@@ -68,7 +68,7 @@ export const RestaurantDishCard: React.FC<RestaurantDishCardProps> = ({
       </div>
       <div className="p-5 pt-0 border-t border-stone-100 flex items-center justify-between">
         <div className="text-left">
-          <span className="text-lg font-black text-stone-950 font-display">
+          <span className="text-lg font-black text-stone-950">
             {dish.price.toLocaleString()} FCFA
           </span>
           {dish.originalPrice && (

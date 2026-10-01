@@ -66,7 +66,7 @@ export const LoginPage: React.FC = () => {
               Q
             </div>
           </motion.button>
-          <h2 className="heading-lg text-center">Espace Restaurateur</h2>
+          <h2 className="text-center">Espace Restaurateur</h2>
           <p className="mt-2 text-xs sm:text-sm text-muted leading-relaxed">
             Connectez-vous pour gérer votre menu digital, vos commandes en temps réel et vos QR codes par table.
           </p>

@@ -105,7 +105,7 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
           <div className="w-14 h-14 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-4">
             <QrCode className="w-7 h-7" />
           </div>
-          <h3 className="text-lg font-bold text-stone-900 font-display">
+          <h3 className="text-lg font-bold text-stone-900">
             {searchQuery ? 'Aucun QR Code trouvé' : 'Aucune table disponible'}
           </h3>
           <p className="text-xs text-stone-500 mt-1 mb-4 leading-relaxed font-normal">

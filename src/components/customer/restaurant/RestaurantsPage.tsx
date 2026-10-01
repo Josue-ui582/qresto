@@ -233,7 +233,7 @@ export const RestaurantsPage: React.FC = () => {
                           </div>
                         </div>
 
-                        <h3 className="text-xl font-bold text-stone-950 mb-2 group-hover:text-amber-700 transition-colors font-display">
+                        <h3 className="text-xl font-bold text-stone-950 mb-2 group-hover:text-amber-700 transition-colors">
                           {resto.name}
                         </h3>
 

@@ -13,13 +13,11 @@ export const Heading: React.FC<HeadingProps> = ({
   children,
   ...props
 }) => {
-  const sizeClass = size === 'xl' ? 'heading-xl' : size === 'md' ? 'heading-md' : 'heading-lg';
-
   return React.createElement(
     Component,
     {
       ...props,
-      className: `${sizeClass} ${className}`.trim(),
+      className: className.trim(),
     },
     children,
   );

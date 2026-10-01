@@ -24,7 +24,7 @@ export const OrderStatusCard: React.FC<OrderStatusCardProps> = ({ ordersByStatus
             <PieChart className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-stone-950 font-display">
+            <h3 className="text-lg font-bold text-stone-950">
               État des Commandes
             </h3>
             <p className="text-xs text-stone-500">Distribution par statut actuel.</p>

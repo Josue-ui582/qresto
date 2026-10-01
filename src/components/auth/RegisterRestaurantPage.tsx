@@ -97,7 +97,7 @@ export const RegisterRestaurantPage: React.FC = () => {
           <div className="w-12 h-12 rounded-2xl bg-brand text-text-inverse flex items-center justify-center text-xl mx-auto mb-3 shadow-lg shadow-amber-500/20">
             <FaIcon name="fa-solid fa-store" />
           </div>
-          <h1 className="heading-lg text-center">Digitalisez votre restaurant</h1>
+          <h1 className="text-center">Digitalisez votre restaurant</h1>
           <p className="text-xs sm:text-sm text-muted mt-2 max-w-md mx-auto">
             Créez votre menu digital QR, configurez vos tables et commencez à recevoir des commandes.
           </p>

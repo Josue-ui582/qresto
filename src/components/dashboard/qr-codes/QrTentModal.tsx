@@ -48,10 +48,10 @@ export const QrTentModal: React.FC<QrTentModalProps> = ({
 
           {/* Rendu imprimable Chevalet */}
           <div className="border-2 border-stone-900 p-6 rounded-3xl bg-white shadow-inner my-2">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-stone-950 font-black text-xl mx-auto flex items-center justify-center mb-3 font-display">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-stone-950 font-black text-xl mx-auto flex items-center justify-center mb-3">
               Q
             </div>
-            <h3 className="text-xl font-black text-stone-950 font-display leading-tight">
+            <h3 className="text-xl font-black text-stone-950 leading-tight">
               {selectedTable.restaurant?.name || restaurantName}
             </h3>
             <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mt-1">

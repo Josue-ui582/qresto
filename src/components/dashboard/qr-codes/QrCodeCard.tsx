@@ -50,11 +50,11 @@ export const QrCodeCard: React.FC<QrCodeCardProps> = ({
         {/* Badge & Nom de table */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-stone-950 font-black text-base flex items-center justify-center font-display shadow-xs">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-stone-950 font-black text-base flex items-center justify-center shadow-xs">
               #{table.number}
             </div>
             <div>
-              <h3 className="text-sm font-bold text-stone-950 font-display">
+              <h3 className="text-sm font-bold text-stone-950">
                 {table.name || `Table #${table.number}`}
               </h3>
               <div className="flex items-center gap-1 text-[11px] text-stone-500 font-medium">

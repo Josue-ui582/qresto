@@ -42,7 +42,7 @@ export const TableFormModal: React.FC<TableFormModalProps> = ({
                   <QrCode className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-stone-950 font-display">
+                  <h3 className="text-lg font-bold text-stone-950">
                     {editingTable ? 'Éditer la table' : 'Nouvelle table'}
                   </h3>
                   <p className="text-[11px] text-stone-500">

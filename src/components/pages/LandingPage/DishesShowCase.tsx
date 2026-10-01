@@ -78,7 +78,7 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
             <div className="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-2">
               Innovation Gastronomique
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-stone-950 font-display">
+            <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
               Plats signatures & immersion 3D
             </h2>
             <p className="text-sm sm:text-base text-stone-500 mt-2 font-normal">
@@ -209,7 +209,7 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
 
                   <div className="p-5 pt-0 border-t border-stone-100 mt-2 flex items-center justify-between">
                     <div>
-                      <span className="text-base font-black text-stone-950 font-display">
+                      <span className="text-base font-black text-stone-950">
                         {dish.price.toLocaleString('fr-FR')}
                       </span>
                       <span className="text-[10px] font-bold text-stone-500 ml-1">FCFA</span>

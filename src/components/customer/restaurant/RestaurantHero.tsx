@@ -69,7 +69,7 @@ export const RestaurantHero: React.FC<RestaurantHeroProps> = ({
           />
           <div className="text-white text-left">
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight font-display">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight">
                 {restaurant.name}
               </h1>
               <span className="px-2 py-0.5 rounded-md bg-emerald-500 text-white text-[10px] font-bold">

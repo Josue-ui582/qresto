@@ -315,7 +315,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
           <div className="w-14 h-14 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-4">
             <UtensilsCrossed className="w-7 h-7" />
           </div>
-          <h3 className="text-lg font-bold text-stone-900 font-display">
+          <h3 className="text-lg font-bold text-stone-900">
             {searchQuery || selectedCategoryFilter !== 'all'
               ? 'Aucun plat correspondant'
               : 'Votre menu est encore vide'}

@@ -11,7 +11,7 @@ import { RestrictedAccess } from './RestrictedAccess';
 import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardTopbar } from './DashboardTopbar';
 import { OverviewTab } from './OverviewTab';
-import { OrdersTab } from './OrdersTab';
+import { OrdersTab } from '@/components/dashboard/orders/OrdersTab';
 import { RestaurantInfoTab } from './RestaurantInfoTab';
 import { Dish, Order, OrderStatus, RestaurantTable } from '@/types';
 import { TeamTab } from './team/TeamTab';

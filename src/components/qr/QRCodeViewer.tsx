@@ -74,8 +74,10 @@ export const QRCodeViewer: React.FC<QRCodeViewerProps> = ({
       <html>
         <head>
           <title>QR Code - ${restaurantName} ${tableNumber ? `Table ${tableNumber}` : ''}</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
             body {
               font-family: 'Plus Jakarta Sans', sans-serif;
               margin: 0;

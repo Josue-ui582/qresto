@@ -25,7 +25,7 @@ export const FAQSection: React.FC = () => {
           <div className="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-2">
             Questions Fréquentes
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-stone-950 font-display">
+          <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
             Tout ce que vous devez savoir
           </h2>
         </motion.div>

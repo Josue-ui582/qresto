@@ -42,7 +42,7 @@ export const Dish3DModal: React.FC<Dish3DModalProps> = ({ dish, onClose }) => {
               <span className="text-xs text-stone-400 font-medium">Glissez la souris ou touchez pour pivoter</span>
             </div>
 
-            <h3 className="text-2xl font-black text-stone-900 font-display mb-1">{dish.name}</h3>
+            <h3 className="text-2xl font-black text-stone-900 mb-1">{dish.name}</h3>
             <p className="text-xs text-stone-500 mb-4">{dish.description}</p>
 
             {/* Canvas 3D Viewer inside modal */}
@@ -53,7 +53,7 @@ export const Dish3DModal: React.FC<Dish3DModalProps> = ({ dish, onClose }) => {
             {/* Bottom modal actions */}
             <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-stone-100">
               <div>
-                <div className="text-xl font-black text-stone-900 font-display">
+                <div className="text-xl font-black text-stone-900">
                   {dish.price.toLocaleString('fr-FR')} FCFA
                 </div>
                 <div className="text-[11px] text-stone-400">Préparé à la minute · Ingrédients frais</div>

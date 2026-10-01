@@ -14,7 +14,7 @@ export const BillingCycleToggle: React.FC<BillingCycleToggleProps> = ({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-stone-200/80">
       <div>
-        <h3 className="text-base font-bold text-stone-950 font-display">
+        <h3 className="text-base font-bold text-stone-950">
           Choisissez votre formule
         </h3>
         <p className="text-xs text-stone-500">

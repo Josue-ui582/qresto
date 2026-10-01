@@ -31,7 +31,7 @@ export const DeleteDishModal: React.FC<DeleteDishModalProps> = ({
           <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-stone-950 font-display mb-1">
+          <h3 className="text-base font-bold text-stone-950 mb-1">
             Supprimer ce plat ?
           </h3>
           <p className="text-xs text-stone-500 mb-6 leading-relaxed">

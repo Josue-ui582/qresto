@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 
 :root {
   --color-background: #f8f2ea;
@@ -22,8 +22,8 @@
   --color-warning: #d97706;
   --color-danger: #d44a4a;
 
-  --font-sans: 'Manrope', 'Segoe UI', sans-serif;
-  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-display: "Plus Jakarta Sans", sans-serif;
 
   --shadow-soft: 0 10px 30px rgba(32, 24, 20, 0.08);
   --shadow-card: 0 18px 45px rgba(114, 79, 45, 0.12);
@@ -56,12 +56,7 @@ h2,
 h3,
 h4,
 h5,
-h6,
-.heading-xl,
-.heading-lg,
-.heading-md,
-.font-display {
-  font-family: var(--font-display);
+h6 {
   letter-spacing: -0.02em;
   color: var(--color-text);
 }

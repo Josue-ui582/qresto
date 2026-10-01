@@ -36,11 +36,11 @@ export const MemberCard: React.FC<MemberCardProps> = ({
       <div>
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-stone-900 text-amber-400 font-black text-lg flex items-center justify-center font-display shadow-xs shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-stone-900 text-amber-400 font-black text-lg flex items-center justify-center shadow-xs shrink-0">
               {member.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h3 className="text-base font-bold text-stone-950 font-display leading-tight">
+              <h3 className="text-base font-bold text-stone-950 leading-tight">
                 {member.name}
               </h3>
               <div

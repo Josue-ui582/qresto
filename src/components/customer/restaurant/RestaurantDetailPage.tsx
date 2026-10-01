@@ -268,7 +268,7 @@ export const RestaurantDetailPage: React.FC = () => {
                   <RotateCw className="w-3.5 h-3.5 animate-spin" />
                   <span>Visualisation 3D Interactive</span>
                 </div>
-                <h3 className="text-2xl font-black text-white font-display mb-1">
+                <h3 className="text-2xl font-black text-white mb-1">
                   {active3DDish.name}
                 </h3>
                 <p className="text-xs text-stone-400">{active3DDish.description}</p>
@@ -281,7 +281,7 @@ export const RestaurantDetailPage: React.FC = () => {
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-stone-800">
                 <div>
-                  <span className="text-2xl font-black text-amber-400 font-display">
+                  <span className="text-2xl font-black text-amber-400">
                     {active3DDish.price.toLocaleString()} FCFA
                   </span>
                 </div>

@@ -38,7 +38,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-stone-950 font-display">
+                  <h3 className="text-lg font-bold text-stone-950">
                     Confirmer le changement
                   </h3>
                   <p className="text-[11px] text-stone-500">Mise à niveau instantanée.</p>
@@ -58,7 +58,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                 <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">
                   Formule sélectionnée
                 </span>
-                <div className="text-lg font-bold text-stone-950 font-display">
+                <div className="text-lg font-bold text-stone-950">
                   {selectedPlan.name}
                 </div>
                 <div className="text-sm font-black text-amber-700 mt-1">

@@ -17,7 +17,7 @@ export const InvoicesTable: React.FC<InvoicesTableProps> = ({ invoices, formatPr
           <Receipt className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-stone-950 font-display">
+          <h3 className="text-lg font-bold text-stone-950">
             Historique des Factures
           </h3>
           <p className="text-xs text-stone-500">

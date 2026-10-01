@@ -23,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Building2 className="w-4 h-4 text-amber-600" />
           <span>Configuration globale</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-950 font-display">
+        <h2 className="text-2xl sm:text-3xl font-black text-stone-950">
           Paramètres du Restaurant
         </h2>
         <p className="text-xs sm:text-sm text-stone-500 mt-1 font-normal">

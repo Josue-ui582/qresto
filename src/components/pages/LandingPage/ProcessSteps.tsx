@@ -45,7 +45,7 @@ export const ProcessSteps: React.FC = () => {
           <div className="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-2">
             Expérience Sans Friction
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-stone-950 font-display">
+          <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
             Comment ça marche pour vos clients ?
           </h2>
           <p className="text-sm sm:text-base text-stone-500 mt-3 font-normal">
@@ -72,7 +72,7 @@ export const ProcessSteps: React.FC = () => {
                     <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center">
                       <IconComp className="w-6 h-6" />
                     </div>
-                    <span className="text-2xl font-black text-stone-300 font-display">{item.step}</span>
+                    <span className="text-2xl font-black text-stone-300">{item.step}</span>
                   </div>
                   <h3 className="text-lg font-bold text-stone-900 mb-2">{item.title}</h3>
                   <p className="text-xs sm:text-sm text-stone-600 leading-relaxed font-normal">{item.desc}</p>

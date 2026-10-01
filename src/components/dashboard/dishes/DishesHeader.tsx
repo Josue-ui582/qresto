@@ -21,7 +21,7 @@ export const DishesHeader: React.FC<DishesHeaderProps> = ({
           <UtensilsCrossed className="w-4 h-4 text-amber-600" />
           <span>Gestion de la Carte</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-950 font-display">
+        <h2 className="text-2xl sm:text-3xl font-black text-stone-950">
           Plats et Menu
         </h2>
         <p className="text-xs sm:text-sm text-stone-500 mt-1 font-normal">
@@ -31,7 +31,7 @@ export const DishesHeader: React.FC<DishesHeaderProps> = ({
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="px-4 py-3 rounded-2xl bg-[#fbf9f5] border border-stone-200/80 text-center min-w-25">
-          <span className="block text-2xl font-black text-stone-950 font-display">
+          <span className="block text-2xl font-black text-stone-950">
             {stats.total}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
@@ -39,7 +39,7 @@ export const DishesHeader: React.FC<DishesHeaderProps> = ({
           </span>
         </div>
         <div className="px-4 py-3 rounded-2xl bg-emerald-50/50 border border-emerald-200/60 text-center min-w-25">
-          <span className="block text-2xl font-black text-emerald-700 font-display">
+          <span className="block text-2xl font-black text-emerald-700">
             {stats.available}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
@@ -47,7 +47,7 @@ export const DishesHeader: React.FC<DishesHeaderProps> = ({
           </span>
         </div>
         <div className="px-4 py-3 rounded-2xl bg-amber-50/50 border border-amber-200/60 text-center min-w-25">
-          <span className="block text-2xl font-black text-amber-700 font-display">
+          <span className="block text-2xl font-black text-amber-700">
             {stats.unavailable}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">

@@ -27,7 +27,7 @@ export const ActivePlanCard: React.FC<ActivePlanCardProps> = ({ subData, daysRem
             </span>
           </div>
 
-          <h3 className="text-2xl sm:text-3xl font-black font-display text-white">
+          <h3 className="text-2xl sm:text-3xl font-black text-white">
             {subData.planDetails?.name || `Plan ${subData.planId}`}
           </h3>
 
@@ -41,7 +41,7 @@ export const ActivePlanCard: React.FC<ActivePlanCardProps> = ({ subData, daysRem
           <span className="text-[10px] font-black uppercase tracking-wider text-stone-400 mb-1">
             Renouvellement dans
           </span>
-          <div className="text-3xl font-black text-amber-400 font-display">
+          <div className="text-3xl font-black text-amber-400">
             {daysRemaining} jour(s)
           </div>
           <span className="text-[11px] text-stone-400 mt-1 font-medium flex items-center gap-1">

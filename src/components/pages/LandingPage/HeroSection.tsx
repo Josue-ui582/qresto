@@ -52,7 +52,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
             </div>
 
             {/* Title with Playfair Display & High Contrast Typography */}
-            <h1 className="text-4xl sm:text-6xl xl:text-7xl font-black text-stone-950 tracking-tight leading-[1.08] mb-6 font-display">
+            <h1 className="text-4xl sm:text-6xl xl:text-7xl font-black text-stone-950 tracking-tight leading-[1.08] mb-6">
               L’art culinaire d’Afrique,{' '}
               <span className="relative inline-block text-amber-600 italic">
                 sublimé
@@ -94,15 +94,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
             {/* Key Trust Stats without AI Slop */}
             <div className="grid grid-cols-3 gap-6 pt-4 border-t border-stone-200/80 w-full max-w-xl">
               <div>
-                <div className="text-2xl sm:text-3xl font-black text-stone-950 font-display">0s</div>
+                <div className="text-2xl sm:text-3xl font-black text-stone-950">0s</div>
                 <div className="text-xs text-stone-500 font-medium mt-0.5">Téléchargement requis</div>
               </div>
               <div>
-                <div className="text-2xl sm:text-3xl font-black text-amber-600 font-display">+32%</div>
+                <div className="text-2xl sm:text-3xl font-black text-amber-600">+32%</div>
                 <div className="text-xs text-stone-500 font-medium mt-0.5">Panier moyen constaté</div>
               </div>
               <div>
-                <div className="text-2xl sm:text-3xl font-black text-stone-950 font-display">1.5s</div>
+                <div className="text-2xl sm:text-3xl font-black text-stone-950">1.5s</div>
                 <div className="text-xs text-stone-500 font-medium mt-0.5">Vitesse d’affichage QR</div>
               </div>
             </div>

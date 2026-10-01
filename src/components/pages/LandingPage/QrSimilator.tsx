@@ -91,7 +91,7 @@ export const QRSimulator: React.FC = () => {
               <span>Simulateur en direct avec données réelles</span>
             </div>
 
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight mb-4 font-display">
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight mb-4">
               Personnalisez vos QR codes de tables en quelques clics
             </h2>
 

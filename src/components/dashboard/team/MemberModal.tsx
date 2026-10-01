@@ -31,7 +31,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-stone-950 font-display">
+                  <h3 className="text-lg font-bold text-stone-950">
                     {editingMember ? 'Modifier le membre' : 'Nouveau membre'}
                   </h3>
                   <p className="text-[11px] text-stone-500">

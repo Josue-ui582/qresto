@@ -22,7 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
           <LayoutGrid className="w-4 h-4 text-amber-600" />
           <span>Plan de Salle & QR Codes</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-950 font-display">
+        <h2 className="text-2xl sm:text-3xl font-black text-stone-950">
           Gestion des Tables
         </h2>
         <p className="text-xs sm:text-sm text-stone-500 mt-1 font-normal">
@@ -32,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="px-4 py-3 rounded-2xl bg-[#fbf9f5] border border-stone-200/80 text-center min-w-27.5">
-          <span className="block text-2xl font-black text-stone-950 font-display">
+          <span className="block text-2xl font-black text-stone-950">
             {tablesCount}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
@@ -40,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
         <div className="px-4 py-3 rounded-2xl bg-[#fbf9f5] border border-stone-200/80 text-center min-w-27.5">
-          <span className="block text-2xl font-black text-amber-600 font-display">
+          <span className="block text-2xl font-black text-amber-600">
             {totalCapacity}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">

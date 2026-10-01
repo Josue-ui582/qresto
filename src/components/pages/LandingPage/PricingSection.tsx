@@ -44,7 +44,7 @@ export const PricingSection: React.FC = () => {
           <div className="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-2">
             Tarification Transparente
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-stone-950 font-display">
+          <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
             Un investissement rentabilisé dès le 1er jour
           </h2>
           <p className="text-sm sm:text-base text-stone-500 mt-2 font-normal">
@@ -90,7 +90,7 @@ export const PricingSection: React.FC = () => {
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Starter</span>
               <div className="mt-3 mb-6">
-                <span className="text-4xl font-black text-stone-950 font-display">0</span>
+                <span className="text-4xl font-black text-stone-950">0</span>
                 <span className="text-sm font-bold text-stone-500 ml-1">FCFA / mois</span>
               </div>
               <p className="text-xs text-stone-600 leading-relaxed mb-6 font-normal">
@@ -123,7 +123,7 @@ export const PricingSection: React.FC = () => {
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Pro Restaurant</span>
               <div className="mt-3 mb-6">
-                <span className="text-4xl font-black text-white font-display">
+                <span className="text-4xl font-black text-white">
                   {billingCycle === 'monthly' ? '5 000' : '4 000'}
                 </span>
                 <span className="text-sm font-bold text-stone-400 ml-1">FCFA / mois</span>
@@ -154,7 +154,7 @@ export const PricingSection: React.FC = () => {
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Business & Chaînes</span>
               <div className="mt-3 mb-6">
-                <span className="text-4xl font-black text-stone-950 font-display">
+                <span className="text-4xl font-black text-stone-950">
                   {billingCycle === 'monthly' ? '8 000' : '6 500'}
                 </span>
                 <span className="text-sm font-bold text-stone-500 ml-1">FCFA / mois</span>
