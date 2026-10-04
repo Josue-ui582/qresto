@@ -38,21 +38,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-7 text-left flex flex-col items-start"
+            className="lg:col-span-7 flex flex-col items-center text-center"
           >
             {/* Refined Pill-Free Region Label with Live Pulse Beacon */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-amber-200/80 shadow-xs mb-6 backdrop-blur-xs">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-              </span>
-              <span className="text-xs font-bold text-amber-900 tracking-wide">
+              {/*  */}
+              <span className="text-xs font-bold text-amber-800 tracking-wide">
                 La digitalisation des restaurants au Bénin & en Afrique
               </span>
             </div>
 
             {/* Title with Playfair Display & High Contrast Typography */}
-            <h1 className="text-4xl sm:text-6xl xl:text-7xl font-black text-stone-950 tracking-tight leading-[1.08] mb-6">
+            <h1 className="text-4xl sm:text-4xl xl:text-7xl font-black text-stone-900 tracking-tight leading-[1.08] mb-6">
               L’art culinaire d’Afrique,{' '}
               <span className="relative inline-block text-amber-600 italic">
                 sublimé
@@ -73,26 +70,26 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
             </p>
 
             {/* Animated Button Row */}
-            <div className="flex flex-wrap items-center gap-3.5 sm:gap-4 w-full sm:w-auto mb-10">
-              <Link href="/restaurants" className="btn-primary w-full sm:w-auto inline-flex items-center justify-center">
+            <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto mb-10">
+              <Link href="/restaurants" className="btn-primary w-full sm:w-auto !rounded-full !px-5 !py-3 inline-flex items-center justify-center">
                 <Utensils className="w-4 h-4" />
-                <span>Explorer les restaurants</span>
+                <span>Explorer</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
 
-              <Link href="/register-restaurant" className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-stone-900 text-white font-bold text-sm shadow-lg hover:bg-stone-800 transition-all flex items-center justify-center gap-2">
+              <Link href="/register-restaurant" className="w-full sm:w-auto px-5 py-3 rounded-full bg-stone-900 text-white font-semibold text-sm shadow-lg hover:bg-stone-800 transition-all flex items-center justify-center gap-2">
                 <Store className="w-4 h-4 text-amber-400" />
-                <span>Digitaliser mon restaurant</span>
+                <span>Digitaliser mon resto</span>
               </Link>
 
-              <Link href="/order-tracking" className="btn-secondary w-full sm:w-auto inline-flex items-center justify-center">
+              <Link href="/order-tracking" className="btn-secondary w-full sm:w-auto !rounded-full !px-5 !py-3 inline-flex items-center justify-center">
                 <Clock className="w-4 h-4 text-stone-500" />
                 <span>Suivre commande</span>
               </Link>
             </div>
 
             {/* Key Trust Stats without AI Slop */}
-            <div className="grid grid-cols-3 gap-6 pt-4 border-t border-stone-200/80 w-full max-w-xl">
+            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-stone-200/80 w-full max-w-xl text-center">
               <div>
                 <div className="text-2xl sm:text-3xl font-black text-stone-950">0s</div>
                 <div className="text-xs text-stone-500 font-medium mt-0.5">Téléchargement requis</div>
@@ -184,6 +181,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
                           id: 'dish_poulet',
                           name: 'Poulet Bicyclette Braisé Kpédji',
                           price: 4500,
+                          image: '/images/poulet_braise_1790196218496.jpg',
                           description: 'Poulet fermier mariné 24h aux épices royales avec alloco croustillant.',
                           modelType: 'poulet_braise',
                           ingredients: ['Poulet bicyclette', 'Alloco bananes mûres', 'Piment vert maison'],
@@ -213,34 +211,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
               </div>
             </div>
 
-            {/* Floating Animated Badges outside phone */}
-            <motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -top-4 -left-6 sm:-left-8 bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-stone-200/90 text-left flex items-center gap-3 z-20"
-            >
-              <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/30">
-                <QrCode className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-stone-900">Scan Instantané</div>
-                <div className="text-[11px] text-stone-500">Table assignée automatiquement</div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-              className="absolute -bottom-6 -right-4 sm:-right-6 bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-stone-200/90 text-left flex items-center gap-3 z-20"
-            >
-              <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/30">
-                <Zap className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-stone-900">En cuisine en 2s</div>
-                <div className="text-[11px] text-emerald-700 font-semibold">0 attente serveur</div>
-              </div>
-            </motion.div>
+          
           </motion.div>
         </div>
       </div>

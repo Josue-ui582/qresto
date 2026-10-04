@@ -8,7 +8,7 @@ import { RestaurantDetailPage } from '@/components/customer/restaurant/Restauran
 
 export default function RestaurantDetailRoute() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       <Navbar />
       <main className="flex-1">
         <RestaurantDetailPage />

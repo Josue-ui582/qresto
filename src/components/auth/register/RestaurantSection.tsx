@@ -31,13 +31,13 @@ export const RestaurantSection: React.FC<Props> = ({ formData, updateForm }) => 
           <label className="form-label">Nom du restaurant *</label>
           <input type="text" required placeholder="Ex: Chez Mama Cotonou" value={formData.restaurantName}
             onChange={(e) => updateForm('restaurantName', e.target.value)}
-            className="input-field" />
+            className="input-field rounded-2xl border-0 bg-stone-100" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="form-label">Ville au Bénin *</label>
             <select value={formData.city} onChange={(e) => updateForm('city', e.target.value)}
-              className="input-field">
+              className="input-field rounded-2xl border-0 bg-stone-100">
               <option value="Cotonou">Cotonou</option>
               <option value="Porto-Novo">Porto-Novo</option>
               <option value="Abomey-Calavi">Abomey-Calavi</option>
@@ -48,7 +48,7 @@ export const RestaurantSection: React.FC<Props> = ({ formData, updateForm }) => 
           <div>
             <label className="form-label">Catégorie culinaire *</label>
             <select value={formData.category} onChange={(e) => updateForm('category', e.target.value)}
-              className="input-field">
+              className="input-field rounded-2xl border-0 bg-stone-100">
               <option value="Cuisine Béninoise & Grillades">Cuisine Béninoise & Grillades</option>
               <option value="Poissons & Grillades Marines">Poissons & Grillades Marines</option>
               <option value="Burgers & Street Food Africaine">Burgers & Street Food Africaine</option>
@@ -61,13 +61,13 @@ export const RestaurantSection: React.FC<Props> = ({ formData, updateForm }) => 
           <label className="form-label">Adresse ou Quartier *</label>
           <input type="text" required placeholder="Ex: Haie Vive, Rue 340" value={formData.address}
             onChange={(e) => updateForm('address', e.target.value)}
-            className="input-field" />
+            className="input-field rounded-2xl border-0 bg-stone-100" />
         </div>
         <div>
           <label className="form-label">Courte description</label>
           <textarea rows={2} placeholder="Vos spécialités phares, ambiance..." value={formData.description}
             onChange={(e) => updateForm('description', e.target.value)}
-            className="input-field" />
+            className="input-field rounded-2xl border-0 bg-stone-100" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
           <div className="p-3 bg-surface-alt rounded-2xl border border-soft">

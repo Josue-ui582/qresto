@@ -164,8 +164,7 @@ export interface FAQItem {
 export interface RegisterOwnerDTO {
   email: string;
   password?: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   phone: string;
 }
 
@@ -187,8 +186,7 @@ export interface RegisterRestaurantDTO {
 }
 
 export interface RegisterFormData {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   phone: string;
   password: string;
@@ -199,9 +197,6 @@ export interface RegisterFormData {
   description: string;
   logoPreview: string;
   coverPreview: string;
-  plan: 'STARTER_5000' | 'PRO_8000';
-  momoProvider: 'MTN' | 'MOOV';
-  momoNumber: string;
 }
 
 export type UpdateFormFn = <K extends keyof RegisterFormData>(field: K, value: RegisterFormData[K]) => void;

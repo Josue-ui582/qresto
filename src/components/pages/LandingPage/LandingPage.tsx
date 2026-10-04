@@ -11,6 +11,7 @@ import { PricingSection } from './PricingSection';
 import { FAQSection } from './FaqSection';
 import { FinalCTA } from './FinalCta';
 import { Dish3DModal } from './Dish3dModal';
+import { TestimonialsSection } from './TestimonialsSection';
 
 export const LandingPage: React.FC = () => {
   // The only piece of state shared across sections: which dish is
@@ -28,6 +29,7 @@ export const LandingPage: React.FC = () => {
       <QRSimulator />
       <FeaturedRestaurants />
       <PricingSection />
+      <TestimonialsSection />
       <FAQSection />
       <FinalCTA />
       <Dish3DModal dish={selected3DDish} onClose={() => setSelected3DDish(null)} />

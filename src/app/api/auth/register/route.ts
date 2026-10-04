@@ -11,16 +11,27 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function POST(req: Request) {
   try {
     const { owner, restaurant } = await req.json();
+    const fullName = typeof owner?.fullName === 'string' ? owner.fullName.trim() : '';
+    const nameParts = fullName.split(/\s+/).filter(Boolean);
 
-    if (!owner?.email || !owner?.password || !restaurant?.name) {
+    if (
+      !fullName ||
+      !owner?.email ||
+      typeof owner.password !== 'string' ||
+      owner.password.length < 6 ||
+      !owner?.phone ||
+      !restaurant?.name?.trim() ||
+      !restaurant?.address?.trim()
+    ) {
       return NextResponse.json(
         { error: "Données incomplètes pour l'inscription." },
         { status: 400 }
       );
     }
 
+    const email = owner.email.trim().toLowerCase();
     const existingUser = await prisma.user.findUnique({
-      where: { email: owner.email },
+      where: { email },
     });
 
     if (existingUser) {
@@ -45,9 +56,9 @@ export async function POST(req: Request) {
     const result = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
-          firstName: owner.firstName,
-          lastName: owner.lastName,
-          email: owner.email,
+          firstName: nameParts[0],
+          lastName: nameParts.slice(1).join(' '),
+          email,
           phone: owner.phone,
           password: hashedPassword,
           role: 'RESTAURANT_OWNER',
@@ -65,13 +76,8 @@ export async function POST(req: Request) {
           logo: restaurant.logo,
           coverImage: restaurant.coverImage,
           phone: owner.phone,
-          email: owner.email,
-          subscriptionPlan: restaurant.subscriptionPlan || 'PRO_8000',
+          email,
           ownerId: newUser.id,
-          settings: {
-            momoProvider: restaurant.momoProvider,
-            momoNumber: restaurant.momoNumber,
-          },
         },
       });
 

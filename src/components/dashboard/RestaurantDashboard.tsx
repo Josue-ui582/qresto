@@ -142,7 +142,10 @@ export const RestaurantDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col md:flex-row text-stone-900 font-sans">
+    <div
+      className="min-h-screen bg-white flex flex-col md:flex-row text-stone-900"
+      style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+    >
       <DashboardSidebar
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}

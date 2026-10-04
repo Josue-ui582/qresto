@@ -8,7 +8,7 @@ import { Toast } from '@/components/common/Toast';
 
 export default function OrderTrackingRoute() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       <Navbar />
       <main className="flex-1">
         <OrderTrackingPage />

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Sparkles } from 'lucide-react';
 import { faqItems } from '@/constants/faq';
 
 export const FAQSection: React.FC = () => {
@@ -22,12 +22,16 @@ export const FAQSection: React.FC = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-14"
         >
-          <div className="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-2">
-            Questions Fréquentes
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 mb-4">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Questions Fréquentes</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
             Tout ce que vous devez savoir
           </h2>
+          <p className="text-sm sm:text-base text-stone-500 mt-3">
+            Une question avant de vous lancer ? On a sûrement la réponse.
+          </p>
         </motion.div>
 
         <div className="space-y-3">
@@ -36,12 +40,12 @@ export const FAQSection: React.FC = () => {
             return (
               <div
                 key={item.q}
-                className="bg-[#fbf9f5] rounded-2xl border border-stone-200/90 overflow-hidden transition-colors"
+                className="bg-white rounded-2xl border border-stone-200/90 overflow-hidden transition-colors"
               >
                 <button
                   type="button"
                   onClick={() => toggleFaq(idx)}
-                  className="w-full px-6 py-4.5 text-left flex items-center justify-between gap-4 font-bold text-stone-900 text-sm sm:text-base cursor-pointer"
+                  className="w-full px-5 sm:px-6 py-4 text-left flex items-center justify-between gap-4 font-semibold text-stone-900 text-sm sm:text-base cursor-pointer"
                 >
                   <span>{item.q}</span>
                   <motion.div

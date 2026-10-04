@@ -25,7 +25,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         <div className="p-5 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-lg font-black text-stone-900">
+              <span className="text-lg font-black text-stone-900">
                 #{order.trackingCode || order.id.slice(-6).toUpperCase()}
               </span>
               {isNew && (

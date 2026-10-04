@@ -37,7 +37,7 @@ export const OrderTrackingSearch: React.FC<OrderTrackingSearchProps> = ({
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Code de suivi (ex: QR-7842)"
-            className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-300 rounded-xl text-stone-900 font-mono font-bold uppercase text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+            className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-300 rounded-xl text-stone-900 font-bold uppercase text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
           />
         </div>
         <button
@@ -54,14 +54,14 @@ export const OrderTrackingSearch: React.FC<OrderTrackingSearchProps> = ({
         <button
           type="button"
           onClick={() => onDemoCodeClick('QR-7842')}
-          className="font-mono font-bold text-amber-600 hover:underline bg-amber-50 px-2 py-0.5 rounded"
+          className="font-bold text-amber-600 hover:underline bg-amber-50 px-2 py-0.5 rounded"
         >
           QR-7842 (En préparation)
         </button>
         <button
           type="button"
           onClick={() => onDemoCodeClick('QR-9310')}
-          className="font-mono font-bold text-amber-600 hover:underline bg-amber-50 px-2 py-0.5 rounded"
+          className="font-bold text-amber-600 hover:underline bg-amber-50 px-2 py-0.5 rounded"
         >
           QR-9310 (Prête !)
         </button>

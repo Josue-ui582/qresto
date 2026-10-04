@@ -43,7 +43,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[#fbf9f5]/90 backdrop-blur-xl border-b border-stone-200/80 transition-all duration-300">
+    <header className="sticky top-0 z-50 w-full border-b border-stone-200/80 bg-white/95 backdrop-blur-xl transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-3">
           {/* Brand Logo with animated emblem */}
@@ -53,16 +53,14 @@ export const Navbar: React.FC = () => {
               whileTap={{ scale: 0.98 }}
               className="flex items-center gap-2 cursor-pointer select-none shrink-0 group focus:outline-hidden"
             >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-linear-to-tr from-amber-600 via-amber-500 to-orange-400 text-stone-950 flex items-center justify-center font-black text-lg sm:text-xl shadow-md shadow-amber-500/20 group-hover:shadow-amber-500/35 transition-all">
-              Q
-            </div>
+            
             <div className="flex flex-col text-left">
               <span className="text-xl sm:text-2xl font-black tracking-tight text-stone-950 leading-none">
                 Q<span className="text-amber-600">Resto</span>
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-amber-700/80">
+              {/* <span className="text-[10px] uppercase font-bold tracking-widest text-amber-700/80">
                 Africa · Digital
-              </span>
+              </span> */}
             </div>
             </motion.div>
           </Link>
@@ -84,8 +82,8 @@ export const Navbar: React.FC = () => {
             </form>
           </div>
 
-          {/* Right Navigation Links & Action Button */}
-          <div className="flex items-center gap-3 sm:gap-5">
+          {/* Desktop navigation */}
+          <div className="hidden md:flex items-center gap-3 sm:gap-5">
             <Link
               href="/restaurants"
               className={`hidden sm:flex items-center gap-1.5 text-xs sm:text-sm font-semibold transition-all px-3 py-1.5 rounded-full ${
@@ -197,41 +195,27 @@ export const Navbar: React.FC = () => {
                 <Link href="/login" className="hidden sm:inline-block px-3 py-1.5 text-xs font-semibold text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-full transition-colors">
                   Connexion
                 </Link>
-                <Link href="/register-restaurant" className="btn-primary px-3.5 sm:px-4 py-2 text-xs">
-                  <Store className="w-3.5 h-3.5" />
+                <Link href="/register-restaurant" className="inline-flex items-center gap-2 rounded-full bg-stone-950 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-stone-800 sm:px-4">
+                  <Store className="w-3.5 h-3.5 text-amber-400" />
                   <span>Inscrire mon resto</span>
                 </Link>
               </div>
             )}
 
-            {/* Mobile Hamburger toggle */}
+          </div>
+
+          {/* Mobile Hamburger toggle */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-stone-700 hover:text-stone-950 focus:outline-hidden"
-              aria-label="Menu"
+              aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
             </button>
-          </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        <div className="md:hidden pb-3">
-          <form action="/restaurants" method="get" className="relative w-full">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
-              <Search className="w-3.5 h-3.5" />
-            </div>
-            <input
-              name="search"
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher un plat, un restaurant..."
-              className="w-full pl-9 pr-3 py-1.5 bg-stone-100 text-xs text-stone-900 rounded-full border border-stone-200 outline-hidden font-medium"
-            />
-          </form>
-        </div>
       </div>
 
       {/* Mobile Drawer Menu */}
@@ -243,6 +227,19 @@ export const Navbar: React.FC = () => {
             exit={{ height: 0, opacity: 0 }}
             className="md:hidden border-t border-stone-200 bg-white/95 backdrop-blur-lg px-4 pt-3 pb-6 flex flex-col gap-3 overflow-hidden"
           >
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
+                <Search className="w-3.5 h-3.5" />
+              </div>
+              <input
+                name="search"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher un plat, un restaurant..."
+                className="w-full pl-9 pr-3 py-2 bg-stone-100 text-xs text-stone-900 rounded-full border border-stone-200 outline-hidden font-medium"
+              />
+            </form>
             <Link href="/restaurants" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2">
               <Compass className="w-4 h-4 text-amber-600" />
               <span>Explorer les restaurants</span>
@@ -252,12 +249,39 @@ export const Navbar: React.FC = () => {
               <span>Suivre une commande</span>
             </Link>
 
+            <Link href="/cart" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4 text-stone-500" />
+              <span>Mon panier{cartCount > 0 ? ` (${cartCount})` : ''}</span>
+            </Link>
+
+            {currentUser && (
+              <div className="pt-2 border-t border-stone-100 flex flex-col gap-2">
+                {currentRestaurant && (
+                  <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2">
+                    <LayoutDashboard className="w-4 h-4 text-amber-600" />
+                    <span>Mon Dashboard Restaurant</span>
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                  }}
+                  className="text-left py-2 font-semibold text-sm text-red-600 flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Déconnexion</span>
+                </button>
+              </div>
+            )}
+
             {!currentUser && (
               <div className="pt-2 border-t border-stone-100 flex flex-col gap-2">
                 <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="w-full py-2.5 rounded-xl border border-stone-200 text-stone-800 font-bold text-xs text-center">
                   Connexion gérant
                 </Link>
-                <Link href="/register-restaurant" onClick={() => setMobileMenuOpen(false)} className="w-full py-2.5 rounded-xl bg-linear-to-r from-amber-600 to-orange-500 text-white font-bold text-xs text-center">
+                <Link href="/register-restaurant" onClick={() => setMobileMenuOpen(false)} className="w-full rounded-full bg-stone-950 py-2.5 text-center text-xs font-bold text-white">
                   Digitaliser mon restaurant gratuitement
                 </Link>
               </div>

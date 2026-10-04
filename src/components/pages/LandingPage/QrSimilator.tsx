@@ -85,22 +85,23 @@ export const QRSimulator: React.FC = () => {
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Colonne Gauche: Contrôles Interactifs */}
-          <div className="lg:col-span-7 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold mb-4">
+          <div className="lg:col-span-7 flex flex-col items-center text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold mb-1">
               <QrCode className="w-3.5 h-3.5" />
               <span>Simulateur en direct avec données réelles</span>
             </div>
 
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight mb-4">
-              Personnalisez vos QR codes de tables en quelques clics
-            </h2>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight mb-2 !text-white">
+  Personnalisez vos QR codes de tables en quelques clics
+</h2>
 
-            <p className="text-stone-300 text-sm sm:text-base leading-relaxed mb-8 max-w-xl font-normal">
+
+            <p className="text-stone-300 text-sm sm:text-base leading-relaxed mb-8 max-w-xl mx-auto font-normal">
               Chaque table dispose de son propre QR code sécurisé. Le client scanne, le numéro de table est automatiquement injecté et la commande part directement au bon endroit.
             </p>
 
             {/* Formulaire de contrôle */}
-            <div className="bg-stone-800/80 backdrop-blur-md rounded-3xl p-6 border border-stone-700/80 space-y-5 max-w-xl">
+            <div className="bg-stone-800/80 backdrop-blur-md rounded-3xl p-6 border border-stone-700/80 space-y-5 w-full max-w-xl text-center">
               {isLoading ? (
                 <div className="py-8 flex flex-col items-center justify-center text-stone-400">
                   <Loader2 className="w-6 h-6 animate-spin text-amber-500 mb-2" />
@@ -111,7 +112,7 @@ export const QRSimulator: React.FC = () => {
                   {/* Sélecteur d'Établissement réel */}
                   {restaurants.length > 0 && (
                     <div>
-                      <label className="flex text-xs font-bold text-stone-300 mb-2 items-center gap-1.5">
+                      <label className="flex text-xs font-bold text-stone-300 mb-2 items-center justify-center gap-1.5">
                         <Store className="w-3.5 h-3.5 text-amber-400" />
                         <span>Sélectionner un établissement</span>
                       </label>
@@ -151,7 +152,7 @@ export const QRSimulator: React.FC = () => {
                         Table #{demoTable}
                       </span>
                     </label>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
                       {tableOptions.map((num) => (
                         <button
                           key={num}
@@ -170,7 +171,7 @@ export const QRSimulator: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                     <Link
                       href={targetRelativePath}
                       className="px-5 py-3 rounded-xl bg-linear-to-r from-amber-500 to-orange-500 text-stone-950 font-black text-xs shadow-lg hover:shadow-amber-500/30 transition-all inline-flex items-center gap-2 justify-center"

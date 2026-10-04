@@ -68,7 +68,7 @@ export const OrderTrackingTimeline: React.FC<OrderTrackingTimelineProps> = ({ cu
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-stone-100">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-mono font-extrabold text-sm border border-amber-300">
+              <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-extrabold text-sm border border-amber-300">
                 {currentOrder.trackingCode}
               </span>
               <span className="text-xs font-semibold text-stone-500">
@@ -132,7 +132,7 @@ export const OrderTrackingTimeline: React.FC<OrderTrackingTimelineProps> = ({ cu
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                     <span>{h.note || `Statut passé à : ${h.status}`}</span>
                   </div>
-                  <span className="text-[10px] text-stone-400 font-mono">
+                  <span className="text-[10px] text-stone-400">
                     {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>

@@ -65,12 +65,12 @@ export const ProcessSteps: React.FC = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 whileHover={{ y: -6, scale: 1.01 }}
-                className="bg-[#fbf9f5] rounded-3xl p-6 border border-stone-200/90 text-left relative flex flex-col justify-between transition-shadow hover:shadow-xl hover:shadow-stone-200/50"
+                className="bg-white rounded-2xl p-5 border border-stone-200/90 text-left relative flex flex-col justify-between transition-shadow hover:shadow-xl hover:shadow-stone-200/50"
               >
                 <div>
                   <div className="flex items-center justify-between mb-5">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center">
-                      <IconComp className="w-6 h-6" />
+                    <div className="w-11 h-11 rounded-xl bg-stone-900 text-white flex items-center justify-center">
+                      <IconComp className="w-5 h-5" />
                     </div>
                     <span className="text-2xl font-black text-stone-300">{item.step}</span>
                   </div>

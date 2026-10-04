@@ -72,9 +72,9 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12"
+          className="mb-12 flex flex-col items-center gap-6 text-center"
         >
-          <div>
+          <div className="max-w-3xl">
             <div className="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-2">
               Innovation Gastronomique
             </div>
@@ -88,7 +88,7 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
 
           {/* Filtres par Catégorie */}
           {categoriesList.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-stone-200/60 rounded-2xl self-start md:self-auto">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-stone-200/60 p-1">
               <button
                 type="button"
                 onClick={() => setActiveCategory('all')}

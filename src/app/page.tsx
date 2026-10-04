@@ -12,7 +12,10 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-stone-50 text-stone-900 selection:bg-amber-500 selection:text-white">
+    <div
+      className="min-h-screen flex flex-col bg-stone-50 text-stone-900 selection:bg-amber-500 selection:text-white"
+      style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+    >
       <Navbar />
       <main className="flex-1">
         <LandingPage />

@@ -8,7 +8,7 @@ import { PrivacyPage } from '@/components/pages/StaticPages';
 
 export default function PrivacyRoute() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       <Navbar />
       <main className="flex-1">
         <PrivacyPage />

@@ -61,7 +61,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       {/* Code, Heure & Total */}
       <div className="flex justify-between items-start">
         <div>
-          <span className="text-sm font-black text-stone-900 font-mono tracking-tight block">
+          <span className="text-sm font-black text-stone-900 tracking-tight block">
             #{order.trackingCode || (order.id ? order.id.slice(-4).toUpperCase() : '----')}
           </span>
           <span className="text-[11px] text-stone-400 font-medium">

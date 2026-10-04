@@ -38,9 +38,9 @@ export const FeaturedRestaurants: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12"
+          className="mb-12 flex flex-col items-center gap-5 text-center"
         >
-          <div>
+          <div className="max-w-3xl">
             <div className="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-2">
               Établissements Certifiés
             </div>
@@ -54,7 +54,7 @@ export const FeaturedRestaurants: React.FC = () => {
 
           <Link href="/restaurants">
             <motion.p
-              className="px-5 py-2.5 rounded-xl border border-stone-200 hover:border-stone-900 text-stone-800 font-bold text-xs flex items-center gap-2 self-start md:self-auto transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-full border border-stone-200 hover:border-stone-900 text-stone-800 font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >

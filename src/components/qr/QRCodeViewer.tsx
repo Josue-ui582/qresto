@@ -77,9 +77,9 @@ export const QRCodeViewer: React.FC<QRCodeViewerProps> = ({
           <link rel="preconnect" href="https://fonts.googleapis.com">
           <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+            @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
             body {
-              font-family: 'Plus Jakarta Sans', sans-serif;
+              font-family: "Plus Jakarta Sans", sans-serif;
               margin: 0;
               padding: 40px;
               display: flex;
@@ -204,7 +204,7 @@ export const QRCodeViewer: React.FC<QRCodeViewerProps> = ({
 
       {/* Target Link preview */}
       <div className="w-full bg-stone-50 rounded-xl p-2.5 mb-4 text-left border border-stone-200 flex items-center justify-between gap-2">
-        <span className="text-[11px] font-mono text-stone-600 truncate flex-1">{url}</span>
+        <span className="text-[11px] text-stone-600 truncate flex-1">{url}</span>
         <button
           type="button"
           onClick={handleCopyLink}
