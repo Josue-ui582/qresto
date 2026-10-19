@@ -61,11 +61,15 @@ export const TestimonialsSection: React.FC = () => {
               ))}
             </div>
             <div className="mt-4 flex items-center gap-3 border-t border-stone-100 pt-4">
-              <img
-                src={testimonial.avatar}
-                alt=""
-                className="h-10 w-10 rounded-full object-cover"
-              />
+              {testimonial.avatar ? (
+                <img
+                  src={testimonial.avatar}
+                  alt=""
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-stone-100" aria-hidden="true" />
+              )}
               <div className="min-w-0">
                 <p className="truncate text-xs font-bold text-stone-900">{testimonial.name}</p>
                 <p className="truncate text-[11px] text-stone-500">

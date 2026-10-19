@@ -65,12 +65,6 @@ export const OrderTrackingPage: React.FC = () => {
     if (found) setCurrentOrder(found);
   };
 
-  const handleDemoCodeClick = async (code: string) => {
-    setSearchInput(code);
-    const found = await searchTrackedOrder(code);
-    if (found) setCurrentOrder(found);
-  };
-
   // 4. Bouton de rafraîchissement manuel
   const handleManualRefresh = async () => {
     if (!currentOrder) return;
@@ -85,7 +79,6 @@ export const OrderTrackingPage: React.FC = () => {
         searchInput={searchInput}
         setSearchInput={setSearchInput}
         handleSearch={handleSearch}
-        onDemoCodeClick={handleDemoCodeClick}
       />
 
       {currentOrder ? (

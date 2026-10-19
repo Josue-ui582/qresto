@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { storage } from '../lib/storage';
 import { useToast } from './ToastContext';
+import { useAuth } from './AuthContext';
 
 export type DashboardTab =
   | 'overview' | 'orders' | 'menu' | 'categories' | 'dishes'
@@ -29,16 +29,16 @@ export const NavigationProvider: React.FC<{ children: ReactNode }> = ({ children
   const [viewParams, setViewParams] = useState<Record<string, unknown>>({});
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>('overview');
   const { showToast } = useToast();
+  const { currentUser, currentRestaurant, isLoading } = useAuth();
 
   const navigateTo = (view: AppView, params: Record<string, unknown> = {}) => {
-    if (view === 'dashboard') {
-      const user = storage.getCurrentUser();
-      if (!user) {
+    if (view === 'dashboard' && !isLoading) {
+      if (!currentUser) {
         showToast('Veuillez vous connecter pour accéder à votre espace restaurant.', 'info');
         setCurrentView('login');
         return;
       }
-      if (!user.restaurantId && user.role !== 'SUPER_ADMIN') {
+      if (!currentRestaurant && currentUser.role !== 'SUPER_ADMIN') {
         showToast("Aucun restaurant n'est rattaché à ce compte.", 'error');
         setCurrentView('register-restaurant');
         return;

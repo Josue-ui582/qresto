@@ -10,15 +10,15 @@ import { OrderProvider } from './OrderContext';
 export const AppProviders: React.FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <ToastProvider>
-      <NavigationProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <NavigationProvider>
           <CartProvider>
             <OrderProvider>
               {children}
             </OrderProvider>
           </CartProvider>
-        </AuthProvider>
-      </NavigationProvider>
+        </NavigationProvider>
+      </AuthProvider>
     </ToastProvider>
   );
 };

@@ -162,7 +162,7 @@ export interface Testimonial {
   role: string;
   restaurantName?: string;
   city: string;
-  avatar: string;
+  avatar?: string | null;
   rating: number;
   text: string;
 }
@@ -272,5 +272,4 @@ export interface OverviewTabProps {
   totalOrdersCount: number;
   averageOrderValue: number;
   totalClientsCount: number;
-  demoModeWithData: boolean;
 }
