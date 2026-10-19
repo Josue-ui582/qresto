@@ -87,7 +87,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {KANBAN_COLUMNS.map((col) => {
           const colOrders = orders.filter((o) => o.status === col.status);
 

@@ -16,7 +16,13 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, members }, { status: 200 });
+    return NextResponse.json(
+      {
+        success: true,
+        members: members.map(({ active, ...member }) => ({ ...member, isActive: active })),
+      },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error('Erreur API GET /api/team:', error);
     return NextResponse.json(
@@ -96,11 +102,15 @@ export async function PUT(request: NextRequest) {
         ...(phone !== undefined && { phone: phone?.trim() || null }),
         ...(role !== undefined && { role }),
         ...(pinCode !== undefined && { pinCode: pinCode?.trim() || null }),
-        ...(isActive !== undefined && { isActive }),
+        ...(isActive !== undefined && { active: isActive }),
       },
     });
 
-    return NextResponse.json({ success: true, member: updatedMember }, { status: 200 });
+    const { active, ...member } = updatedMember;
+    return NextResponse.json(
+      { success: true, member: { ...member, isActive: active } },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error('Erreur API PUT /api/team:', error);
     return NextResponse.json(

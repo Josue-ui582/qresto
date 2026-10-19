@@ -54,15 +54,20 @@ export const TeamTab: React.FC<TeamTabProps> = ({
   // Chargement
   const fetchTeam = async () => {
     try {
-      setIsLoading(true);
-      const url = restaurantId ? `/api/team?restaurantId=${restaurantId}` : '/api/team';
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setTeamList(data.members || []);
+      if (!restaurantId) {
+        throw new Error('Identifiant du restaurant introuvable.');
       }
-    } catch (err) {
+
+      setIsLoading(true);
+      const res = await fetch(`/api/team?restaurantId=${encodeURIComponent(restaurantId)}`);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Impossible de récupérer les membres de l’équipe.');
+      }
+      setTeamList(data.members || []);
+    } catch (err: unknown) {
       console.error('Erreur chargement équipe:', err);
+      showNotice('error', err instanceof Error ? err.message : 'Erreur lors du chargement de l’équipe.');
     } finally {
       setIsLoading(false);
     }
@@ -124,6 +129,11 @@ export const TeamTab: React.FC<TeamTabProps> = ({
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!editingMember && !restaurantId) {
+      setFormError('Identifiant du restaurant introuvable. Impossible d’ajouter ce membre.');
+      return;
+    }
+
     if (!formData.name.trim() || !formData.email.trim()) {
       setFormError('Le nom et l’email sont requis.');
       return;
@@ -136,7 +146,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
       const method = editingMember ? 'PUT' : 'POST';
       const payload = editingMember
         ? { id: editingMember.id, ...formData }
-        : { ...formData, restaurantId: restaurantId || '' };
+        : { ...formData, restaurantId };
 
       const res = await fetch('/api/team', {
         method,
@@ -152,10 +162,19 @@ export const TeamTab: React.FC<TeamTabProps> = ({
 
       showNotice('success', editingMember ? 'Membre mis à jour !' : 'Nouveau membre ajouté !');
       setIsModalOpen(false);
-      fetchTeam();
+      setEditingMember(null);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        role: 'WAITER',
+        pinCode: '',
+        isActive: true,
+      });
+      await fetchTeam();
       if (onRefreshNeeded) onRefreshNeeded();
-    } catch (err: any) {
-      setFormError(err.message || 'Erreur lors de la sauvegarde.');
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.');
     } finally {
       setIsSubmitting(false);
     }
@@ -180,8 +199,8 @@ export const TeamTab: React.FC<TeamTabProps> = ({
       setDeletingId(null);
       fetchTeam();
       if (onRefreshNeeded) onRefreshNeeded();
-    } catch (err: any) {
-      showNotice('error', err.message || 'Impossible de retirer ce membre.');
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'Impossible de retirer ce membre.');
     } finally {
       setIsDeleting(false);
     }

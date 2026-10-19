@@ -12,7 +12,6 @@ import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardTopbar } from './DashboardTopbar';
 import { OverviewTab } from './OverviewTab';
 import { OrdersTab } from '@/components/dashboard/orders/OrdersTab';
-import { RestaurantInfoTab } from './RestaurantInfoTab';
 import { Dish, Order, OrderStatus, RestaurantTable } from '@/types';
 import { TeamTab } from './team/TeamTab';
 import { AnalyticsTab } from './analytics/AnalyticsTab';
@@ -105,7 +104,6 @@ export const RestaurantDashboard: React.FC = () => {
     { id: 'dishes', label: 'Plats', icon: 'fa-solid fa-utensils' },
     { id: 'tables', label: 'Tables', icon: 'fa-solid fa-border-all' },
     { id: 'qrcodes', label: 'QR Codes', icon: 'fa-solid fa-qrcode' },
-    { id: 'restaurant', label: 'Restaurant', icon: 'fa-solid fa-store' },
     { id: 'analytics', label: 'Analytics', icon: 'fa-solid fa-chart-simple' },
     { id: 'team', label: 'Équipe', icon: 'fa-solid fa-user-group' },
     { id: 'subscription', label: 'Abonnement', icon: 'fa-solid fa-credit-card' },
@@ -224,10 +222,6 @@ export const RestaurantDashboard: React.FC = () => {
             <QrCodesTab tables={tables as any} onOpenQr={(t: any) => setActiveQrTable(t)} />
           )}
 
-          {dashboardTab === 'restaurant' && (
-            <RestaurantInfoTab restaurant={currentRestaurant} />
-          )}
-
           {dashboardTab === 'analytics' && (
             <AnalyticsTab
               stats={{
@@ -261,15 +255,21 @@ export const RestaurantDashboard: React.FC = () => {
           )}
 
           {dashboardTab === 'team' && (
-            <TeamTab members={(currentRestaurant as any)?.team || []} />
+            <TeamTab restaurantId={restaurantId} />
           )}
 
           {dashboardTab === 'subscription' && (
-            <SubscriptionTab plan={(currentRestaurant as any)?.plan} />
+            <SubscriptionTab
+              restaurantId={restaurantId}
+              currencySymbol={currentRestaurant.currency}
+            />
           )}
 
           {dashboardTab === 'settings' && (
-            <SettingsTab onOpenSettings={() => { /* noop */ }} />
+            <SettingsTab
+              restaurantId={restaurantId}
+              onOpenSettings={() => { /* noop */ }}
+            />
           )}
         </main>
       </div>

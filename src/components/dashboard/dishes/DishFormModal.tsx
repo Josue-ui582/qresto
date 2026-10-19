@@ -78,15 +78,15 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-950/60 backdrop-blur-xs">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-stone-200 shadow-2xl relative overflow-hidden"
+          className="bg-white rounded-3xl max-w-lg w-full max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] border border-stone-200 shadow-2xl relative overflow-hidden flex flex-col"
         >
           {/* Entête Modal */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
+          <div className="flex items-center justify-between p-6 sm:p-8 pb-4 border-b border-stone-100 shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center">
                 <UtensilsCrossed className="w-5 h-5" />
@@ -112,13 +112,14 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
 
           {/* Affichage des Erreurs */}
           {formError && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
+            <div className="mx-6 sm:mx-8 mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2 shrink-0">
               <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
               <span>{formError}</span>
             </div>
           )}
 
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0">
+            <div className="px-6 sm:px-8 py-4 space-y-4 overflow-y-auto min-h-0 flex-1">
             {/* Nom, Prix, Catégorie */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
@@ -324,8 +325,10 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
               />
             </div>
 
+            </div>
+
             {/* Boutons d'action */}
-            <div className="pt-4 flex items-center justify-end gap-3 border-t border-stone-100">
+            <div className="px-6 sm:px-8 py-4 flex items-center justify-end gap-3 border-t border-stone-100 bg-white shrink-0">
               <button
                 type="button"
                 onClick={onClose}
