@@ -49,7 +49,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-3 text-sm">
               <li>
                 <Link href="/cgu" className="text-stone-600 hover:text-stone-900 transition-colors">
-                  Conditions d'utilisation
+                  Conditions d&apos;utilisation
                 </Link>
               </li>
               <li>

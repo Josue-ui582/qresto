@@ -2,7 +2,7 @@
 
 import { useNavigation } from '@/context/NavigationContext';
 import { useOrder } from '@/context/OrderContext';
-import { Order } from '@/types';
+import { TrackedOrder } from '@/types';
 import React, { useState, useEffect } from 'react';
 import { OrderTrackingSearch } from './OrderTrackingSearch';
 import { OrderTrackingTimeline } from './OrderTrackingTimeline';
@@ -21,7 +21,7 @@ export const OrderTrackingPage: React.FC = () => {
   const [searchInput, setSearchInput] = useState<string>(
     (viewParams.trackingCode as string) || trackingCodeInput || ''
   );
-  const [currentOrder, setCurrentOrder] = useState<Order | null>(trackedOrder);
+  const [currentOrder, setCurrentOrder] = useState<TrackedOrder | null>(trackedOrder);
   const [autoRefresh] = useState<boolean>(true);
 
   // 1. Recherche initiale (si un code est dans l'URL ou le contexte)

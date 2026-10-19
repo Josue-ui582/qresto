@@ -12,7 +12,7 @@ import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardTopbar } from './DashboardTopbar';
 import { OverviewTab } from './OverviewTab';
 import { OrdersTab } from '@/components/dashboard/orders/OrdersTab';
-import { Dish, Order, OrderStatus, RestaurantTable } from '@/types';
+import { Order, OrderStatus } from '@/types';
 import { TeamTab } from './team/TeamTab';
 import { AnalyticsTab } from './analytics/AnalyticsTab';
 import { CategoriesTab } from './categories/CategoriesTab';
@@ -35,7 +35,6 @@ export const RestaurantDashboard: React.FC = () => {
   const [topSearch, setTopSearch] = useState('');
 
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
-  const [activeQrTable, setActiveQrTable] = useState<RestaurantTable | null>(null);
 
   // 1. Nouvel État pour stocker les vraies commandes de la base de données
   const [orders, setOrders] = useState<Order[]>([]);
@@ -214,12 +213,12 @@ export const RestaurantDashboard: React.FC = () => {
               restaurantId={restaurantId}
               restaurantSlug={currentRestaurant.slug}
               restaurantName={currentRestaurant.name}
-              tables={tables as any}
+              tables={tables}
             />
           )}
 
           {dashboardTab === 'qrcodes' && (
-            <QrCodesTab tables={tables as any} onOpenQr={(t: any) => setActiveQrTable(t)} />
+            <QrCodesTab tables={tables} />
           )}
 
           {dashboardTab === 'analytics' && (

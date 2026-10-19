@@ -1,7 +1,7 @@
 import React from 'react';
-import { Crown, Shield, ChefHat, Utensils, Receipt } from 'lucide-react';
+import { Shield, ChefHat, Utensils, Receipt, Truck } from 'lucide-react';
 
-export type TeamRole = 'OWNER' | 'MANAGER' | 'CHEF' | 'WAITER' | 'CASHIER';
+export type TeamRole = 'MANAGER' | 'CHEF' | 'WAITER' | 'CASHIER' | 'DELIVERY';
 
 export interface TeamMemberData {
   id: string;
@@ -15,16 +15,19 @@ export interface TeamMemberData {
   createdAt?: string | Date;
 }
 
+export interface TeamMemberFormData {
+  name: string;
+  email: string;
+  phone: string;
+  role: TeamRole;
+  pinCode: string;
+  isActive: boolean;
+}
+
 export const ROLE_CONFIG: Record<
   TeamRole,
   { label: string; badgeBg: string; badgeText: string; icon: React.ElementType }
 > = {
-  OWNER: {
-    label: 'Propriétaire',
-    badgeBg: 'bg-amber-500/10 border-amber-300',
-    badgeText: 'text-amber-900',
-    icon: Crown,
-  },
   MANAGER: {
     label: 'Gérant / Manager',
     badgeBg: 'bg-indigo-50 border-indigo-200',
@@ -49,22 +52,21 @@ export const ROLE_CONFIG: Record<
     badgeText: 'text-purple-800',
     icon: Receipt,
   },
+  DELIVERY: {
+    label: 'Livraison',
+    badgeBg: 'bg-sky-50 border-sky-200',
+    badgeText: 'text-sky-800',
+    icon: Truck,
+  },
 };
 
 export interface MemberModalProps {
   isOpen: boolean;
   editingMember: TeamMemberData | null;
-  formData: {
-    name: string;
-    email: string;
-    phone: string;
-    role: TeamRole;
-    pinCode: string;
-    isActive: boolean;
-  };
+  formData: TeamMemberFormData;
   formError: string | null;
   isSubmitting: boolean;
   onClose: () => void;
-  onChange: (data: any) => void;
+  onChange: (data: TeamMemberFormData) => void;
   onSubmit: (e: React.FormEvent) => void;
 }

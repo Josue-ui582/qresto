@@ -11,7 +11,7 @@ export const OwnerSection: React.FC<Props> = ({ formData, updateForm }) => (
   <div>
     <h3 className="section-title">
       <FaIcon name="fa-solid fa-user" />
-      <span>1. Responsable & Compte d'accès</span>
+      <span>1. Responsable & Compte d&apos;accès</span>
     </h3>
 
     <div className="grid grid-cols-1 gap-4">

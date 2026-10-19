@@ -1,9 +1,9 @@
 import { FaIcon } from '@/components/common/Icon';
-import { Order, OrderStatus } from '@/types';
+import { OrderStatus, TrackedOrder } from '@/types';
 import React from 'react';
 
 interface OrderTrackingTimelineProps {
-  currentOrder: Order;
+  currentOrder: TrackedOrder;
   handleManualRefresh: () => void;
 }
 
@@ -42,11 +42,7 @@ export const OrderTrackingTimeline: React.FC<OrderTrackingTimelineProps> = ({ cu
             <div>
               <h3 className="text-lg font-extrabold">Votre commande est prête !</h3>
               <p className="text-xs text-white/90">
-                {currentOrder.type === 'DINE_IN'
-                  ? `Le serveur vous apporte vos plats à la Table ${currentOrder.tableNumber || ''}.`
-                  : currentOrder.type === 'DELIVERY'
-                  ? 'Le plat est emballé, notre livreur est prêt à partir.'
-                  : 'Vous pouvez vous présenter au comptoir pour récupérer votre commande.'}
+                Le restaurant vous apporte les dernières nouvelles dès que votre commande avance.
               </p>
             </div>
           </div>
@@ -71,18 +67,8 @@ export const OrderTrackingTimeline: React.FC<OrderTrackingTimelineProps> = ({ cu
               <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-extrabold text-sm border border-amber-300">
                 {currentOrder.trackingCode}
               </span>
-              <span className="text-xs font-semibold text-stone-500">
-                {new Date(currentOrder.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
             </div>
             <h2 className="text-xl font-extrabold text-stone-900 mt-2">{currentOrder.restaurantName}</h2>
-            <p className="text-xs text-stone-500">
-              {currentOrder.type === 'DINE_IN'
-                ? `🍽️ Sur place • Table ${currentOrder.tableNumber || 'N/A'}`
-                : currentOrder.type === 'DELIVERY'
-                ? `🛵 Livraison : ${currentOrder.customerAddress || 'N/A'}`
-                : '🛍️ Retrait sur place'}
-            </p>
           </div>
           <button
             type="button"

@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Share2, Star, MapPin, Phone } from 'lucide-react';
+import { Restaurant } from '@/types';
 
 interface RestaurantHeroProps {
-  restaurant: any; // Remplacez 'any' par le type 'Restaurant' si vous l'avez dans vos types
+  restaurant: Restaurant;
   onBack: () => void;
   onShareMenu: () => void;
   onShareWhatsApp: () => void;

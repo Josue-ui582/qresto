@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Order, OrderType, PaymentMethod, OrderStatus } from '../types';
+import { Order, OrderType, PaymentMethod, OrderStatus, TrackedOrder } from '../types';
 import { useToast } from './ToastContext';
 import { useCart } from './CartContext';
 
@@ -16,11 +16,11 @@ interface OrderData {
 }
 
 interface OrderContextType {
-  placeOrder: (orderData: OrderData) => Promise<Order>;
-  trackedOrder: Order | null;
+  placeOrder: (orderData: OrderData) => Promise<TrackedOrder>;
+  trackedOrder: TrackedOrder | null;
   trackingCodeInput: string;
   setTrackingCodeInput: (code: string) => void;
-  searchTrackedOrder: (code: string) => Promise<Order | null>;
+  searchTrackedOrder: (code: string) => Promise<TrackedOrder | null>;
   refreshTrackedOrder: () => Promise<void>;
   updateRestaurantStatus: (status: OrderStatus, orderId: string) => Promise<void>;
 }
@@ -28,22 +28,20 @@ interface OrderContextType {
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
+  const [trackedOrder, setTrackedOrder] = useState<TrackedOrder | null>(null);
   const [trackingCodeInput, setTrackingCodeInput] = useState<string>('');
 
   const { showToast } = useToast();
   const { cart, cartRestaurantId, clearCart } = useCart();
 
   // 1. Passage de commande via API Next.js -> PostgreSQL
-  const placeOrder = async (orderData: OrderData): Promise<Order> => {
+  const placeOrder = async (orderData: OrderData): Promise<TrackedOrder> => {
     if (!cartRestaurantId || cart.length === 0) {
       throw new Error('Votre panier est vide');
     }
 
     const items = cart.map((item) => ({
       dishId: item.dish.id,
-      name: item.dish.name,
-      price: item.dish.price,
       quantity: item.quantity,
       notes: item.notes,
     }));
@@ -66,7 +64,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       throw new Error(errorMsg);
     }
 
-    const newOrder: Order = result.data;
+    const newOrder: TrackedOrder = result.data;
     clearCart();
     setTrackedOrder(newOrder);
     setTrackingCodeInput(newOrder.trackingCode);
@@ -75,7 +73,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   // 2. Recherche d'une commande par code de suivi via API
-  const searchTrackedOrder = async (code: string): Promise<Order | null> => {
+  const searchTrackedOrder = async (code: string): Promise<TrackedOrder | null> => {
     if (!code.trim()) return null;
 
     try {
@@ -121,11 +119,14 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
 
       showToast(`Statut mis à jour : ${status}`, 'success');
-      if (trackedOrder?.id === orderId) {
+      if (trackedOrder?.trackingCode === orderId) {
         setTrackedOrder(result.data);
       }
-    } catch (err: any) {
-      showToast(err.message || 'Erreur lors de la mise à jour du statut', 'error');
+    } catch (err: unknown) {
+      showToast(
+        err instanceof Error ? err.message : 'Erreur lors de la mise à jour du statut',
+        'error'
+      );
     }
   };
 

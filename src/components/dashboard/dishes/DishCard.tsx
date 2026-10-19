@@ -40,7 +40,7 @@ export const DishCard: React.FC<DishCardProps> = ({
         <div className="relative h-44 bg-stone-100 w-full overflow-hidden">
           {dish.image || dish.imageUrl ? (
             <img
-              src={dish.image || dish.imageUrl}
+              src={dish.image || dish.imageUrl || undefined}
               alt={dish.name}
               className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${!dish.isAvailable ? 'grayscale opacity-75' : ''
                 }`}

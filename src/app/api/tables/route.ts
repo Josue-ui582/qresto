@@ -1,165 +1,117 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { handleDatabaseError, parseJson, parseQueryParam } from '@/lib/api/validation';
+import { authorizeRequest } from '@/lib/auth/session';
 
-// GET : Récupérer toutes les tables (filtrables par restaurantId)
+const createTableSchema = z.object({
+  number: z.union([z.string().trim().min(1).max(30), z.number().int().positive()]),
+  capacity: z.number().int().positive().max(100).optional(),
+  name: z.string().trim().max(100).optional(),
+  restaurantId: z.string().optional(),
+});
+
+const updateTableSchema = z.object({
+  id: z.string().min(1),
+  number: z.union([z.string().trim().min(1).max(30), z.number().int().positive()]).optional(),
+  capacity: z.number().int().positive().max(100).optional(),
+  name: z.string().trim().max(100).nullable().optional(),
+});
+
 export async function GET(request: NextRequest) {
+  const restaurantIdParam = new URL(request.url).searchParams.get('restaurantId');
+  const auth = await authorizeRequest(request, 'TABLES_READ', restaurantIdParam);
+  if (auth.response) return auth.response;
+
   try {
-    const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get('restaurantId');
-
-    const whereCondition = restaurantId ? { restaurantId } : {};
-
     const tables = await prisma.restaurantTable.findMany({
-      where: whereCondition,
-      include: {
-        restaurant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
-      orderBy: {
-        number: 'asc',
-      },
+      where: { restaurantId: auth.session.restaurantId },
+      include: { restaurant: { select: { id: true, name: true, slug: true } } },
+      orderBy: { number: 'asc' },
     });
-
     return NextResponse.json({ success: true, tables }, { status: 200 });
-  } catch (error: any) {
-    console.error('Erreur API GET /api/tables:', error);
-    return NextResponse.json(
-      { success: false, error: 'Erreur lors de la récupération des tables.' },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur lors de la récupération des tables.');
   }
 }
 
-// POST : Créer une nouvelle table
 export async function POST(request: NextRequest) {
+  const parsed = await parseJson(request, createTableSchema);
+  if (!parsed.success) return parsed.response;
+  const auth = await authorizeRequest(request, 'TABLES_WRITE', parsed.data.restaurantId);
+  if (auth.response) return auth.response;
+
   try {
-    const body = await request.json();
-    const { number, capacity, name, restaurantId } = body;
-
-    if (!number || !restaurantId) {
-      return NextResponse.json(
-        { success: false, error: 'Le numéro de table et le restaurant sont requis.' },
-        { status: 400 }
-      );
-    }
-
-    const formattedNumber = String(number).trim();
-
-    // Vérifier si le numéro de table existe déjà pour ce restaurant
-    const existingTable = await prisma.restaurantTable.findFirst({
-      where: {
-        restaurantId,
-        number: formattedNumber,
-      },
+    const number = String(parsed.data.number).trim();
+    const existing = await prisma.restaurantTable.findFirst({
+      where: { restaurantId: auth.session.restaurantId, number },
+      select: { id: true },
     });
-
-    if (existingTable) {
-      return NextResponse.json(
-        { success: false, error: `La table #${formattedNumber} existe déjà dans cet établissement.` },
-        { status: 400 }
-      );
+    if (existing) {
+      return NextResponse.json({ error: `La table #${number} existe déjà.` }, { status: 409 });
     }
-
     const table = await prisma.restaurantTable.create({
       data: {
-        number: formattedNumber,
-        capacity: capacity ? parseInt(String(capacity), 10) : 4,
-        name: name?.trim() || null,
-        restaurantId,
+        number,
+        capacity: parsed.data.capacity ?? 4,
+        name: parsed.data.name || null,
+        restaurantId: auth.session.restaurantId,
       },
-      include: {
-        restaurant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+      include: { restaurant: { select: { id: true, name: true, slug: true } } },
     });
-
     return NextResponse.json({ success: true, table }, { status: 201 });
-  } catch (error: any) {
-    console.error('Erreur API POST /api/tables:', error);
-    return NextResponse.json(
-      { success: false, error: 'Impossible de créer la table.' },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Impossible de créer la table.');
   }
 }
 
-// PUT : Mettre à jour une table
 export async function PUT(request: NextRequest) {
+  const parsed = await parseJson(request, updateTableSchema);
+  if (!parsed.success) return parsed.response;
+  const auth = await authorizeRequest(request, 'TABLES_WRITE');
+  if (auth.response) return auth.response;
+
   try {
-    const body = await request.json();
-    const { id, number, capacity, name } = body;
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: "L'identifiant de la table est requis." },
-        { status: 400 }
-      );
-    }
-
-    const updatedTable = await prisma.restaurantTable.update({
-      where: { id },
+    const { id, number, ...fields } = parsed.data;
+    const result = await prisma.restaurantTable.updateMany({
+      where: { id, restaurantId: auth.session.restaurantId },
       data: {
+        ...fields,
         ...(number !== undefined && { number: String(number).trim() }),
-        ...(capacity !== undefined && { capacity: parseInt(String(capacity), 10) }),
-        ...(name !== undefined && { name: name?.trim() || null }),
-      },
-      include: {
-        restaurant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
       },
     });
-
-    return NextResponse.json({ success: true, table: updatedTable }, { status: 200 });
-  } catch (error: any) {
-    console.error('Erreur API PUT /api/tables:', error);
-    return NextResponse.json(
-      { success: false, error: 'Erreur lors de la mise à jour de la table.' },
-      { status: 500 }
-    );
+    if (!result.count) {
+      return NextResponse.json({ error: 'Table introuvable.' }, { status: 404 });
+    }
+    const table = await prisma.restaurantTable.findFirst({
+      where: { id, restaurantId: auth.session.restaurantId },
+      include: { restaurant: { select: { id: true, name: true, slug: true } } },
+    });
+    return NextResponse.json({ success: true, table }, { status: 200 });
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur lors de la mise à jour de la table.');
   }
 }
 
-// DELETE : Supprimer une table
 export async function DELETE(request: NextRequest) {
+  const parsedId = parseQueryParam(new URL(request.url).searchParams.get('id'), 'Identifiant de table');
+  if (!parsedId.success) return parsedId.response;
+  if (!parsedId.data) {
+    return NextResponse.json({ error: 'Identifiant de table requis.' }, { status: 400 });
+  }
+  const id = parsedId.data;
+  const auth = await authorizeRequest(request, 'TABLES_WRITE');
+  if (auth.response) return auth.response;
+
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: "L'identifiant de la table est requis." },
-        { status: 400 }
-      );
-    }
-
-    await prisma.restaurantTable.delete({
-      where: { id },
+    const deleted = await prisma.restaurantTable.deleteMany({
+      where: { id, restaurantId: auth.session.restaurantId },
     });
-
-    return NextResponse.json(
-      { success: true, message: 'Table supprimée avec succès.' },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    console.error('Erreur API DELETE /api/tables:', error);
-    return NextResponse.json(
-      { success: false, error: 'Erreur lors de la suppression de la table.' },
-      { status: 500 }
-    );
+    if (!deleted.count) {
+      return NextResponse.json({ error: 'Table introuvable.' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, message: 'Table supprimée avec succès.' });
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur lors de la suppression de la table.');
   }
 }

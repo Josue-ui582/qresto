@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { RotateCw, Star, Clock, Loader2, UtensilsCrossed } from 'lucide-react';
-import { Dish3DSelection } from '@/types';
+import { Dish3DSelection, DishModelType } from '@/types';
 import Link from 'next/link';
 
 interface ShowcaseDish {
@@ -31,6 +31,19 @@ interface DishesShowcaseProps {
   onSelectDish: (dish: Dish3DSelection) => void;
 }
 
+const dishModelTypes: readonly string[] = [
+  'poulet_braise',
+  'poisson_grille',
+  'igname_pile',
+  'burger',
+  'alloco',
+  'cocktail',
+];
+
+function isDishModelType(value: string | undefined): value is DishModelType {
+  return value !== undefined && dishModelTypes.includes(value);
+}
+
 export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) => {
   const [dishes, setDishes] = useState<ShowcaseDish[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -40,7 +53,7 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
     const fetchShowcaseDishes = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch('/api/dishes');
+        const res = await fetch('/api/dishes/showcase');
         if (!res.ok) throw new Error('Erreur lors du chargement des plats');
         const data = await res.json();
         setDishes(data.dishes || []);
@@ -158,10 +171,12 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                             name: dish.name,
                             description: dish.description || '',
                             price: dish.price,
-                            image: dish.image,
+                            image: dish.image || '',
                             ingredients: dish.ingredients || [],
                             prepTime: dish.prepTime || '15 min',
-                            modelType: (dish.model3DType as any),
+                            modelType: isDishModelType(dish.model3DType)
+                              ? dish.model3DType
+                              : 'poulet_braise',
                           })
                         }
                         className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-extrabold shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-105 transition-all"

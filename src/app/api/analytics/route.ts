@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from 'generated/prisma/client';
+import { z } from 'zod';
+import { authorizeRequest } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get('restaurantId');
-    const period = searchParams.get('period') || '7d'; // 'today' | '7d' | '30d' | 'all'
+    const period = searchParams.get('period') || '7d';
+    const parsedPeriod = z.enum(['today', '7d', '30d', 'all']).safeParse(period);
+    if (!parsedPeriod.success) {
+      return NextResponse.json({ error: 'Période invalide.' }, { status: 400 });
+    }
+    const auth = await authorizeRequest(
+      request,
+      'ANALYTICS_READ',
+      searchParams.get('restaurantId')
+    );
+    if (auth.response) return auth.response;
 
-    // Filtrage par date
     const now = new Date();
     let startDate: Date | undefined;
 
@@ -21,87 +32,76 @@ export async function GET(request: NextRequest) {
       startDate.setDate(now.getDate() - 30);
     }
 
-    const whereCondition: any = {};
-    if (restaurantId) whereCondition.restaurantId = restaurantId;
-    if (startDate) whereCondition.createdAt = { gte: startDate };
+    const whereCondition: Prisma.OrderWhereInput = {
+      restaurantId: auth.session.restaurantId,
+      ...(startDate ? { createdAt: { gte: startDate } } : {}),
+    };
 
-    // 1. Statistiques globales
-    const aggregate = await prisma.order.aggregate({
-      where: whereCondition,
-      _sum: { totalAmount: true },
-      _count: { id: true },
-      _avg: { totalAmount: true },
-    });
+    const [aggregate, ordersByStatusRaw, orderItems, activeTables] = await Promise.all([
+      prisma.order.aggregate({
+        where: whereCondition,
+        _sum: { total: true },
+        _count: { id: true },
+        _avg: { total: true },
+      }),
+      prisma.order.groupBy({
+        by: ['status'],
+        where: whereCondition,
+        _count: { id: true },
+      }),
+      prisma.orderItem.findMany({
+        where: { order: whereCondition },
+        select: { dishId: true, name: true, price: true, quantity: true },
+      }),
+      prisma.order.findMany({
+        where: { ...whereCondition, tableNumber: { not: null } },
+        select: { tableNumber: true },
+        distinct: ['tableNumber'],
+      }),
+    ]);
 
-    const totalRevenue = aggregate._sum.totalAmount || 0;
-    const totalOrders = aggregate._count.id || 0;
-    const averageOrderValue = Math.round(aggregate._avg.totalAmount || 0);
+    const itemsByDish = new Map<
+      string,
+      { id: string; name: string; quantity: number; revenue: number }
+    >();
 
-    // 2. Commandes par statut
-    const ordersByStatusRaw = await prisma.order.groupBy({
-      by: ['status'],
-      where: whereCondition,
-      _count: { id: true },
-    });
+    for (const item of orderItems) {
+      const key = item.dishId || item.name;
+      const aggregateItem = itemsByDish.get(key) || {
+        id: key,
+        name: item.name,
+        quantity: 0,
+        revenue: 0,
+      };
+      aggregateItem.quantity += item.quantity;
+      aggregateItem.revenue += item.price * item.quantity;
+      itemsByDish.set(key, aggregateItem);
+    }
 
-    const ordersByStatus = ordersByStatusRaw.map((item) => ({
-      status: item.status,
-      count: item._count.id,
-    }));
-
-    // 3. Plats les plus vendus (Top 5)
-    const topItemsRaw = await prisma.orderItem.groupBy({
-      by: ['menuItemId'],
-      where: {
-        order: whereCondition,
-      },
-      _sum: { quantity: true, price: true },
-      _count: { id: true },
-      orderBy: {
-        _sum: { quantity: 'desc' },
-      },
-      take: 5,
-    });
-
-    // Enrichir avec le nom du plat
-    const topItems = await Promise.all(
-      topItemsRaw.map(async (item) => {
-        const menuItem = await prisma.menuItem.findUnique({
-          where: { id: item.menuItemId },
-          select: { name: true, category: { select: { name: true } } },
-        });
-        return {
-          id: item.menuItemId,
-          name: menuItem?.name || 'Article inconnu',
-          category: menuItem?.category?.name || 'Général',
-          quantity: item._sum.quantity || 0,
-          revenue: (item._sum.price || 0) * (item._sum.quantity || 1),
-        };
-      })
-    );
-
-    // 4. Nombre de tables actives (ayant passé au moins 1 commande sur la période)
-    const activeTablesRaw = await prisma.order.groupBy({
-      by: ['tableNumber'],
-      where: whereCondition,
-    });
+    const topItems = [...itemsByDish.values()]
+      .sort((left, right) => right.quantity - left.quantity)
+      .slice(0, 5)
+      .map((item) => ({ ...item, category: 'Général' }));
 
     return NextResponse.json(
       {
         success: true,
-        period,
+        period: parsedPeriod.data,
         stats: {
-          totalRevenue,
-          totalOrders,
-          averageOrderValue,
-          activeTablesCount: activeTablesRaw.length,
-          ordersByStatus,
+          totalRevenue: aggregate._sum.total || 0,
+          totalOrders: aggregate._count.id,
+          averageOrderValue: Math.round(aggregate._avg.total || 0),
+          activeTablesCount: activeTables.length,
+          ordersByStatus: ordersByStatusRaw.map((item) => ({
+            status: item.status,
+            count: item._count.id,
+          })),
           topItems,
         },
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erreur API GET /api/analytics:', error);
     return NextResponse.json(
       { success: false, error: 'Erreur lors du calcul des statistiques.' },

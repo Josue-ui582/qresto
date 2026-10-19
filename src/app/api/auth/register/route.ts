@@ -3,33 +3,45 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { slugify } from '@/utils';
+import { z } from 'zod';
+import { getJwtSecret } from '@/lib/auth/jwt';
+import { parseJson } from '@/lib/api/validation';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'votre-cle-secrete-par-defaut'
-);
+const registerSchema = z.object({
+  owner: z.object({
+    email: z.string().trim().email().max(254),
+    password: z.string().min(6).max(200),
+    fullName: z.string().trim().min(1).max(150),
+    phone: z.string().trim().min(8).max(30),
+  }),
+  restaurant: z.object({
+    name: z.string().trim().min(1).max(150),
+    address: z.string().trim().min(1).max(500),
+    city: z.string().trim().max(100).optional(),
+    category: z.string().trim().max(100).optional(),
+    description: z.string().trim().max(2000).optional(),
+    logo: z.string().max(2048).optional(),
+    coverImage: z.string().max(2048).optional(),
+  }),
+});
 
 export async function POST(req: Request) {
   try {
-    const { owner, restaurant } = await req.json();
-    const fullName = typeof owner?.fullName === 'string' ? owner.fullName.trim() : '';
+    const parsed = await parseJson(req, registerSchema);
+    if (!parsed.success) return parsed.response;
+    const jwtSecret = getJwtSecret();
+    const { owner, restaurant } = parsed.data;
+    const fullName = owner.fullName.trim();
     const nameParts = fullName.split(/\s+/).filter(Boolean);
 
-    if (
-      !fullName ||
-      !owner?.email ||
-      typeof owner.password !== 'string' ||
-      owner.password.length < 6 ||
-      !owner?.phone ||
-      !restaurant?.name?.trim() ||
-      !restaurant?.address?.trim()
-    ) {
+    if (!nameParts.length) {
       return NextResponse.json(
         { error: "Données incomplètes pour l'inscription." },
         { status: 400 }
       );
     }
 
-    const email = owner.email.trim().toLowerCase();
+    const email = owner.email.toLowerCase();
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -37,7 +49,7 @@ export async function POST(req: Request) {
     if (existingUser) {
       return NextResponse.json(
         { error: 'Un compte avec cet email existe déjà.' },
-        { status: 400 }
+        { status: 409 }
       );
     }
 
@@ -93,9 +105,18 @@ export async function POST(req: Request) {
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')
-      .sign(JWT_SECRET);
+      .sign(jwtSecret);
 
-    const { password: _, ...userWithoutPassword } = result.user;
+    const userWithoutPassword = {
+      id: result.user.id,
+      email: result.user.email,
+      firstName: result.user.firstName,
+      lastName: result.user.lastName,
+      phone: result.user.phone,
+      role: result.user.role,
+      restaurantId: result.user.restaurantId,
+      createdAt: result.user.createdAt,
+    };
 
     const response = NextResponse.json(
       {
