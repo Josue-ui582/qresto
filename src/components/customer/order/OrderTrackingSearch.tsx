@@ -5,14 +5,12 @@ interface OrderTrackingSearchProps {
   searchInput: string;
   setSearchInput: (val: string) => void;
   handleSearch: (e: React.FormEvent) => void;
-  onDemoCodeClick: (code: string) => void;
 }
 
 export const OrderTrackingSearch: React.FC<OrderTrackingSearchProps> = ({
   searchInput,
   setSearchInput,
   handleSearch,
-  onDemoCodeClick,
 }) => {
   return (
     <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-sm mb-8 text-center">
@@ -23,7 +21,7 @@ export const OrderTrackingSearch: React.FC<OrderTrackingSearchProps> = ({
         Suivi de Commande en Direct
       </h1>
       <p className="text-xs sm:text-sm text-stone-500 max-w-md mx-auto mb-6">
-        Saisissez votre code de suivi (ex : <strong>QR-7842</strong> ou <strong>QR-9310</strong>) pour connaître en direct l'état de votre commande.
+        Saisissez le code de suivi reçu après votre commande pour connaître son état.
       </p>
 
       <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-center gap-3 max-w-md mx-auto">
@@ -36,7 +34,7 @@ export const OrderTrackingSearch: React.FC<OrderTrackingSearchProps> = ({
             required
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Code de suivi (ex: QR-7842)"
+            placeholder="Code de suivi"
             className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-300 rounded-xl text-stone-900 font-bold uppercase text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
           />
         </div>
@@ -48,24 +46,6 @@ export const OrderTrackingSearch: React.FC<OrderTrackingSearchProps> = ({
           <span>Rechercher</span>
         </button>
       </form>
-
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-stone-400">
-        <span>Codes de démonstration :</span>
-        <button
-          type="button"
-          onClick={() => onDemoCodeClick('QR-7842')}
-          className="font-bold text-amber-600 hover:underline bg-amber-50 px-2 py-0.5 rounded"
-        >
-          QR-7842 (En préparation)
-        </button>
-        <button
-          type="button"
-          onClick={() => onDemoCodeClick('QR-9310')}
-          className="font-bold text-amber-600 hover:underline bg-amber-50 px-2 py-0.5 rounded"
-        >
-          QR-9310 (Prête !)
-        </button>
-      </div>
     </div>
   );
 };

@@ -1,12 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Sparkles } from 'lucide-react';
-import { faqItems } from '@/constants/faq';
+import { FAQItem } from '@/types';
 
 export const FAQSection: React.FC = () => {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [faqItems, setFaqItems] = useState<FAQItem[]>([]);
+
+  useEffect(() => {
+    const fetchFaqItems = async () => {
+      try {
+        const response = await fetch('/api/faq');
+        if (!response.ok) throw new Error('Erreur lors du chargement de la FAQ.');
+        const data: { faqItems: FAQItem[] } = await response.json();
+        setFaqItems(data.faqItems);
+      } catch (error: unknown) {
+        console.error('Erreur chargement FAQ :', error);
+      }
+    };
+
+    fetchFaqItems();
+  }, []);
 
   const toggleFaq = (idx: number) => {
     setOpenFaqIndex(openFaqIndex === idx ? null : idx);
@@ -39,7 +55,7 @@ export const FAQSection: React.FC = () => {
             const isOpen = openFaqIndex === idx;
             return (
               <div
-                key={item.q}
+                key={item.id}
                 className="bg-white rounded-2xl border border-stone-200/90 overflow-hidden transition-colors"
               >
                 <button
@@ -47,7 +63,7 @@ export const FAQSection: React.FC = () => {
                   onClick={() => toggleFaq(idx)}
                   className="w-full px-5 sm:px-6 py-4 text-left flex items-center justify-between gap-4 font-semibold text-stone-900 text-sm sm:text-base cursor-pointer"
                 >
-                  <span>{item.q}</span>
+                  <span>{item.question}</span>
                   <motion.div
                     animate={{ rotate: isOpen ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
@@ -66,7 +82,7 @@ export const FAQSection: React.FC = () => {
                       transition={{ duration: 0.25, ease: 'easeInOut' }}
                     >
                       <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-stone-600 leading-relaxed border-t border-stone-200/60 font-normal">
-                        {item.a}
+                        {item.answer}
                       </div>
                     </motion.div>
                   )}

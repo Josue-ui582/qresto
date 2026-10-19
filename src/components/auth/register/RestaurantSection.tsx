@@ -24,12 +24,12 @@ export const RestaurantSection: React.FC<Props> = ({ formData, updateForm }) => 
     <div>
       <h3 className="section-title">
         <FaIcon name="fa-solid fa-utensils" />
-        <span>2. Profil de l'Établissement</span>
+        <span>2. Profil de l&apos;Établissement</span>
       </h3>
       <div className="space-y-4">
         <div>
           <label className="form-label">Nom du restaurant *</label>
-          <input type="text" required placeholder="Ex: Chez Mama Cotonou" value={formData.restaurantName}
+          <input type="text" required placeholder="Ex. : Mon restaurant" value={formData.restaurantName}
             onChange={(e) => updateForm('restaurantName', e.target.value)}
             className="input-field rounded-2xl border-0 bg-stone-100" />
         </div>

@@ -6,18 +6,18 @@ Ce README a pour objectif de permettre à n’importe quel développeur de compr
 
 ## 1. Vue d’ensemble du projet
 
-QResto vise à simuler une plateforme de commande pour restaurants, avec plusieurs capacités :
+QResto est une plateforme de commande et de gestion pour restaurants, avec plusieurs capacités :
 
 - consultation des restaurants et de leurs menus
 - navigation par ville / type de cuisine
 - gestion du panier client
-- prise de commande en ligne
+- prise de commande en ligne avec validation des prix et de la disponibilité côté serveur
 - suivi d’une commande via code de tracking
 - inscription d’un restaurateur
 - espace dashboard restaurant
-- démonstration de modules de recommandation et d’UX orientée restauration
+- recommandations construites à partir des plats disponibles en base
 
-Le projet est actuellement conçu comme une application démonstration / prototype avec données semi-statiques. Une partie importante de la logique utilise des données en mémoire et dans le stockage local du navigateur, ce qui facilite le lancement sans dépendre immédiatement d’une base de données externe.
+Les données métier sont persistées dans PostgreSQL. Les clients ne créent pas de compte; seuls les restaurateurs et leur équipe s’authentifient. Le panier est conservé temporairement dans le navigateur et revalidé par l’API lors de la commande.
 
 ## 2. Stack technique
 
@@ -26,8 +26,9 @@ Le projet est actuellement conçu comme une application démonstration / prototy
 - TypeScript
 - Tailwind CSS
 - Prisma
-- PostgreSQL (préparé via Prisma)
-- LocalStorage pour la persistence côté front en mode prototype
+- PostgreSQL via Prisma
+- JWT en cookie pour l’authentification des restaurateurs et de l’équipe
+- LocalStorage uniquement pour le cache temporaire du panier client
 - API routes Next.js pour les endpoints de données
 
 ## 3. Prérequis
@@ -36,7 +37,7 @@ Avant de lancer le projet, vérifie que votre environnement a bien :
 
 - Node.js >= 20
 - Yarn >= 1.22
-- PostgreSQL installé et accessible si vous souhaitez utiliser Prisma avec une vraie base de données
+- PostgreSQL installé et accessible (requis)
 - Un terminal Bash ou zsh
 
 ### Vérification rapide
@@ -79,31 +80,25 @@ cp .env.example .env.local
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/qresto?schema=public"
 ```
 
-Si vous n’utilisez pas encore la base de données, vous pouvez laisser le projet démarrer en mode prototype avec les données par défaut, mais la configuration Prisma reste recommandée pour que les scripts de base de données fonctionnent correctement.
+La base PostgreSQL et les variables requises doivent être configurées avant de lancer l’application.
 
 ## 5. Variables d’environnement
 
-Le projet comprend un fichier `.env.example` avec les variables de base :
+Le fichier `.env.example` énumère les variables nécessaires, sans valeurs :
 
 ```env
-# GEMINI_API_KEY: Required for Gemini AI API calls.
-# AI Studio automatically injects this at runtime from user secrets.
-# Users configure this via the Secrets panel in the AI Studio UI.
-GEMINI_API_KEY="MY_GEMINI_API_KEY"
-
-# APP_URL: The URL where this applet is hosted.
-# AI Studio automatically injects this at runtime with the Cloud Run service URL.
-# Used for self-referential links, OAuth callbacks, and API endpoints.
-APP_URL="MY_APP_URL"
+DATABASE_URL=
+JWT_SECRET=
+NEXT_PUBLIC_APP_URL=
 ```
 
 ### Variables utiles selon le contexte
 
 - `DATABASE_URL` : utilisée par Prisma pour se connecter à PostgreSQL
-- `GEMINI_API_KEY` : prévue pour des intégrations IA / Gemini si le projet évolue ou si des recommandations intelligentes sont activées
-- `APP_URL` : utile pour les liens d’application et les environnements hébergés
+- `JWT_SECRET` : requis pour signer et vérifier les sessions des restaurateurs et membres d’équipe
+- `NEXT_PUBLIC_APP_URL` : URL publique utilisée par les liens générés dans l’application
 
-> Important : dans la version actuelle, le cœur du projet est principalement piloté par des données de démonstration dans `src/lib/storage.ts` et non par une base Prisma complète en production. Prisma est bien présent et prêt, mais l’app peut tourner sans une vraie BDD tant que vous restez dans le mode démonstration.
+> Les données métier sont persistées dans PostgreSQL via Prisma et les endpoints Next.js. Seul le panier client reste en cache temporaire dans `localStorage`; le serveur revalide les plats, prix et disponibilités à la création de commande.
 
 ## 6. Structure du projet
 
@@ -127,8 +122,9 @@ qresto/
 │   │   └── pages/
 │   ├── context/
 │   ├── lib/
+│   │   ├── auth/
 │   │   ├── prisma.ts
-│   │   └── storage.ts
+│   │   └── rate-limit.ts
 │   └── types/
 │       └── index.ts
 ├── public/
@@ -148,7 +144,8 @@ qresto/
 - `src/app`: routes de l’application, pages et API Next.js
 - `src/components`: composants React de l’interface
 - `src/context`: contexte d’authentification, navigation, panier, toast
-- `src/lib/storage.ts`: source principale des données de démonstration
+- `src/app/api`: endpoints publics et protégés des données métier
+- `prisma/seed.ts`: données initiales de FAQ et témoignages
 - `prisma/schema.prisma`: modèle Prisma pour PostgreSQL
 - `src/lib/prisma.ts`: instance Prisma utilisée pour les accès à la base
 
@@ -223,25 +220,9 @@ yarn db:migrate
 yarn db:studio
 ```
 
-> Si vous souhaitez une vraie persistance backend, cette étape est la bonne base pour la migration progressive des données depuis `src/lib/storage.ts` vers Prisma.
-
 ## 10. Données de démonstration
 
-Le projet embarque déjà des données d’exemple pour simuler plusieurs restaurant et commandes :
-
-- Delice SPEED
-- Chez Mama Bénin
-- Le Jardin Fidjrossè
-- AfroBurger Lounge
-
-Les comptes utilisateurs de démonstration sont définis dans `src/lib/storage.ts` et incluent notamment :
-
-- `delice@qresto.africa` / `password123`
-- `owner@chezmama.bj` / `password123`
-- `contact@jardin-fidjrosse.bj` / `password123`
-- `admin@qresto.africa` / `admin123`
-
-Ces comptes permettent de tester les vues de restaurant et de propriétaire dans l’interface.
+Les contenus d’exemple de la FAQ et des témoignages de la landing sont chargés dans PostgreSQL avec `yarn db:seed` (`prisma/seed.ts`). Aucun compte client ou compte restaurateur de démonstration n’est créé par ce seed.
 
 ## 11. Fonctionnement de l’application
 
@@ -268,50 +249,29 @@ Elle gère :
 
 ### 3) Données et Seed
 
-Les données initiales sont principalement dans :
+Les contenus initiaux de la landing sont définis dans :
 
-- `src/lib/storage.ts`
+- `prisma/seed.ts`
 
-Ce fichier contient :
-
-- utilisateurs
-- restaurants
-- catégories
-- plats
-- tables
-- commandes
-- FAQ / témoignages
+Les données métier (restaurants, catégories, plats, tables, commandes et équipe) sont gérées par Prisma et les routes dans `src/app/api`.
 
 ### 4) API backend
 
-Les endpoints disponibles dans `src/app/api` comprennent :
+Les endpoints disponibles dans `src/app/api` comprennent notamment :
 
-- `restaurants` : liste des restaurants
-- `dishes` : données de plats
-- `orders` : gestion des commandes
-- `recommendations` : suggestions / formules
+- `restaurants` : annuaire et menus publics depuis PostgreSQL
+- `dishes`, `categories`, `tables` : gestion des données de menu du restaurant connecté
+- `orders` : création publique, suivi par code et gestion authentifiée
+- `faq`, `testimonials` : contenus de landing chargés depuis PostgreSQL
+- `recommendations` : plats populaires/spécialités disponibles en base
 
-Ces routes sont pensées pour être complétées ou migrées vers une vraie base de données et une logique métier plus robuste.
+Les opérations privées sont protégées par la session et isolées par restaurant.
 
 ## 12. Points importants à savoir
 
-### Le projet est un prototype fonctionnel
-
-La logique est pensée pour démontrer l’expérience complète d’une plateforme de commande en restauration, mais elle n’a pas encore été entièrement standardisée autour d’un backend complet.
-
 ### Le stockage actuel
 
-Actuellement, une grande partie des données est gérée via `localStorage` depuis `src/lib/storage.ts`.
-
-Cela signifie :
-
-- le projet est très simple à démarrer
-- il est parfait pour démonstration, maquettes, tests UI
-- il nécessite une migration progressive vers une vraie base de données si l’application passe en production
-
-### Prisma est préparé mais pas nécessairement utilisé partout
-
-Le schéma Prisma existe et la configuration est correcte, mais l’architecture front actuelle n’a pas encore totalement remplacé le stockage local par des requêtes Prisma. Le projet est donc dans une phase de démonstration / MVP, ce qui est courant pour une première version.
+Les données métier sont chargées depuis PostgreSQL via Prisma et les endpoints de l’application. Le seul stockage navigateur conservé est le cache temporaire du panier, qui est revalidé côté serveur lors de la création de commande.
 
 ## 13. Dépannage courant
 
@@ -360,9 +320,9 @@ yarn dev
 
 ## 14. Bonnes pratiques de développement
 
-- garder les données mock dans `src/lib/storage.ts` pour la démonstration
 - éviter de mélanger logique métier front et logique backend
-- migrer progressivement les accès à Prisma pour un vrai stockage durable
+- garder les données métier persistées dans PostgreSQL, sans fallback de démonstration
+- ne conserver dans le navigateur que le cache temporaire autorisé du panier
 - respecter la structure par domaine (`auth`, `customer`, `dashboard`, `pages`)
 - conserver les types centralisés dans `src/types/index.ts`
 
@@ -370,13 +330,8 @@ yarn dev
 
 Le projet peut encore évoluer avec :
 
-- authentification réelle avec JWT / NextAuth
-- base de données PostgreSQL pleinement exploitée
-- API REST robuste avec validation Zod / Joi
 - paiement MTN MoMo / Orange Money / Stripe
 - notifications en temps réel
-- dashboard admin avancé
-- gestion multi-restaurants et multi-rôles
 - export des commandes / statistiques
 
 ## 16. Résumé rapide pour démarrer en 30 secondes
@@ -386,7 +341,9 @@ corepack enable
 cd qresto
 yarn install
 cp .env.example .env.local
-# configure DATABASE_URL si tu veux Prisma
+# configure les variables d'environnement requises
+yarn db:migrate
+yarn db:seed
 yarn dev
 ```
 
@@ -398,8 +355,8 @@ http://localhost:3000
 
 ## 17. Licence et contexte
 
-Le projet est un prototype de plateforme de commande QR pour restaurant, destiné à l’exploration technique et à la démonstration de fonctionnalités UX/UI. Il est conçu pour servir de base de référence pour un MVP ou une application de démonstration.
+QR Resto est une plateforme de commande et de gestion de restaurant via menu QR, avec données métier persistées dans PostgreSQL. Le redesign du front public reste un chantier distinct.
 
 ---
 
-Si vous voulez aller plus loin, la prochaine étape recommandée est de remplacer progressivement les données mockées du fichier `src/lib/storage.ts` par des appels Prisma réels et de sécuriser les endpoints API pour un usage en production.
+Pour la direction produit, les limites connues et la feuille de route, consulter [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md).

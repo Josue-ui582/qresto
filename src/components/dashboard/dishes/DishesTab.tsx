@@ -217,8 +217,8 @@ export const DishesTab: React.FC<DishesTabProps> = ({
       setIsModalOpen(false);
       fetchData();
       if (onRefreshNeeded) onRefreshNeeded();
-    } catch (err: any) {
-      setFormError(err.message || 'Erreur lors de la sauvegarde.');
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.');
     } finally {
       setIsSubmitting(false);
     }
@@ -241,8 +241,8 @@ export const DishesTab: React.FC<DishesTabProps> = ({
       setDeletingId(null);
       fetchData();
       if (onRefreshNeeded) onRefreshNeeded();
-    } catch (err: any) {
-      showNotice('error', err.message || 'Impossible de supprimer ce plat.');
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'Impossible de supprimer ce plat.');
     } finally {
       setIsDeleting(false);
     }

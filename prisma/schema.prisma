@@ -467,8 +467,11 @@ model Testimonial {
   avatar         String?
   rating         Int      @default(5)
   text           String
+  order          Int      @default(0)
+  active         Boolean  @default(true)
   createdAt      DateTime @default(now())
 
+  @@index([active, order])
   @@map("testimonials")
 }
 
@@ -477,7 +480,10 @@ model FAQItem {
   question  String
   answer    String
   category  String
+  order     Int      @default(0)
+  active    Boolean  @default(true)
   createdAt DateTime @default(now())
 
+  @@index([active, order])
   @@map("faq_items")
 }

@@ -54,9 +54,11 @@ export const Dish3DModal: React.FC<Dish3DModalProps> = ({ dish, onClose }) => {
             <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-stone-100">
               <div>
                 <div className="text-xl font-black text-stone-900">
-                  {dish.price.toLocaleString('fr-FR')} FCFA
+                  {dish.price.toLocaleString('fr-FR')} {dish.currency}
                 </div>
-                <div className="text-[11px] text-stone-400">Préparé à la minute · Ingrédients frais</div>
+                {dish.prepTime && (
+                  <div className="text-[11px] text-stone-400">Temps de préparation : {dish.prepTime}</div>
+                )}
               </div>
 
               <div className="flex items-center gap-3">
@@ -68,7 +70,7 @@ export const Dish3DModal: React.FC<Dish3DModalProps> = ({ dish, onClose }) => {
                   Fermer
                 </button>
 
-                <Link href={`/restaurant/chez-mama-benin?table=4`}> 
+                <Link href={`/restaurant/${dish.restaurantSlug}`}>
                   <motion.button
                     type="button"
                     whileHover={{ scale: 1.03 }}

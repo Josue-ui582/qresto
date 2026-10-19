@@ -49,25 +49,25 @@ export const OpeningHoursSection: React.FC<OpeningHoursSectionProps> = ({ openin
                 <span className="text-xs font-bold text-stone-900 min-w-22.5">{DAY_LABELS[dayKey]}</span>
               </div>
 
-              {daySchedule.active ? (
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <input
-                    type="time"
-                    value={daySchedule.open}
-                    onChange={(e) => onChange(dayKey, 'open', e.target.value)}
-                    className="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-900 focus:outline-hidden"
-                  />
-                  <span className="text-xs text-stone-400 font-bold">à</span>
-                  <input
-                    type="time"
-                    value={daySchedule.close}
-                    onChange={(e) => onChange(dayKey, 'close', e.target.value)}
-                    className="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-900 focus:outline-hidden"
-                  />
-                </div>
-              ) : (
-                <span className="text-xs text-stone-400 italic font-semibold">Fermé ce jour</span>
-              )}
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <input
+                  type="time"
+                  value={daySchedule.open}
+                  disabled={!daySchedule.active}
+                  aria-label={`${DAY_LABELS[dayKey]} - heure d’ouverture`}
+                  onChange={(e) => onChange(dayKey, 'open', e.target.value)}
+                  className="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-900 focus:outline-hidden disabled:cursor-not-allowed disabled:bg-stone-100"
+                />
+                <span className="text-xs text-stone-400 font-bold">à</span>
+                <input
+                  type="time"
+                  value={daySchedule.close}
+                  disabled={!daySchedule.active}
+                  aria-label={`${DAY_LABELS[dayKey]} - heure de fermeture`}
+                  onChange={(e) => onChange(dayKey, 'close', e.target.value)}
+                  className="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-900 focus:outline-hidden disabled:cursor-not-allowed disabled:bg-stone-100"
+                />
+              </div>
             </div>
           );
         })}

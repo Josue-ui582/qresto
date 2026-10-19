@@ -2,25 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
+import { z } from 'zod';
+import { getJwtSecret } from '@/lib/auth/jwt';
+import { parseJson } from '@/lib/api/validation';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'votre-cle-secrete-par-defaut'
-);
+const loginSchema = z.object({
+  email: z.string().trim().email().max(254),
+  password: z.string().min(1).max(200),
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email et mot de passe requis.' },
-        { status: 400 }
-      );
-    }
+    const parsed = await parseJson(req, loginSchema);
+    if (!parsed.success) return parsed.response;
+    const jwtSecret = getJwtSecret();
+    const { email, password } = parsed.data;
 
     // On inclut ownedRestaurant (pour les propriétaires) ET restaurant (pour le staff)
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase() },
       include: {
         ownedRestaurant: true,
         restaurant: true,
@@ -54,9 +54,18 @@ export async function POST(req: NextRequest) {
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')
-      .sign(JWT_SECRET);
+      .sign(jwtSecret);
 
-    const { password: _, ...userWithoutPassword } = user;
+    const userWithoutPassword = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      role: user.role,
+      restaurantId: user.restaurantId,
+      createdAt: user.createdAt,
+    };
 
     const response = NextResponse.json(
       {

@@ -6,6 +6,7 @@ import { Building2, RefreshCw, Save, Loader2 } from 'lucide-react';
 interface HeaderProps {
   isLoading: boolean;
   isSaving: boolean;
+  isDirty: boolean;
   onRefresh: () => void;
   onSave: () => void;
 }
@@ -13,6 +14,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   isLoading,
   isSaving,
+  isDirty,
   onRefresh,
   onSave,
 }) => {
@@ -43,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <button
           onClick={onSave}
-          disabled={isSaving || isLoading}
+          disabled={isSaving || isLoading || !isDirty}
           className="px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md hover:shadow-lg disabled:opacity-50"
         >
           {isSaving ? (

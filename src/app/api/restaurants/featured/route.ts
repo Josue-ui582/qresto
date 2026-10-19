@@ -9,9 +9,27 @@ export async function GET() {
         { rating: 'desc' },
         { createdAt: 'desc' },
       ],
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        address: true,
+        city: true,
+        phone: true,
+        logo: true,
+        coverImage: true,
+        isOpen: true,
+        rating: true,
+        reviewCount: true,
+        category: true,
+        cuisineType: true,
         _count: {
           select: { tables: true },
+        },
+        tables: {
+          select: { number: true },
+          orderBy: { number: 'asc' },
         },
       },
     });

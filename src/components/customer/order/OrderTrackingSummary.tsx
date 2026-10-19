@@ -1,8 +1,8 @@
-import { Order } from '@/types';
+import { TrackedOrder } from '@/types';
 import React from 'react';
 
 interface OrderTrackingSummaryProps {
-  currentOrder: Order;
+  currentOrder: TrackedOrder;
 }
 
 export const OrderTrackingSummary: React.FC<OrderTrackingSummaryProps> = ({ currentOrder }) => {

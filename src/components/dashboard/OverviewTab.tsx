@@ -8,7 +8,6 @@ export interface OverviewTabProps {
   totalOrdersCount: number;
   averageOrderValue: number;
   totalClientsCount: number;
-  demoModeWithData?: boolean;
   orders?: Order[];
 }
 
@@ -18,7 +17,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   totalOrdersCount,
   averageOrderValue,
   totalClientsCount,
-  demoModeWithData = false,
   orders = [],
 }) => {
   // 1. Calcul dynamique des 7 derniers jours à partir des vraies commandes
@@ -50,21 +48,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       });
     }
 
-    // fallback si mode démo actif et pas de vraies commandes
-    if (orders.length === 0 && demoModeWithData) {
-      return [
-        { label: 'Jeu', revenue: 15000, count: 3 },
-        { label: 'Ven', revenue: 28000, count: 5 },
-        { label: 'Sam', revenue: 65000, count: 12 },
-        { label: 'Dim', revenue: 80000, count: 15 },
-        { label: 'Lun', revenue: 35000, count: 6 },
-        { label: 'Mar', revenue: 42000, count: 8 },
-        { label: 'Mer', revenue: 55000, count: 10 },
-      ];
-    }
-
     return days;
-  }, [orders, demoModeWithData]);
+  }, [orders]);
 
   // Max revenue sur 7j pour calibrer le graphique SVG
   const max7DaysRev = useMemo(() => {
@@ -113,21 +98,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     // calcul de la hauteur relative en %
     const maxVal = Math.max(...counts.map((c) => c.val));
 
-    if (maxVal === 0 && demoModeWithData) {
-      const demoVals = [15, 25, 40, 85, 95, 50, 20, 30, 45, 60, 90, 75];
-      return hours.map((h, idx) => ({
-        hour: `${h}h`,
-        percent: demoVals[idx],
-        count: Math.round(demoVals[idx] / 10),
-      }));
-    }
-
     return counts.map((c) => ({
       hour: c.hour,
       percent: maxVal > 0 ? (c.val / maxVal) * 100 : 0,
       count: c.val,
     }));
-  }, [orders, demoModeWithData]);
+  }, [orders]);
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">

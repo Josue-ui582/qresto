@@ -28,8 +28,78 @@ const DEFAULT_HOURS: OpeningHoursMap = {
   sunday: { open: '12:00', close: '22:00', active: false },
 };
 
+const isOpeningHoursMap = (value: unknown): value is OpeningHoursMap => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+
+  return Object.entries(value).every(
+    ([day, schedule]) =>
+      day in DEFAULT_HOURS &&
+      schedule !== null &&
+      typeof schedule === 'object' &&
+      !Array.isArray(schedule) &&
+      'open' in schedule &&
+      typeof schedule.open === 'string' &&
+      'close' in schedule &&
+      typeof schedule.close === 'string' &&
+      'active' in schedule &&
+      typeof schedule.active === 'boolean'
+  );
+};
+
+const parseOpeningHours = (value: string | OpeningHoursMap): OpeningHoursMap => {
+  if (typeof value !== 'string') {
+    return { ...DEFAULT_HOURS, ...value };
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (isOpeningHoursMap(parsed)) {
+      return { ...DEFAULT_HOURS, ...parsed };
+    }
+  } catch {
+    // Older restaurant records store a single text range instead of per-day JSON.
+  }
+
+  const range = value.match(
+    /(\d{1,2})(?:h|:)(\d{0,2})\s*(?:-|–|à)\s*(\d{1,2})(?:h|:)(\d{0,2})/i
+  );
+  if (!range) {
+    throw new Error('Format des horaires non reconnu.');
+  }
+
+  const formatTime = (hour: string, minute: string) =>
+    `${hour.padStart(2, '0')}:${(minute || '00').padStart(2, '0')}`;
+  const open = formatTime(range[1], range[2]);
+  const close = formatTime(range[3], range[4]);
+  const dayNames: Record<string, string[]> = {
+    monday: ['lundi', 'monday'],
+    tuesday: ['mardi', 'tuesday'],
+    wednesday: ['mercredi', 'wednesday'],
+    thursday: ['jeudi', 'thursday'],
+    friday: ['vendredi', 'friday'],
+    saturday: ['samedi', 'saturday'],
+    sunday: ['dimanche', 'sunday'],
+  };
+  const explicitDays = Object.entries(dayNames)
+    .filter(([, names]) => names.some((name) => value.toLowerCase().includes(name)))
+    .map(([day]) => day);
+  const appliesEveryDay =
+    /7\s*j\s*\/\s*7|tous les jours|every day/i.test(value) || explicitDays.length === 0;
+
+  return Object.fromEntries(
+    Object.keys(DEFAULT_HOURS).map((day) => [
+      day,
+      {
+        open,
+        close,
+        active: appliesEveryDay || explicitDays.includes(day),
+      },
+    ])
+  );
+};
+
 export const SettingsTab: React.FC<SettingsTabProps> = ({
-  restaurantId = 'default-resto',
+  restaurantId,
   initialSettings,
   onOpenSettings,
   onSavedSuccess,
@@ -56,6 +126,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   });
 
   const [openingHours, setOpeningHours] = useState<OpeningHoursMap>(DEFAULT_HOURS);
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
+  const isDirty =
+    savedSnapshot !== null && savedSnapshot !== JSON.stringify([formData, openingHours]);
 
   const showNotice = (type: 'success' | 'error', msg: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -70,7 +143,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   }, []);
 
   const populateForm = (data: RestaurantSettingsData) => {
-    setFormData({
+    const nextFormData: RestaurantSettingsData = {
       name: data.name || '',
       phone: data.phone || '',
       address: data.address || '',
@@ -83,34 +156,44 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       serviceFeePercent: data.serviceFeePercent || 0,
       wifiName: data.wifiName || '',
       wifiPassword: data.wifiPassword || '',
-    });
+    };
 
-    if (data.openingHours) {
-      try {
-        const parsed =
-          typeof data.openingHours === 'string'
-            ? JSON.parse(data.openingHours)
-            : data.openingHours;
-        setOpeningHours({ ...DEFAULT_HOURS, ...parsed });
-      } catch (e) {
-        setOpeningHours(DEFAULT_HOURS);
-      }
-    }
+    const nextOpeningHours = data.openingHours
+      ? parseOpeningHours(data.openingHours)
+      : DEFAULT_HOURS;
+
+    setFormData(nextFormData);
+    setOpeningHours(nextOpeningHours);
+    setSavedSnapshot(JSON.stringify([nextFormData, nextOpeningHours]));
   };
 
   const fetchSettings = async () => {
-    if (!restaurantId) return;
     try {
       setIsLoading(true);
-      const res = await fetch(`/api/restaurant/settings?restaurantId=${restaurantId}`);
+      if (!restaurantId) {
+        throw new Error('Identifiant du restaurant introuvable.');
+      }
+
+      const res = await fetch(`/api/settings?restaurantId=${encodeURIComponent(restaurantId)}`, {
+        cache: 'no-store',
+      });
       const data = await res.json();
 
-      if (data.success && data.settings) {
-        populateForm(data.settings);
+      if (!res.ok || !data.success || !data.settings) {
+        throw new Error(data.error || 'Impossible de récupérer les paramètres du restaurant.');
       }
-    } catch (err) {
+
+      try {
+        populateForm(data.settings);
+      } catch {
+        throw new Error('Les horaires enregistrés du restaurant sont invalides.');
+      }
+    } catch (err: unknown) {
       console.error('Erreur chargement paramètres:', err);
-      showNotice('error', 'Erreur lors du chargement des données.');
+      showNotice(
+        'error',
+        err instanceof Error ? err.message : 'Erreur lors du chargement des données.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +216,22 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         openingHours,
       };
 
-      const res = await fetch('/api/restaurant/settings', {
+      const invalidSchedule = Object.entries(openingHours).find(
+        ([, schedule]) =>
+          schedule.active &&
+          (!/^([01]\d|2[0-3]):[0-5]\d$/.test(schedule.open) ||
+            !/^([01]\d|2[0-3]):[0-5]\d$/.test(schedule.close) ||
+            schedule.open === schedule.close)
+      );
+      if (invalidSchedule) {
+        throw new Error(`Vérifiez les heures d’ouverture et de fermeture du ${invalidSchedule[0]}.`);
+      }
+
+      if (!restaurantId) {
+        throw new Error('Identifiant du restaurant introuvable.');
+      }
+
+      const res = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -145,6 +243,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         throw new Error(data.error || 'Erreur lors de la sauvegarde.');
       }
 
+      if (data.settings) {
+        populateForm(data.settings);
+      } else {
+        setSavedSnapshot(JSON.stringify([formData, openingHours]));
+      }
       showNotice('success', 'Paramètres enregistrés avec succès !');
       if (onSavedSuccess) onSavedSuccess();
     } catch (err: unknown) {
@@ -183,6 +286,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       <Header
         isLoading={isLoading}
         isSaving={isSaving}
+        isDirty={isDirty}
         onRefresh={fetchSettings}
         onSave={handleSave}
       />

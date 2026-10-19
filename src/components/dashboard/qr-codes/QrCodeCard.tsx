@@ -12,11 +12,14 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { TableData } from './types';
+import { QRCodeImage } from '@/components/common/QRCodeImage';
+import { createTableMenuUrl, QrCodeOptions } from '@/lib/qr-code';
 
 interface QrCodeCardProps {
   table: TableData;
   restaurantSlug: string;
   origin: string;
+  qrOptions: QrCodeOptions;
   isCopied: boolean;
   onSelect: (table: TableData) => void;
   onDownload: (table: TableData) => void;
@@ -27,16 +30,14 @@ export const QrCodeCard: React.FC<QrCodeCardProps> = ({
   table,
   restaurantSlug,
   origin,
+  qrOptions,
   isCopied,
   onSelect,
   onDownload,
   onCopy,
 }) => {
   const slug = table.restaurant?.slug || restaurantSlug;
-  const targetUrl = `${origin}/restaurant/${slug}?table=${table.number}`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-    targetUrl
-  )}&color=1c1917`;
+  const targetUrl = createTableMenuUrl(origin, slug, table.number);
 
   return (
     <motion.div
@@ -67,10 +68,11 @@ export const QrCodeCard: React.FC<QrCodeCardProps> = ({
 
         {/* Zone Visuelle du QR Code */}
         <div className="relative group/qr bg-stone-50 rounded-2xl p-4 border border-stone-200/80 text-center mb-4 overflow-hidden">
-          <img
-            src={qrImageUrl}
+          <QRCodeImage
+            value={targetUrl}
             alt={`QR Table ${table.number}`}
             className="w-36 h-36 mx-auto rounded-lg shadow-xs group-hover/qr:scale-105 transition-transform duration-300"
+            options={qrOptions}
           />
 
           {/* Overlay au survol */}

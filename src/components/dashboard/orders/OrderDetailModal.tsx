@@ -1,6 +1,6 @@
 // src/components/dashboard/OrderDetailModal.tsx
 import React from 'react';
-import { Order, OrderStatus } from '@/types/index';
+import { Order, OrderItem, OrderStatus } from '@/types/index';
 import { FaIcon } from '@/components/common/Icon';
 
 interface OrderDetailModalProps {
@@ -94,7 +94,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </h3>
 
             <div className="space-y-3">
-              {order.items?.map((item: any, idx: number) => (
+              {order.items?.map((item: OrderItem & { id?: string }, idx: number) => (
                 <div
                   key={item.id || idx}
                   className="flex items-center justify-between gap-4 p-3 rounded-2xl border border-stone-100 bg-white shadow-2xs hover:border-stone-200 transition-all"
@@ -102,9 +102,9 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   <div className="flex items-center gap-3.5">
                     {/* Image du plat ou Placeholder */}
                     <div className="w-14 h-14 rounded-xl bg-stone-100 overflow-hidden shrink-0 border border-stone-200/60 flex items-center justify-center">
-                      {item.image || item.dish?.image ? (
+                      {item.image ? (
                         <img
-                          src={item.image || item.dish?.image}
+                          src={item.image}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />

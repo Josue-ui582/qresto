@@ -143,13 +143,26 @@ export interface Order {
   }[];
 }
 
+export interface TrackedOrder {
+  trackingCode: string;
+  restaurantName: string;
+  status: OrderStatus;
+  items: Array<Pick<OrderItem, 'name' | 'price' | 'quantity'>>;
+  total: number;
+  statusHistory: Array<{
+    status: OrderStatus;
+    timestamp: string;
+    note?: string;
+  }>;
+}
+
 export interface Testimonial {
   id: string;
   name: string;
   role: string;
   restaurantName?: string;
   city: string;
-  avatar: string;
+  avatar?: string | null;
   rating: number;
   text: string;
 }
@@ -228,11 +241,13 @@ export interface Dish3DSelection {
   id: string;
   name: string;
   price: number;
+  currency: string;
   description: string;
   modelType: DishModelType;
   image: string;
   ingredients: string[];
   prepTime: string;
+  restaurantSlug: string;
 }
 export interface RestaurantItem {
   id: string;
@@ -259,5 +274,4 @@ export interface OverviewTabProps {
   totalOrdersCount: number;
   averageOrderValue: number;
   totalClientsCount: number;
-  demoModeWithData: boolean;
 }

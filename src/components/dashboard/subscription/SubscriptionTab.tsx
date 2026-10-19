@@ -24,6 +24,7 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
   const [subData, setSubData] = useState<SubscriptionData | null>(initialPlan || null);
   const [availablePlans, setAvailablePlans] = useState<PlanCatalogItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(!initialPlan);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
 
   // Modal de changement de plan
@@ -40,20 +41,29 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
 
   // Chargement des informations d'abonnement
   const fetchSubscription = useCallback(async () => {
-    if (!restaurantId) return;
     try {
       setIsLoading(true);
-      const res = await fetch(`/api/subscription?restaurantId=${restaurantId}`);
-      const data = await res.json();
-      if (data.success) {
-        setSubData(data.subscription);
-        setAvailablePlans(data.availablePlans || []);
-        if (data.subscription?.billingCycle) {
-          setBillingCycle(data.subscription.billingCycle);
-        }
+      setLoadError(null);
+      if (!restaurantId) {
+        throw new Error('Identifiant du restaurant introuvable.');
       }
-    } catch (err) {
+
+      const res = await fetch(`/api/subscription?restaurantId=${encodeURIComponent(restaurantId)}`, {
+        cache: 'no-store',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Impossible de récupérer les informations d’abonnement.');
+      }
+
+      setSubData(data.subscription || null);
+      setAvailablePlans(data.availablePlans || []);
+      if (data.subscription?.billingCycle) {
+        setBillingCycle(data.subscription.billingCycle);
+      }
+    } catch (err: unknown) {
       console.error('Erreur chargement abonnement:', err);
+      setLoadError(err instanceof Error ? err.message : 'Erreur lors du chargement de l’abonnement.');
     } finally {
       setIsLoading(false);
     }
@@ -129,24 +139,40 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
           <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-3" />
           <span className="text-xs font-semibold">Chargement des informations de licence...</span>
         </div>
+      ) : loadError ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-semibold text-rose-800">
+          {loadError}
+        </div>
       ) : (
         <>
-          {subData && <ActivePlanCard subData={subData} daysRemaining={daysRemaining} />}
+          {subData ? (
+            <ActivePlanCard subData={subData} daysRemaining={daysRemaining} />
+          ) : (
+            <div className="rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-500">
+              Aucun abonnement n’est actuellement associé à ce restaurant.
+            </div>
+          )}
 
           <BillingCycleToggle billingCycle={billingCycle} onCycleChange={setBillingCycle} />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {availablePlans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                isCurrent={subData?.planId === plan.id}
-                billingCycle={billingCycle}
-                formatPrice={formatPrice}
-                onSelect={setSelectedPlanForUpgrade}
-              />
-            ))}
-          </div>
+          {availablePlans.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {availablePlans.map((plan) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  isCurrent={subData?.planId === plan.id}
+                  billingCycle={billingCycle}
+                  formatPrice={formatPrice}
+                  onSelect={setSelectedPlanForUpgrade}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-500">
+              Aucun plan n’est disponible pour le moment.
+            </div>
+          )}
 
           <InvoicesTable invoices={subData?.invoices} formatPrice={formatPrice} />
         </>

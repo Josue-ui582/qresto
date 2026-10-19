@@ -6,7 +6,7 @@ export interface TableRestaurantData {
 
 export interface TableData {
   id: string;
-  number: number;
+  number: number | string;
   capacity?: number;
   name?: string | null;
   restaurantId?: string;
@@ -14,8 +14,8 @@ export interface TableData {
 }
 
 export interface QrCodesTabProps {
-  tables?: TableData[];
-  restaurantSlug?: string;
-  restaurantName?: string;
+  tables: TableData[];
+  restaurantSlug: string;
+  restaurantName: string;
   onOpenQr?: (table: TableData) => void;
 }

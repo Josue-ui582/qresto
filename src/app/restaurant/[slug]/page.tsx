@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
 import { Toast } from '@/components/common/Toast';
@@ -11,7 +11,9 @@ export default function RestaurantDetailRoute() {
     <div className="min-h-screen flex flex-col" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       <Navbar />
       <main className="flex-1">
-        <RestaurantDetailPage />
+        <Suspense fallback={null}>
+          <RestaurantDetailPage />
+        </Suspense>
       </main>
       <Footer />
       <Toast />

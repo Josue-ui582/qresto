@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { RotateCw, Star, Clock, Loader2, UtensilsCrossed } from 'lucide-react';
-import { Dish3DSelection } from '@/types';
+import { RotateCw, Clock, Loader2, UtensilsCrossed } from 'lucide-react';
+import { Dish3DSelection, DishModelType } from '@/types';
 import Link from 'next/link';
 
 interface ShowcaseDish {
@@ -11,24 +11,37 @@ interface ShowcaseDish {
   name: string;
   description?: string;
   price: number;
-  image?: string;
-  prepTime?: string;
-  rating?: number;
+  image?: string | null;
+  prepTime: string;
   ingredients?: string[];
-  model3DType?: string;
+  model3DType?: string | null;
   category?: {
     id: string;
     name: string;
   };
-  restaurant?: {
+  restaurant: {
     id: string;
     name: string;
     slug: string;
+    currency: string;
   };
 }
 
 interface DishesShowcaseProps {
   onSelectDish: (dish: Dish3DSelection) => void;
+}
+
+const dishModelTypes: readonly string[] = [
+  'poulet_braise',
+  'poisson_grille',
+  'igname_pile',
+  'burger',
+  'alloco',
+  'cocktail',
+];
+
+function isDishModelType(value: string | null | undefined): value is DishModelType {
+  return value !== undefined && value !== null && dishModelTypes.includes(value);
 }
 
 export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) => {
@@ -40,7 +53,7 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
     const fetchShowcaseDishes = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch('/api/dishes');
+        const res = await fetch('/api/dishes/showcase');
         if (!res.ok) throw new Error('Erreur lors du chargement des plats');
         const data = await res.json();
         setDishes(data.dishes || []);
@@ -125,8 +138,8 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
         ) : filteredDishes.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredDishes.map((dish, idx) => {
-              const image = dish.image || '/images/poulet_braise_1790196207320.jpg';
               const restaurantSlug = dish.restaurant?.slug;
+              const modelType = isDishModelType(dish.model3DType) ? dish.model3DType : null;
 
               return (
                 <motion.div
@@ -140,57 +153,69 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                 >
                   <div>
                     <div className="relative h-48 overflow-hidden bg-stone-100">
-                      <img
-                        src={image}
-                        alt={dish.name}
-                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
-                      />
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-stone-900/80 backdrop-blur-xs text-white text-[10px] font-bold flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-amber-400" />
-                        <span>{dish.prepTime || '15-20 min'}</span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onSelectDish({
-                            id: dish.id,
-                            name: dish.name,
-                            description: dish.description || '',
-                            price: dish.price,
-                            image: dish.image,
-                            ingredients: dish.ingredients || [],
-                            prepTime: dish.prepTime || '15 min',
-                            modelType: (dish.model3DType as any),
-                          })
-                        }
-                        className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-extrabold shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-105 transition-all"
-                      >
-                        <RotateCw
-                          className="w-3.5 h-3.5 animate-spin"
-                          style={{ animationDuration: '8s' }}
+                      {dish.image ? (
+                        <img
+                          src={dish.image}
+                          alt={dish.name}
+                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
                         />
-                        <span>Voir en 3D</span>
-                      </button>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-stone-400">
+                          <UtensilsCrossed className="w-8 h-8" />
+                        </div>
+                      )}
+                      {dish.prepTime && (
+                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-stone-900/80 backdrop-blur-xs text-white text-[10px] font-bold flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-400" />
+                          <span>{dish.prepTime}</span>
+                        </div>
+                      )}
+
+                      {modelType && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onSelectDish({
+                              id: dish.id,
+                              name: dish.name,
+                              description: dish.description || '',
+                              price: dish.price,
+                              currency: dish.restaurant.currency,
+                              image: dish.image || '',
+                              ingredients: dish.ingredients || [],
+                              prepTime: dish.prepTime,
+                              modelType,
+                              restaurantSlug: dish.restaurant.slug,
+                            })
+                          }
+                          className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-extrabold shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-105 transition-all"
+                        >
+                          <RotateCw
+                            className="w-3.5 h-3.5 animate-spin"
+                            style={{ animationDuration: '8s' }}
+                          />
+                          <span>Voir en 3D</span>
+                        </button>
+                      )}
                     </div>
 
                     <div className="p-5">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-semibold text-amber-800 uppercase tracking-wider truncate max-w-32.5">
-                          {dish.restaurant?.name || 'Restaurant'}
-                        </span>
-                        <div className="flex items-center gap-1 text-xs font-bold text-amber-600 shrink-0">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                          <span>{dish.rating ? dish.rating.toFixed(1) : '4.8'}</span>
-                        </div>
+                        {dish.restaurant?.name && (
+                          <span className="text-xs font-semibold text-amber-800 uppercase tracking-wider truncate max-w-32.5">
+                            {dish.restaurant.name}
+                          </span>
+                        )}
                       </div>
 
                       <h3 className="text-base font-bold text-stone-900 leading-snug mb-2 group-hover:text-amber-700 transition-colors">
                         {dish.name}
                       </h3>
-                      <p className="text-xs text-stone-500 leading-relaxed line-clamp-2 mb-4 font-normal">
-                        {dish.description || 'Délicieuse recette préparée par notre chef avec des ingrédients frais.'}
-                      </p>
+                      {dish.description && (
+                        <p className="text-xs text-stone-500 leading-relaxed line-clamp-2 mb-4 font-normal">
+                          {dish.description}
+                        </p>
+                      )}
 
                       {dish.ingredients && dish.ingredients.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-4">
@@ -212,7 +237,7 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                       <span className="text-base font-black text-stone-950">
                         {dish.price.toLocaleString('fr-FR')}
                       </span>
-                      <span className="text-[10px] font-bold text-stone-500 ml-1">FCFA</span>
+                      <span className="text-[10px] font-bold text-stone-500 ml-1">{dish.restaurant?.currency}</span>
                     </div>
 
                     {restaurantSlug ? (

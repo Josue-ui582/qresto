@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
@@ -8,26 +9,69 @@ export async function GET(
   try {
     // 1. Déballer params avec await (Requis sur Next.js 15+)
     const { slug } = await params;
-
-    if (!slug) {
+    const parsedSlug = z.string().trim().min(1).max(150).regex(/^[a-z0-9-]+$/i).safeParse(slug);
+    if (!parsedSlug.success) {
       return NextResponse.json(
-        { error: 'Le slug du restaurant est requis.' },
+        { error: 'Identifiant de restaurant invalide.' },
         { status: 400 }
       );
     }
 
     // 2. Recherche en BDD avec le slug récupéré
     const restaurant = await prisma.restaurant.findUnique({
-      where: { slug },
-      include: {
+      where: { slug: parsedSlug.data },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        address: true,
+        city: true,
+        phone: true,
+        logo: true,
+        coverImage: true,
+        openingHours: true,
+        isOpen: true,
+        currency: true,
+        deliveryFee: true,
+        minOrder: true,
+        rating: true,
+        reviewCount: true,
+        category: true,
+        cuisineType: true,
         categories: {
-          where: { active: true },
-          orderBy: { order: 'asc' },
-          include: {
+          select: {
+            id: true,
+            restaurantId: true,
+            name: true,
+            description: true,
+            order: true,
+            active: true,
             dishes: {
+              select: {
+                id: true,
+                categoryId: true,
+                name: true,
+                slug: true,
+                description: true,
+                price: true,
+                originalPrice: true,
+                image: true,
+                isAvailable: true,
+                preparationTimeMin: true,
+                allergens: true,
+                isPopular: true,
+                isChefSpecial: true,
+                isSpecialty: true,
+                has3DModel: true,
+                model3DType: true,
+                createdAt: true,
+              },
               where: { isAvailable: true },
             },
           },
+          where: { active: true },
+          orderBy: { order: 'asc' },
         },
       },
     });

@@ -12,18 +12,19 @@ import { EmptyState } from './EmptyState';
 import { QrModal } from './QrModal';
 import { TableFormModal } from './TableFormModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { createTableMenuUrl, generateQrCodePngDataUrl } from '@/lib/qr-code';
 
 export const TablesTab: React.FC<TablesTabProps> = ({
   restaurantId,
-  restaurantSlug = 'chez-mama-benin',
-  restaurantName = 'Mon Restaurant',
+  restaurantSlug,
+  restaurantName,
   tables: initialTables = [],
   onRefreshNeeded,
 }) => {
   const [tablesList, setTablesList] = useState<TableData[]>(initialTables);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [origin, setOrigin] = useState<string>('https://qresto.africa');
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
 
   // Modal Création / Édition
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -45,12 +46,6 @@ export const TablesTab: React.FC<TablesTabProps> = ({
 
   // Toast Notification
   const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin);
-    }
-  }, []);
 
   const showNotice = (type: 'success' | 'error', msg: string) => {
     setActionNotice({ type, msg });
@@ -189,17 +184,21 @@ export const TablesTab: React.FC<TablesTabProps> = ({
   };
 
   // Téléchargement Image QR Code
-  const handleDownloadQr = (table: TableData) => {
+  const handleDownloadQr = async (table: TableData) => {
     const slug = table.restaurant?.slug || restaurantSlug;
-    const targetUrl = `${origin}/restaurant/${slug}?table=${table.number}`;
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(targetUrl)}&color=1c1917`;
-
-    const link = document.createElement('a');
-    link.href = qrApiUrl;
-    link.download = `QR_Code_Table_${table.number}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const targetUrl = createTableMenuUrl(window.location.origin, slug, table.number);
+    try {
+      const pngDataUrl = await generateQrCodePngDataUrl(targetUrl);
+      const link = document.createElement('a');
+      link.href = pngDataUrl;
+      link.download = `QR_Code_Table_${table.number}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error: unknown) {
+      console.error('Erreur lors du téléchargement du QR code :', error);
+      showNotice('error', 'Impossible de générer le fichier PNG du QR code.');
+    }
   };
 
   return (

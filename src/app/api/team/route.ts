@@ -1,141 +1,125 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { StaffRole } from 'generated/prisma/enums';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { handleDatabaseError, parseJson, parseQueryParam } from '@/lib/api/validation';
+import { authorizeRequest } from '@/lib/auth/session';
 
-// GET : Récupérer les membres de l'équipe
+const staffRoleSchema = z.nativeEnum(StaffRole);
+
+const createMemberSchema = z.object({
+  name: z.string().trim().min(1).max(150),
+  email: z.string().trim().email().max(254),
+  phone: z.string().trim().max(40).optional(),
+  role: staffRoleSchema.optional(),
+  pinCode: z.string().regex(/^\d{4}$/).optional().or(z.literal('')),
+  restaurantId: z.string().optional(),
+});
+
+const updateMemberSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(150).optional(),
+  email: z.string().trim().email().max(254).optional(),
+  phone: z.string().trim().max(40).nullable().optional(),
+  role: staffRoleSchema.optional(),
+  pinCode: z.string().regex(/^\d{4}$/).nullable().optional().or(z.literal('')),
+  isActive: z.boolean().optional(),
+});
+
 export async function GET(request: NextRequest) {
+  const restaurantIdParam = new URL(request.url).searchParams.get('restaurantId');
+  const auth = await authorizeRequest(request, 'TEAM_ADMIN', restaurantIdParam);
+  if (auth.response) return auth.response;
+
   try {
-    const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get('restaurantId');
-
-    const whereCondition = restaurantId ? { restaurantId } : {};
-
     const members = await prisma.teamMember.findMany({
-      where: whereCondition,
-      orderBy: {
-        createdAt: 'desc',
-      },
+      where: { restaurantId: auth.session.restaurantId },
+      orderBy: { createdAt: 'desc' },
     });
-
-    return NextResponse.json({ success: true, members }, { status: 200 });
-  } catch (error: any) {
-    console.error('Erreur API GET /api/team:', error);
-    return NextResponse.json(
-      { success: false, error: 'Erreur lors de la récupération de l’équipe.' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: true,
+      members: members.map(({ active, ...member }) => ({ ...member, isActive: active })),
+    });
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur lors de la récupération de l’équipe.');
   }
 }
 
-// POST : Ajouter un membre dans l'équipe
 export async function POST(request: NextRequest) {
+  const parsed = await parseJson(request, createMemberSchema);
+  if (!parsed.success) return parsed.response;
+  const auth = await authorizeRequest(request, 'TEAM_ADMIN', parsed.data.restaurantId);
+  if (auth.response) return auth.response;
+
   try {
-    const body = await request.json();
-    const { name, email, phone, role, pinCode, restaurantId } = body;
-
-    if (!name || !email || !restaurantId) {
-      return NextResponse.json(
-        { success: false, error: 'Le nom, l’email et l’établissement sont requis.' },
-        { status: 400 }
-      );
-    }
-
-    // Vérification de doublon d'email au sein du même restaurant
-    const existingMember = await prisma.teamMember.findFirst({
-      where: {
-        restaurantId,
-        email: email.trim().toLowerCase(),
-      },
-    });
-
-    if (existingMember) {
-      return NextResponse.json(
-        { success: false, error: 'Un membre avec cet email existe déjà dans l’établissement.' },
-        { status: 400 }
-      );
-    }
-
     const member = await prisma.teamMember.create({
       data: {
-        name: name.trim() || null,
-        email: email.trim().toLowerCase(),
-        phone: phone?.trim() || null,
-        role: role,
-        pinCode: pinCode?.trim() || null,
-        restaurantId,
+        name: parsed.data.name,
+        email: parsed.data.email.toLowerCase(),
+        phone: parsed.data.phone || null,
+        role: parsed.data.role || StaffRole.WAITER,
+        pinCode: parsed.data.pinCode || null,
+        restaurantId: auth.session.restaurantId,
       },
     });
-
     return NextResponse.json({ success: true, member }, { status: 201 });
-  } catch (error: any) {
-    console.error('Erreur API POST /api/team:', error);
-    return NextResponse.json(
-      { success: false, error: 'Impossible d’ajouter ce membre.' },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Impossible d’ajouter ce membre.');
   }
 }
 
-// PUT : Mettre à jour un membre de l'équipe
 export async function PUT(request: NextRequest) {
+  const parsed = await parseJson(request, updateMemberSchema);
+  if (!parsed.success) return parsed.response;
+  const auth = await authorizeRequest(request, 'TEAM_ADMIN');
+  if (auth.response) return auth.response;
+
   try {
-    const body = await request.json();
-    const { id, name, email, phone, role, pinCode, isActive } = body;
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'L’identifiant du membre est requis.' },
-        { status: 400 }
-      );
-    }
-
-    const updatedMember = await prisma.teamMember.update({
-      where: { id },
+    const { id, isActive, ...fields } = parsed.data;
+    const result = await prisma.teamMember.updateMany({
+      where: { id, restaurantId: auth.session.restaurantId },
       data: {
-        ...(name !== undefined && { name: name.trim() }),
-        ...(email !== undefined && { email: email.trim().toLowerCase() }),
-        ...(phone !== undefined && { phone: phone?.trim() || null }),
-        ...(role !== undefined && { role }),
-        ...(pinCode !== undefined && { pinCode: pinCode?.trim() || null }),
-        ...(isActive !== undefined && { isActive }),
+        ...fields,
+        ...(isActive !== undefined && { active: isActive }),
+        ...(fields.email && { email: fields.email.toLowerCase() }),
+        ...(fields.phone !== undefined && { phone: fields.phone || null }),
+        ...(fields.pinCode !== undefined && { pinCode: fields.pinCode || null }),
       },
     });
-
-    return NextResponse.json({ success: true, member: updatedMember }, { status: 200 });
-  } catch (error: any) {
-    console.error('Erreur API PUT /api/team:', error);
-    return NextResponse.json(
-      { success: false, error: 'Erreur lors de la mise à jour du membre.' },
-      { status: 500 }
-    );
+    if (!result.count) {
+      return NextResponse.json({ error: 'Membre introuvable.' }, { status: 404 });
+    }
+    const member = await prisma.teamMember.findFirst({
+      where: { id, restaurantId: auth.session.restaurantId },
+    });
+    return NextResponse.json({
+      success: true,
+      member: member && { ...member, isActive: member.active },
+    });
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur lors de la mise à jour du membre.');
   }
 }
 
-// DELETE : Retirer un membre de l'équipe
 export async function DELETE(request: NextRequest) {
+  const parsedId = parseQueryParam(new URL(request.url).searchParams.get('id'), 'Identifiant du membre');
+  if (!parsedId.success) return parsedId.response;
+  if (!parsedId.data) {
+    return NextResponse.json({ error: 'Identifiant du membre requis.' }, { status: 400 });
+  }
+  const id = parsedId.data;
+  const auth = await authorizeRequest(request, 'TEAM_ADMIN');
+  if (auth.response) return auth.response;
+
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'L’identifiant du membre est requis.' },
-        { status: 400 }
-      );
-    }
-
-    await prisma.teamMember.delete({
-      where: { id },
+    const deleted = await prisma.teamMember.deleteMany({
+      where: { id, restaurantId: auth.session.restaurantId },
     });
-
-    return NextResponse.json(
-      { success: true, message: 'Membre retiré avec succès.' },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    console.error('Erreur API DELETE /api/team:', error);
-    return NextResponse.json(
-      { success: false, error: 'Erreur lors de la suppression du membre.' },
-      { status: 500 }
-    );
+    if (!deleted.count) {
+      return NextResponse.json({ error: 'Membre introuvable.' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, message: 'Membre retiré avec succès.' });
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur lors de la suppression du membre.');
   }
 }

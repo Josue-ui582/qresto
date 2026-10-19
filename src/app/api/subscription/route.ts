@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { handleDatabaseError, parseJson } from '@/lib/api/validation';
+import { authorizeRequest } from '@/lib/auth/session';
+
+const updateSubscriptionSchema = z.object({
+  restaurantId: z.string().optional(),
+  planId: z.enum(['STARTER', 'PRO', 'ENTERPRISE']),
+  billingCycle: z.enum(['MONTHLY', 'YEARLY']).default('MONTHLY'),
+});
 
 // Constantes des plans tarifaires
 export const PLANS_CATALOG = [
@@ -54,20 +63,14 @@ export const PLANS_CATALOG = [
 
 // GET : Récupérer l'état de l'abonnement du restaurant
 export async function GET(request: NextRequest) {
+  const restaurantIdParam = new URL(request.url).searchParams.get('restaurantId');
+  const auth = await authorizeRequest(request, 'SUBSCRIPTION_ADMIN', restaurantIdParam);
+  if (auth.response) return auth.response;
+
   try {
-    const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get('restaurantId');
-
-    if (!restaurantId) {
-      return NextResponse.json(
-        { success: false, error: 'Identifiant du restaurant requis.' },
-        { status: 400 }
-      );
-    }
-
     // Récupération de l'abonnement
     let subscription = await prisma.subscription.findUnique({
-      where: { restaurantId },
+      where: { restaurantId: auth.session.restaurantId },
       include: {
         invoices: {
           orderBy: { createdAt: 'desc' },
@@ -84,7 +87,7 @@ export async function GET(request: NextRequest) {
 
       subscription = await prisma.subscription.create({
         data: {
-          restaurantId,
+          restaurantId: auth.session.restaurantId,
           planId: 'PRO',
           status: 'TRIAL',
           billingCycle: 'MONTHLY',
@@ -111,27 +114,20 @@ export async function GET(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error('Erreur API GET /api/subscription:', error);
-    return NextResponse.json(
-      { success: false, error: 'Erreur lors de la récupération de l’abonnement.' },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur lors de la récupération de l’abonnement.');
   }
 }
 
 // POST / PUT : Demander un changement de plan ou renouvellement
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { restaurantId, planId, billingCycle } = body;
+  const parsed = await parseJson(request, updateSubscriptionSchema);
+  if (!parsed.success) return parsed.response;
+  const auth = await authorizeRequest(request, 'SUBSCRIPTION_ADMIN', parsed.data.restaurantId);
+  if (auth.response) return auth.response;
 
-    if (!restaurantId || !planId) {
-      return NextResponse.json(
-        { success: false, error: 'Les paramètres restaurantId et planId sont requis.' },
-        { status: 400 }
-      );
-    }
+  try {
+    const { planId, billingCycle } = parsed.data;
 
     const selectedPlan = PLANS_CATALOG.find((p) => p.id === planId);
     if (!selectedPlan) {
@@ -154,19 +150,19 @@ export async function POST(request: NextRequest) {
 
     // Mise à jour ou création de l'abonnement
     const updatedSubscription = await prisma.subscription.upsert({
-      where: { restaurantId },
+      where: { restaurantId: auth.session.restaurantId },
       update: {
         planId,
-        billingCycle: billingCycle || 'MONTHLY',
+        billingCycle,
         status: 'ACTIVE',
         startDate: now,
         endDate: nextEndDate,
         autoRenew: true,
       },
       create: {
-        restaurantId,
+        restaurantId: auth.session.restaurantId,
         planId,
-        billingCycle: billingCycle || 'MONTHLY',
+        billingCycle,
         status: 'ACTIVE',
         startDate: now,
         endDate: nextEndDate,
@@ -193,11 +189,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error('Erreur API POST /api/subscription:', error);
-    return NextResponse.json(
-      { success: false, error: 'Erreur lors du changement d’abonnement.' },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur lors du changement d’abonnement.');
   }
 }
