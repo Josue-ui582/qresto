@@ -27,6 +27,10 @@ export async function GET() {
         _count: {
           select: { tables: true },
         },
+        tables: {
+          select: { number: true },
+          orderBy: { number: 'asc' },
+        },
       },
     });
 

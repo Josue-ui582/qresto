@@ -14,8 +14,8 @@ export interface TableData {
 }
 
 export interface QrCodesTabProps {
-  tables?: TableData[];
-  restaurantSlug?: string;
-  restaurantName?: string;
+  tables: TableData[];
+  restaurantSlug: string;
+  restaurantName: string;
   onOpenQr?: (table: TableData) => void;
 }

@@ -5,14 +5,13 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigation, DashboardTab } from '../../context/NavigationContext';
 import { useRouter } from 'next/navigation';
 import { useToast } from '../../context/ToastContext';
-import { storage } from '../../lib/storage';
 
 import { RestrictedAccess } from './RestrictedAccess';
 import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardTopbar } from './DashboardTopbar';
 import { OverviewTab } from './OverviewTab';
 import { OrdersTab } from '@/components/dashboard/orders/OrdersTab';
-import { Order, OrderStatus } from '@/types';
+import { Category, Dish, Order, OrderStatus, RestaurantTable } from '@/types';
 import { TeamTab } from './team/TeamTab';
 import { AnalyticsTab } from './analytics/AnalyticsTab';
 import { CategoriesTab } from './categories/CategoriesTab';
@@ -31,37 +30,107 @@ export const RestaurantDashboard: React.FC = () => {
   // Navigation & UI state
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [restaurantDropdownOpen, setRestaurantDropdownOpen] = useState(false);
-  const [demoModeWithData, setDemoModeWithData] = useState<boolean>(false);
   const [topSearch, setTopSearch] = useState('');
 
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
-  // 1. Nouvel État pour stocker les vraies commandes de la base de données
   const [orders, setOrders] = useState<Order[]>([]);
+  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tables, setTables] = useState<RestaurantTable[]>([]);
 
-  // 2. Fetch des commandes via API (PostgreSQL)
   useEffect(() => {
     if (!currentRestaurant?.id) return;
 
-    const fetchOrders = async () => {
+    const fetchOrders = async (notifyOnError = false) => {
       try {
-        const response = await fetch(`/api/orders?restaurantId=${currentRestaurant.id}`);
-        const data = await response.json();
-        
-        if (response.ok && data.data) {
+        const response = await fetch('/api/orders');
+        const data: { success: boolean; data?: Order[]; error?: string } = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Erreur lors du chargement des commandes.');
+        }
+        if (data.data) {
           setOrders(data.data);
         }
       } catch (error) {
         console.error('Erreur lors du chargement des commandes :', error);
+        if (notifyOnError) {
+          showToast('Impossible de charger les commandes.', 'error');
+        }
       }
     };
 
-    fetchOrders(); // Premier chargement
+    void fetchOrders(true);
 
-    // Polling toutes les 10 secondes pour actualiser le Kanban en temps réel
-    const interval = setInterval(fetchOrders, 10000);
+    const interval = setInterval(() => void fetchOrders(), 10000);
     return () => clearInterval(interval);
-  }, [currentRestaurant?.id]);
+  }, [currentRestaurant?.id, showToast]);
+
+  useEffect(() => {
+    if (!currentRestaurant?.id) return;
+
+    let isCurrent = true;
+    const fetchRestaurantData = async () => {
+      try {
+        const shouldLoadMenu = ['categories', 'dishes', 'analytics'].includes(dashboardTab);
+        const shouldLoadTables = ['tables', 'qrcodes', 'analytics'].includes(dashboardTab);
+
+        if (shouldLoadMenu) {
+          const [dishesResponse, categoriesResponse] = await Promise.all([
+            fetch('/api/dishes'),
+            fetch('/api/categories'),
+          ]);
+          const [dishesData, categoriesData]: [
+            { success: boolean; dishes?: Dish[]; error?: string },
+            { success: boolean; categories?: Category[]; error?: string },
+          ] = await Promise.all([dishesResponse.json(), categoriesResponse.json()]);
+
+          if (
+            !dishesResponse.ok || !dishesData.success ||
+            !categoriesResponse.ok || !categoriesData.success
+          ) {
+            throw new Error(
+              dishesData.error ||
+              categoriesData.error ||
+              'Erreur lors du chargement du menu.'
+            );
+          }
+          if (isCurrent) {
+            setDishes(dishesData.dishes ?? []);
+            setCategories(categoriesData.categories ?? []);
+          }
+        }
+
+        if (shouldLoadTables) {
+          const tablesResponse = await fetch('/api/tables');
+          const tablesData: {
+            success: boolean;
+            tables?: RestaurantTable[];
+            error?: string;
+          } = await tablesResponse.json();
+          if (!tablesResponse.ok || !tablesData.success) {
+            throw new Error(tablesData.error || 'Erreur lors du chargement des tables.');
+          }
+          if (isCurrent) {
+            setTables(tablesData.tables ?? []);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des données du restaurant :', error);
+        if (isCurrent) {
+          showToast(
+            error instanceof Error ? error.message : 'Impossible de charger les données du restaurant.',
+            'error'
+          );
+        }
+      }
+    };
+
+    void fetchRestaurantData();
+    return () => {
+      isCurrent = false;
+    };
+  }, [currentRestaurant?.id, dashboardTab, showToast]);
 
   if (isLoading) {
     return (
@@ -77,14 +146,7 @@ export const RestaurantDashboard: React.FC = () => {
   }
 
   const restaurantId = currentRestaurant.id;
-  const allRestaurants = storage.getRestaurants();
 
-  // TODO : Dans un second temps, faire la même chose (Fetch API) pour ces ressources
-  const dishes = storage.getDishes(restaurantId);
-  const categories = storage.getCategories(restaurantId);
-  const tables = storage.getTables(restaurantId);
-
-  // 3. Calcul des statistiques basées sur les VRAIES commandes récupérées (orders)
   const totalRevenue = orders
     .filter((o) => o.status !== 'CANCELLED')
     .reduce((sum, o) => sum + (o.total || 0), 0);
@@ -109,7 +171,6 @@ export const RestaurantDashboard: React.FC = () => {
     { id: 'settings', label: 'Paramètres', icon: 'fa-solid fa-gear' },
   ];
 
-  // 4. Fonction pour faire avancer le Kanban (qui met à jour la base de données via API)
   const advanceOrderStatus = async (orderId: string, nextStatus: OrderStatus) => {
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
@@ -118,24 +179,17 @@ export const RestaurantDashboard: React.FC = () => {
         body: JSON.stringify({ status: nextStatus }),
       });
 
-      if (res.ok) {
-        // Met à jour l'interface immédiatement sans attendre le prochain polling (10s)
-        setOrders((prevOrders) =>
-          prevOrders.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
-        );
+      const data: { error?: string } = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Impossible de modifier le statut de la commande.');
       }
-    } catch (err) {
-      console.error('Erreur lors du changement de statut:', err);
+      setOrders((prevOrders) =>
+        prevOrders.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
+      );
+    } catch (error) {
+      console.error('Erreur lors du changement de statut:', error);
+      showToast('Impossible de modifier le statut de la commande.', 'error');
     }
-  };
-
-  const handleSelectRestaurant = (selectedId: string) => {
-    storage.setCurrentUser({
-      ...currentUser,
-      restaurantId: selectedId,
-    });
-    setRestaurantDropdownOpen(false);
-    window.location.reload();
   };
 
   return (
@@ -159,19 +213,9 @@ export const RestaurantDashboard: React.FC = () => {
         <DashboardTopbar
           topSearch={topSearch}
           setTopSearch={setTopSearch}
-          demoModeWithData={demoModeWithData}
-          toggleDemoMode={() => {
-            setDemoModeWithData(!demoModeWithData);
-            showToast(
-              !demoModeWithData ? 'Mode simulation activé !' : 'Mode restaurant initial activé.',
-              'info'
-            );
-          }}
           currentRestaurant={currentRestaurant}
-          allRestaurants={allRestaurants}
           dropdownOpen={restaurantDropdownOpen}
           setDropdownOpen={setRestaurantDropdownOpen}
-          onSelectRestaurant={handleSelectRestaurant}
           onViewMenu={() => {
             setRestaurantDropdownOpen(false);
             router.push(`/restaurant/${currentRestaurant.slug}`);
@@ -188,7 +232,7 @@ export const RestaurantDashboard: React.FC = () => {
               totalOrdersCount={totalOrdersCount}
               averageOrderValue={averageOrderValue}
               totalClientsCount={totalClientsCount}
-              demoModeWithData={demoModeWithData}
+              orders={orders}
             />
           )}
 
@@ -218,7 +262,11 @@ export const RestaurantDashboard: React.FC = () => {
           )}
 
           {dashboardTab === 'qrcodes' && (
-            <QrCodesTab tables={tables} />
+            <QrCodesTab
+              tables={tables}
+              restaurantSlug={currentRestaurant.slug}
+              restaurantName={currentRestaurant.name}
+            />
           )}
 
           {dashboardTab === 'analytics' && (

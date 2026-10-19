@@ -12,9 +12,9 @@ export interface TableData {
 }
 
 export interface TablesTabProps {
-  restaurantId?: string;
-  restaurantSlug?: string;
-  restaurantName?: string;
+  restaurantId: string;
+  restaurantSlug: string;
+  restaurantName: string;
   tables?: TableData[];
   onRefreshNeeded?: () => void;
   onOpenTableModal?: () => void;

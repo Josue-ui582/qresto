@@ -209,7 +209,7 @@ export const CartPage: React.FC = () => {
             </button>
 
             <p className="text-[11px] text-stone-400 text-center">
-              🔒 Vous recevrez un code de suivi immédiat (ex: QR-7842) pour suivre l'avancement en temps réel.
+              Vous recevrez un code de suivi après validation pour suivre l'avancement de votre commande.
             </p>
           </form>
         </div>

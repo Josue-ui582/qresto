@@ -1,12 +1,30 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Quote, Star } from 'lucide-react';
-import { TESTIMONIALS } from '@/lib/storage';
+import { Testimonial } from '@/types';
 
-export const TestimonialsSection: React.FC = () => (
-  <section className="bg-[#fbf9f5] px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+export const TestimonialsSection: React.FC = () => {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const response = await fetch('/api/testimonials');
+        if (!response.ok) throw new Error('Erreur lors du chargement des témoignages.');
+        const data: { testimonials: Testimonial[] } = await response.json();
+        setTestimonials(data.testimonials);
+      } catch (error: unknown) {
+        console.error('Erreur chargement des témoignages :', error);
+      }
+    };
+
+    fetchTestimonials();
+  }, []);
+
+  return (
+    <section className="bg-[#fbf9f5] px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
     <div className="mx-auto max-w-7xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -24,7 +42,7 @@ export const TestimonialsSection: React.FC = () => (
       </motion.div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {TESTIMONIALS.map((testimonial, index) => (
+        {testimonials.map((testimonial, index) => (
           <motion.article
             key={testimonial.id}
             initial={{ opacity: 0, y: 20 }}
@@ -43,11 +61,15 @@ export const TestimonialsSection: React.FC = () => (
               ))}
             </div>
             <div className="mt-4 flex items-center gap-3 border-t border-stone-100 pt-4">
-              <img
-                src={testimonial.avatar}
-                alt=""
-                className="h-10 w-10 rounded-full object-cover"
-              />
+              {testimonial.avatar ? (
+                <img
+                  src={testimonial.avatar}
+                  alt=""
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-stone-100" aria-hidden="true" />
+              )}
               <div className="min-w-0">
                 <p className="truncate text-xs font-bold text-stone-900">{testimonial.name}</p>
                 <p className="truncate text-[11px] text-stone-500">
@@ -59,5 +81,6 @@ export const TestimonialsSection: React.FC = () => (
         ))}
       </div>
     </div>
-  </section>
-);
+    </section>
+  );
+};

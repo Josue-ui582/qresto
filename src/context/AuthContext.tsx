@@ -129,12 +129,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const reloadRestaurantData = async () => {
     try {
       const response = await fetch('/api/restaurant/me');
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentRestaurant(data.restaurant);
+      const data: { restaurant?: Restaurant; error?: string } = await response.json();
+      if (!response.ok || !data.restaurant) {
+        throw new Error(data.error || 'Erreur lors du rechargement des données du restaurant.');
       }
+      setCurrentRestaurant(data.restaurant);
     } catch (error) {
       console.error('Erreur lors du rechargement des données du restaurant:', error);
+      showToast('Impossible de recharger les données du restaurant.', 'error');
     }
   };
 

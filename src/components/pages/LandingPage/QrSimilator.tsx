@@ -4,30 +4,25 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { QrCode, Smartphone, Printer, Loader2, Store } from 'lucide-react';
 import Link from 'next/link';
+import { QRCodeImage } from '@/components/common/QRCodeImage';
+import { createTableMenuUrl } from '@/lib/qr-code';
 
 interface RestaurantOption {
   id: string;
   name: string;
   slug: string;
-  _count?: {
-    tables: number;
-  };
+  tables: Array<{ number: string }>;
 }
 
 export const QRSimulator: React.FC = () => {
   const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
   const [selectedResto, setSelectedResto] = useState<RestaurantOption | null>(null);
   const [customRestoName, setCustomRestoName] = useState<string>('');
-  const [demoTable, setDemoTable] = useState<number>(1);
+  const [selectedTableNumber, setSelectedTableNumber] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [origin, setOrigin] = useState<string>('https://qresto.africa');
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
 
   useEffect(() => {
-    // Détecter le domaine actuel (ex: http://localhost:3000 ou https://qresto.africa)
-    if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin);
-    }
-
     const fetchRestaurants = async () => {
       try {
         setIsLoading(true);
@@ -39,6 +34,7 @@ export const QRSimulator: React.FC = () => {
           if (list.length > 0) {
             setSelectedResto(list[0]);
             setCustomRestoName(list[0].name);
+            setSelectedTableNumber(list[0].tables[0]?.number ?? '');
           }
         }
       } catch (err) {
@@ -57,25 +53,17 @@ export const QRSimulator: React.FC = () => {
     if (found) {
       setSelectedResto(found);
       setCustomRestoName(found.name);
-      setDemoTable(1); // Réinitialiser à la table 1
+      setSelectedTableNumber(found.tables[0]?.number ?? '');
     }
   };
 
-  // Génération dynamique des boutons de tables selon le nombre de tables en BDD
-  const totalTables = selectedResto?._count?.tables || 8;
-  const tableOptions = Array.from(
-    { length: Math.min(Math.max(totalTables, 4), 12) },
-    (_, i) => i + 1
-  );
-
-  // Construction des liens réels
-  const currentSlug = selectedResto?.slug || 'chez-nino';
-  const targetRelativePath = `/restaurant/${currentSlug}?table=${demoTable}`;
-  const fullQrTargetUrl = `${origin}${targetRelativePath}`;
-
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-    fullQrTargetUrl
-  )}&color=1c1917`;
+  const currentSlug = selectedResto?.slug;
+  const targetRelativePath = currentSlug
+    ? `/restaurant/${currentSlug}${selectedTableNumber ? `?table=${encodeURIComponent(selectedTableNumber)}` : ''}`
+    : '/restaurants';
+  const fullQrTargetUrl = currentSlug && selectedTableNumber
+    ? createTableMenuUrl(origin, currentSlug, selectedTableNumber)
+    : null;
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-stone-900 text-white relative overflow-hidden">
@@ -123,7 +111,7 @@ export const QRSimulator: React.FC = () => {
                       >
                         {restaurants.map((resto) => (
                           <option key={resto.id} value={resto.id}>
-                            {resto.name} ({resto._count?.tables || 0} tables)
+                            {resto.name} ({resto.tables.length} tables)
                           </option>
                         ))}
                       </select>
@@ -149,22 +137,22 @@ export const QRSimulator: React.FC = () => {
                     <label className="block text-xs font-bold text-stone-300 mb-2">
                       Numéro de table :{' '}
                       <span className="text-amber-400 font-extrabold text-sm">
-                        Table #{demoTable}
+                      {selectedTableNumber ? `Table #${selectedTableNumber}` : 'Aucune table configurée'}
                       </span>
                     </label>
                     <div className="flex flex-wrap items-center justify-center gap-2">
-                      {tableOptions.map((num) => (
+                    {(selectedResto?.tables ?? []).map(({ number }) => (
                         <button
-                          key={num}
+                        key={number}
                           type="button"
-                          onClick={() => setDemoTable(num)}
+                        onClick={() => setSelectedTableNumber(number)}
                           className={`w-10 h-10 rounded-xl font-black text-xs transition-all cursor-pointer ${
-                            demoTable === num
+                          selectedTableNumber === number
                               ? 'bg-amber-500 text-stone-950 scale-105 shadow-md shadow-amber-500/30'
                               : 'bg-stone-900 text-stone-400 hover:text-white hover:bg-stone-700'
                           }`}
                         >
-                          #{num}
+                        #{number}
                         </button>
                       ))}
                     </div>
@@ -177,7 +165,7 @@ export const QRSimulator: React.FC = () => {
                       className="px-5 py-3 rounded-xl bg-linear-to-r from-amber-500 to-orange-500 text-stone-950 font-black text-xs shadow-lg hover:shadow-amber-500/30 transition-all inline-flex items-center gap-2 justify-center"
                     >
                       <Smartphone className="w-4 h-4" />
-                      <span>Tester le scan de la Table #{demoTable}</span>
+                      <span>{selectedTableNumber ? `Tester le scan de la Table #${selectedTableNumber}` : 'Consulter le menu'}</span>
                     </Link>
 
                     <button
@@ -197,7 +185,7 @@ export const QRSimulator: React.FC = () => {
           {/* Colonne Droite: Aperçu Carte Chevalet QR Code */}
           <div className="lg:col-span-5 flex justify-center">
             <motion.div
-              key={`${selectedResto?.id}-${demoTable}`}
+              key={`${selectedResto?.id}-${selectedTableNumber}`}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.4 }}
@@ -215,16 +203,23 @@ export const QRSimulator: React.FC = () => {
 
               {/* QR Code Réel Généré */}
               <div className="my-5 p-4 bg-stone-50 rounded-2xl border-2 border-dashed border-stone-200 inline-block shadow-inner">
-                <img
-                  src={qrImageUrl}
-                  alt={`QR Code Table ${demoTable}`}
-                  className="w-40 h-40 mx-auto rounded-lg"
-                />
+                {fullQrTargetUrl ? (
+                  <QRCodeImage
+                    value={fullQrTargetUrl}
+                    alt={`QR Code Table ${selectedTableNumber}`}
+                    className="w-40 h-40 mx-auto rounded-lg"
+                    options={{ size: 220 }}
+                  />
+                ) : (
+                  <p className="w-40 h-40 flex items-center justify-center text-xs text-stone-500">
+                    Aucune table n’est configurée pour ce restaurant.
+                  </p>
+                )}
               </div>
 
               {/* Badge Table */}
               <div className="inline-block px-4 py-1.5 rounded-full bg-stone-900 text-white font-black text-xs uppercase tracking-wider mb-2">
-                Table #{demoTable}
+                Table #{selectedTableNumber}
               </div>
 
               <div className="text-[10px] text-stone-400 font-medium">

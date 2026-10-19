@@ -3,12 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Star, ArrowRight, QrCode, Loader2, UtensilsCrossed } from 'lucide-react';
-import { useNavigation } from '@/context/NavigationContext';
 import Link from 'next/link';
 import { RestaurantItem } from '@/types';
 
 export const FeaturedRestaurants: React.FC = () => {
-  const { navigateTo } = useNavigation();
   const [restaurants, setRestaurants] = useState<RestaurantItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -45,7 +43,7 @@ export const FeaturedRestaurants: React.FC = () => {
               Établissements Certifiés
             </div>
             <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
-              Restaurants digitalisés à Cotonou
+              Restaurants digitalisés
             </h2>
             <p className="text-sm sm:text-base text-stone-500 mt-2 font-normal">
               Découvrez comment les meilleurs chefs et gérants modernisent leur service en salle.
@@ -72,10 +70,10 @@ export const FeaturedRestaurants: React.FC = () => {
         ) : restaurants.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {restaurants.map((resto, i) => {
-              const image = resto.coverImage || resto.logo || '/images/resto_ambiance_1790196207320.jpg';
-              const badge = resto.cuisineType || resto.category || 'Certifié QResto';
+              const image = resto.coverImage || resto.logo;
+              const badge = resto.cuisineType || resto.category;
               const status = resto.isOpen ? 'Ouvert' : 'Fermé';
-              const neighborhood = resto.city || resto.address || 'Cotonou';
+              const neighborhood = resto.city || resto.address;
               const tableCount = resto._count?.tables || 0;
 
               return (
@@ -90,14 +88,22 @@ export const FeaturedRestaurants: React.FC = () => {
                 >
                   <div>
                     <div className="relative h-52 overflow-hidden bg-stone-100">
-                      <img
-                        src={image}
-                        alt={resto.name}
-                        className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-500"
-                      />
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-stone-900/80 backdrop-blur-xs text-white text-[10px] font-bold">
-                        {badge}
-                      </div>
+                      {image ? (
+                        <img
+                          src={image}
+                          alt={resto.name}
+                          className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-stone-400">
+                          <UtensilsCrossed className="w-10 h-10" />
+                        </div>
+                      )}
+                      {badge && (
+                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-stone-900/80 backdrop-blur-xs text-white text-[10px] font-bold">
+                          {badge}
+                        </div>
+                      )}
                       <div className={`absolute top-3 right-3 px-2.5 py-1 rounded-lg text-white text-[10px] font-bold flex items-center gap-1 shadow-sm ${
                         resto.isOpen ? 'bg-emerald-500' : 'bg-red-500'
                       }`}>
@@ -109,19 +115,23 @@ export const FeaturedRestaurants: React.FC = () => {
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-semibold text-stone-500">{neighborhood}</span>
-                        <div className="flex items-center gap-1 text-xs font-bold text-amber-600">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                          <span>{resto.rating ? resto.rating.toFixed(1) : '4.8'}</span>
-                          <span className="text-stone-400 font-normal">({resto.reviewCount || 0})</span>
-                        </div>
+                        {resto.rating > 0 && resto.reviewCount > 0 && (
+                          <div className="flex items-center gap-1 text-xs font-bold text-amber-600">
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                            <span>{resto.rating.toFixed(1)}</span>
+                            <span className="text-stone-400 font-normal">({resto.reviewCount})</span>
+                          </div>
+                        )}
                       </div>
 
                       <h3 className="text-xl font-bold text-stone-950 mb-2 group-hover:text-amber-700 transition-colors">
                         {resto.name}
                       </h3>
-                      <p className="text-xs text-stone-600 leading-relaxed font-normal mb-4 line-clamp-2">
-                        {resto.description || 'Découvrez notre menu digital complet et nos spécialités culinaires.'}
-                      </p>
+                      {resto.description && (
+                        <p className="text-xs text-stone-600 leading-relaxed font-normal mb-4 line-clamp-2">
+                          {resto.description}
+                        </p>
+                      )}
 
                       <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
                         <QrCode className="w-3.5 h-3.5 text-amber-600" />

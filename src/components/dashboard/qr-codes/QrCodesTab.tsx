@@ -1,30 +1,31 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { QrCode } from 'lucide-react';
 import { TableData, QrCodesTabProps } from './types';
 import { QrCodesHeader } from './QrCodesHeader';
 import { QrSearchBar } from './QrSearchBar';
 import { QrCodeCard } from './QrCodeCard';
 import { QrTentModal } from './QrTentModal';
+import { createTableMenuUrl, generateQrCodePngDataUrl, QrCodeOptions } from '@/lib/qr-code';
 
 export const QrCodesTab: React.FC<QrCodesTabProps> = ({
-  tables = [],
-  restaurantSlug = 'chez-mama-benin',
-  restaurantName = 'Mon Restaurant',
+  tables,
+  restaurantSlug,
+  restaurantName,
   onOpenQr,
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTable, setSelectedTable] = useState<TableData | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [origin, setOrigin] = useState<string>('https://qresto.africa');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin);
-    }
-  }, []);
-
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [qrOptions, setQrOptions] = useState<QrCodeOptions>({
+    size: 500,
+    darkColor: '#1c1917',
+    lightColor: '#ffffff',
+  });
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
   // Filtrage par recherche
   const filteredTables = useMemo(() => {
     return tables.filter((t) => {
@@ -35,28 +36,64 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
   }, [tables, searchQuery]);
 
   // Copier le lien unique de la table
-  const handleCopyLink = (table: TableData) => {
+  const handleCopyLink = async (table: TableData) => {
     const slug = table.restaurant?.slug || restaurantSlug;
-    const url = `${origin}/restaurant/${slug}?table=${table.number}`;
-    navigator.clipboard.writeText(url);
-    setCopiedId(table.id);
-    setTimeout(() => setCopiedId(null), 2000);
+    const url = createTableMenuUrl(window.location.origin, slug, table.number);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(table.id);
+      setTimeout(() => setCopiedId(null), 2000);
+      setDownloadError(null);
+    } catch (error: unknown) {
+      console.error('Erreur lors de la copie du lien QR :', error);
+      setDownloadError('Impossible de copier le lien de cette table.');
+    }
   };
 
   // Télécharger le QR Code PNG
-  const handleDownloadQr = (table: TableData) => {
+  const handleDownloadQr = async (table: TableData) => {
     const slug = table.restaurant?.slug || restaurantSlug;
-    const targetUrl = `${origin}/restaurant/${slug}?table=${table.number}`;
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(
-      targetUrl
-    )}&color=1c1917`;
+    const targetUrl = createTableMenuUrl(window.location.origin, slug, table.number);
+    try {
+      const pngDataUrl = await generateQrCodePngDataUrl(targetUrl, qrOptions);
+      const link = document.createElement('a');
+      link.href = pngDataUrl;
+      link.download = `QR_Code_Table_${table.number}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setDownloadError(null);
+    } catch (error: unknown) {
+      console.error('Erreur lors du téléchargement du QR code :', error);
+      setDownloadError('Impossible de générer le fichier PNG du QR code.');
+    }
+  };
 
-    const link = document.createElement('a');
-    link.href = qrApiUrl;
-    link.download = `QR_Code_Table_${table.number}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setLogoError(null);
+    if (!file) {
+      setQrOptions((current) => ({ ...current, logoDataUrl: undefined }));
+      return;
+    }
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 2_000_000) {
+      setLogoError('Choisissez un logo PNG, JPEG ou WebP de 2 Mo maximum.');
+      setQrOptions((current) => ({ ...current, logoDataUrl: undefined }));
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') {
+        setLogoError('Impossible de lire le fichier du logo.');
+        return;
+      }
+      const logoDataUrl = reader.result;
+      setQrOptions((current) => ({ ...current, logoDataUrl }));
+    };
+    reader.onerror = () => setLogoError('Impossible de lire le fichier du logo.');
+    reader.readAsDataURL(file);
   };
 
   // Sélectionner une table pour ouvrir le chevalet
@@ -77,6 +114,62 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
         onPrintAll={handlePrintAll}
       />
 
+      <section className="grid grid-cols-1 gap-4 rounded-2xl border border-stone-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="text-xs font-semibold text-stone-700">
+          Taille de l’image
+          <select
+            value={qrOptions.size}
+            onChange={(event) => setQrOptions((current) => ({
+              ...current,
+              size: Number(event.target.value),
+            }))}
+            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2"
+          >
+            <option value={300}>300 × 300</option>
+            <option value={500}>500 × 500</option>
+            <option value={800}>800 × 800</option>
+          </select>
+        </label>
+        <label className="text-xs font-semibold text-stone-700">
+          Couleur du code
+          <input
+            type="color"
+            value={qrOptions.darkColor}
+            onChange={(event) => setQrOptions((current) => ({
+              ...current,
+              darkColor: event.target.value,
+            }))}
+            className="mt-1 block h-10 w-full rounded-lg border border-stone-300 bg-white p-1"
+          />
+        </label>
+        <label className="text-xs font-semibold text-stone-700">
+          Couleur du fond
+          <input
+            type="color"
+            value={qrOptions.lightColor}
+            onChange={(event) => setQrOptions((current) => ({
+              ...current,
+              lightColor: event.target.value,
+            }))}
+            className="mt-1 block h-10 w-full rounded-lg border border-stone-300 bg-white p-1"
+          />
+        </label>
+        <label className="text-xs font-semibold text-stone-700">
+          Logo (optionnel, max. 2 Mo)
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handleLogoChange}
+            className="mt-1 block w-full text-xs"
+          />
+        </label>
+        {(downloadError || logoError) && (
+          <p role="alert" className="text-xs font-semibold text-red-700 sm:col-span-2 lg:col-span-4">
+            {downloadError || logoError}
+          </p>
+        )}
+      </section>
+
       <QrSearchBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -92,6 +185,7 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
               table={table}
               restaurantSlug={restaurantSlug}
               origin={origin}
+              qrOptions={qrOptions}
               isCopied={copiedId === table.id}
               onSelect={handleSelectTable}
               onDownload={handleDownloadQr}
@@ -122,6 +216,7 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
         restaurantName={restaurantName}
         restaurantSlug={restaurantSlug}
         origin={origin}
+        qrOptions={qrOptions}
         onClose={() => setSelectedTable(null)}
         onDownload={handleDownloadQr}
       />

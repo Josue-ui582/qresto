@@ -162,7 +162,7 @@ export interface Testimonial {
   role: string;
   restaurantName?: string;
   city: string;
-  avatar: string;
+  avatar?: string | null;
   rating: number;
   text: string;
 }
@@ -241,11 +241,13 @@ export interface Dish3DSelection {
   id: string;
   name: string;
   price: number;
+  currency: string;
   description: string;
   modelType: DishModelType;
   image: string;
   ingredients: string[];
   prepTime: string;
+  restaurantSlug: string;
 }
 export interface RestaurantItem {
   id: string;
@@ -272,5 +274,4 @@ export interface OverviewTabProps {
   totalOrdersCount: number;
   averageOrderValue: number;
   totalClientsCount: number;
-  demoModeWithData: boolean;
 }

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { handleDatabaseError } from '@/lib/api/validation';
 import { authorizeRequest } from '@/lib/auth/session';
+import { createTableMenuUrl, generateQrCodeSvgDataUrl } from '@/lib/qr-code';
 
 // GET : Récupérer tous les QR codes configurés avec leurs URLs générées
 export async function GET(request: NextRequest) {
@@ -44,15 +45,10 @@ export async function GET(request: NextRequest) {
     });
 
     // Formater et enrichir les données pour la signalétique QR
-    const qrCodesData = tables.map((table) => {
-      const slug = table.restaurant?.slug || 'menu';
-      // URL de commande sur laquelle le client atterrit en scannant
-      const targetUrl = `${baseUrl}/restaurant/${slug}?table=${table.number}`;
-
-      // URL de l'image QR Code HD (500x500px)
-      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(
-        targetUrl
-      )}&color=1c1917`;
+    const qrCodesData = await Promise.all(tables.map(async (table) => {
+      const slug = table.restaurant.slug;
+      const targetUrl = createTableMenuUrl(baseUrl, slug, table.number);
+      const qrImageUrl = await generateQrCodeSvgDataUrl(targetUrl);
 
       return {
         id: table.id,
@@ -64,7 +60,7 @@ export async function GET(request: NextRequest) {
         targetUrl,
         qrImageUrl,
       };
-    });
+    }));
 
     return NextResponse.json(
       {
