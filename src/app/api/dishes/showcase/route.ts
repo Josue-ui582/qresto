@@ -14,10 +14,23 @@ export async function GET() {
         description: true,
         price: true,
         image: true,
+        isPopular: true,
         preparationTimeMin: true,
         model3DType: true,
         category: { select: { id: true, name: true } },
-        restaurant: { select: { id: true, name: true, slug: true } },
+        restaurant: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            currency: true,
+            tables: {
+              select: { number: true },
+              orderBy: { number: 'asc' },
+              take: 1,
+            },
+          },
+        },
       },
     });
 

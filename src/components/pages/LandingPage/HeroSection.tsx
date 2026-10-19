@@ -1,29 +1,74 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   QrCode,
   Sparkles,
   ArrowRight,
-  ShieldCheck,
-  Zap,
   RotateCw,
   Utensils,
   Store,
   Clock,
   Flame,
 } from 'lucide-react';
-import { Dish3DSelection } from '@/types';
-import { useNavigation } from '@/context/NavigationContext';
+import { Dish3DSelection, DishModelType } from '@/types';
 import Link from 'next/link';
+
+interface HeroDish {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image: string | null;
+  prepTime: string;
+  model3DType: string | null;
+  isPopular: boolean;
+  restaurant: {
+    name: string;
+    slug: string;
+    currency: string;
+    tables: Array<{ number: string }>;
+  };
+}
 
 interface HeroSectionProps {
   onSelectDish: (dish: Dish3DSelection) => void;
 }
 
+const dishModelTypes: readonly string[] = [
+  'poulet_braise',
+  'poisson_grille',
+  'igname_pile',
+  'burger',
+  'alloco',
+  'cocktail',
+];
+
+function isDishModelType(value: string | null): value is DishModelType {
+  return value !== null && dishModelTypes.includes(value);
+}
+
 export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
-  const { navigateTo } = useNavigation();
+  const [dish, setDish] = useState<HeroDish | null>(null);
+  const selectedModelType = dish && isDishModelType(dish.model3DType)
+    ? dish.model3DType
+    : null;
+
+  useEffect(() => {
+    const fetchFeaturedDish = async () => {
+      try {
+        const response = await fetch('/api/dishes/showcase');
+        if (!response.ok) throw new Error('Impossible de charger le plat à la une.');
+        const data: { dishes?: HeroDish[] } = await response.json();
+        setDish(data.dishes?.[0] ?? null);
+      } catch (error) {
+        console.error('Erreur chargement du plat à la une:', error);
+      }
+    };
+
+    void fetchFeaturedDish();
+  }, []);
 
   return (
     <section className="relative pt-12 pb-20 sm:pt-20 sm:pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
@@ -66,7 +111,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
 
             {/* Subheading */}
             <p className="text-base sm:text-lg md:text-xl text-stone-600 leading-relaxed mb-8 max-w-2xl font-normal">
-              Menus QR dynamiques par table, visualiseur 3D interactif et encaissement Mobile Money instantané sans friction pour les restaurants et leurs clients.
+              Menus QR par table, commandes sans compte client et visualisation 3D des plats compatibles pour les restaurants et leurs clients.
             </p>
 
             {/* Animated Button Row */}
@@ -95,12 +140,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
                 <div className="text-xs text-stone-500 font-medium mt-0.5">Téléchargement requis</div>
               </div>
               <div>
-                <div className="text-2xl sm:text-3xl font-black text-amber-600">+32%</div>
-                <div className="text-xs text-stone-500 font-medium mt-0.5">Panier moyen constaté</div>
+                <div className="text-2xl sm:text-3xl font-black text-amber-600">0</div>
+                <div className="text-xs text-stone-500 font-medium mt-0.5">Compte client requis</div>
               </div>
               <div>
-                <div className="text-2xl sm:text-3xl font-black text-stone-950">1.5s</div>
-                <div className="text-xs text-stone-500 font-medium mt-0.5">Vitesse d’affichage QR</div>
+                <div className="text-2xl sm:text-3xl font-black text-stone-950">QR</div>
+                <div className="text-xs text-stone-500 font-medium mt-0.5">Menu accessible sur mobile</div>
               </div>
             </div>
           </motion.div>
@@ -122,7 +167,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
                 <div className="w-3 h-3 rounded-full bg-stone-700/50" />
               </div>
 
-              {/* Simulated Screen Content */}
+              {/* Aperçu du menu issu des plats disponibles en base */}
               <div className="bg-[#fbf9f5] rounded-3xl p-4 border border-stone-200/80 overflow-hidden text-left">
                 {/* Restaurant Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-stone-200">
@@ -131,10 +176,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
                       Q
                     </div>
                     <div>
-                      <h4 className="text-xs font-black text-stone-900 leading-tight">Chez Mama Bénin</h4>
+                      <h4 className="text-xs font-black text-stone-900 leading-tight">
+                        {dish?.restaurant.name || 'Restaurants partenaires'}
+                      </h4>
                       <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 font-bold">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span>Table 04 · En service</span>
+                        <span>{dish?.restaurant.tables[0]
+                          ? `Table ${dish.restaurant.tables[0].number}`
+                          : 'Menu disponible'}</span>
                       </div>
                     </div>
                   </div>
@@ -143,70 +192,89 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
                   </span>
                 </div>
 
-                {/* Featured interactive dish inside simulator */}
-                <div className="mt-3.5 relative bg-white rounded-2xl p-3 border border-stone-200/90 shadow-sm group">
-                  <div className="relative h-40 rounded-xl overflow-hidden mb-3 bg-stone-100">
-                    <img
-                      src="/images/poulet_braise_1790196218496.jpg"
-                      alt="Poulet braisé"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-stone-950/80 backdrop-blur-xs text-white text-[10px] font-bold flex items-center gap-1">
-                      <Flame className="w-3 h-3 text-amber-400" />
-                      <span>Best-seller</span>
+                {dish ? (
+                  <div className="mt-3.5 relative bg-white rounded-2xl p-3 border border-stone-200/90 shadow-sm group">
+                    <div className="relative h-40 rounded-xl overflow-hidden mb-3 bg-stone-100">
+                      {dish.image ? (
+                        <img
+                          src={dish.image}
+                          alt={dish.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-stone-400">
+                          <Utensils className="w-8 h-8" />
+                        </div>
+                      )}
+                      {dish.isPopular && (
+                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-stone-950/80 backdrop-blur-xs text-white text-[10px] font-bold flex items-center gap-1">
+                          <Flame className="w-3 h-3 text-amber-400" />
+                          <span>Populaire</span>
+                        </div>
+                      )}
+                      {selectedModelType && (
+                        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-amber-500 text-stone-950 text-[10px] font-extrabold flex items-center gap-1 shadow-sm">
+                          <Sparkles className="w-3 h-3" />
+                          <span>3D</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-amber-500 text-stone-950 text-[10px] font-extrabold flex items-center gap-1 shadow-sm">
-                      <Sparkles className="w-3 h-3" />
-                      <span>3D Dispo</span>
+
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h5 className="text-xs font-bold text-stone-900">{dish.name}</h5>
+                        {dish.description && (
+                          <p className="text-[11px] text-stone-500 line-clamp-1">{dish.description}</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-black text-amber-600">{dish.price.toLocaleString('fr-FR')}</div>
+                        <div className="text-[9px] text-stone-400 font-bold">{dish.restaurant.currency}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t border-stone-100 flex items-center gap-2">
+                      {selectedModelType && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onSelectDish({
+                              id: dish.id,
+                              name: dish.name,
+                              price: dish.price,
+                              currency: dish.restaurant.currency,
+                              image: dish.image || '',
+                              description: dish.description || '',
+                              modelType: selectedModelType,
+                              ingredients: [],
+                              prepTime: dish.prepTime,
+                              restaurantSlug: dish.restaurant.slug,
+                            })
+                          }
+                          className="flex-1 py-2 rounded-xl bg-amber-100/80 hover:bg-amber-100 text-amber-900 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <RotateCw className="w-3 h-3 text-amber-700 animate-spin" style={{ animationDuration: '6s' }} />
+                          <span>Tourner en 3D 360°</span>
+                        </button>
+                      )}
+
+                      <Link href={`/restaurant/${dish.restaurant.slug}`} className="px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-[11px] transition-colors inline-flex items-center justify-center">
+                        Commander
+                      </Link>
                     </div>
                   </div>
-
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h5 className="text-xs font-bold text-stone-900">Poulet Bicyclette Braisé</h5>
-                      <p className="text-[11px] text-stone-500 line-clamp-1">Alloco doré, piment vert maison & oignons</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs font-black text-amber-600">4 500</div>
-                      <div className="text-[9px] text-stone-400 font-bold">FCFA</div>
-                    </div>
+                ) : (
+                  <div className="mt-3.5 rounded-2xl bg-white p-6 text-center text-xs text-stone-500">
+                    Les plats disponibles des restaurants partenaires s’afficheront ici.
                   </div>
+                )}
 
-                  {/* Interactive Action inside phone */}
-                  <div className="mt-3 pt-3 border-t border-stone-100 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSelectDish({
-                          id: 'dish_poulet',
-                          name: 'Poulet Bicyclette Braisé Kpédji',
-                          price: 4500,
-                          image: '/images/poulet_braise_1790196218496.jpg',
-                          description: 'Poulet fermier mariné 24h aux épices royales avec alloco croustillant.',
-                          modelType: 'poulet_braise',
-                          ingredients: ['Poulet bicyclette', 'Alloco bananes mûres', 'Piment vert maison'],
-                          prepTime: '20 min',
-                        })
-                      }
-                      className="flex-1 py-2 rounded-xl bg-amber-100/80 hover:bg-amber-100 text-amber-900 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <RotateCw className="w-3 h-3 text-amber-700 animate-spin" style={{ animationDuration: '6s' }} />
-                      <span>Tourner en 3D 360°</span>
-                    </button>
-
-                          <Link href="/restaurant/chez-mama-benin?table=4" className="px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-[11px] transition-colors inline-flex items-center justify-center">
-                            Commander
-                          </Link>
-                  </div>
-                </div>
-
-                {/* Payment Icons Footer in simulator */}
                 <div className="mt-3 bg-stone-100/80 rounded-xl p-2 flex items-center justify-between text-[10px] text-stone-600 font-medium">
                   <span className="flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                    <span>MoMo & Moov acceptés</span>
+                    <QrCode className="w-3 h-3 text-amber-600" />
+                    <span>Commande sans compte client</span>
                   </span>
-                  <span className="font-bold text-stone-800">100% Sécurisé</span>
+                  <span className="font-bold text-stone-800">Menu numérique</span>
                 </div>
               </div>
             </div>

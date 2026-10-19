@@ -262,7 +262,11 @@ export const RestaurantDashboard: React.FC = () => {
           )}
 
           {dashboardTab === 'qrcodes' && (
-            <QrCodesTab tables={tables} />
+            <QrCodesTab
+              tables={tables}
+              restaurantSlug={currentRestaurant.slug}
+              restaurantName={currentRestaurant.name}
+            />
           )}
 
           {dashboardTab === 'analytics' && (

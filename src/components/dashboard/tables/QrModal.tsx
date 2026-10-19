@@ -4,6 +4,8 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Printer, Download } from 'lucide-react';
 import { TableData } from './types';
+import { QRCodeImage } from '@/components/common/QRCodeImage';
+import { createTableMenuUrl } from '@/lib/qr-code';
 
 interface QrModalProps {
   table: TableData | null;
@@ -22,6 +24,10 @@ export const QrModal: React.FC<QrModalProps> = ({
   onClose,
   onDownloadQr,
 }) => {
+  const targetUrl = table
+    ? createTableMenuUrl(origin, table.restaurant?.slug || restaurantSlug, table.number)
+    : '';
+
   return (
     <AnimatePresence>
       {table && (
@@ -50,10 +56,8 @@ export const QrModal: React.FC<QrModalProps> = ({
             </p>
 
             <div className="my-5 p-4 bg-stone-50 rounded-2xl border-2 border-dashed border-stone-200 inline-block shadow-inner">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                  `${origin}/restaurant/${table.restaurant?.slug || restaurantSlug}?table=${table.number}`
-                )}&color=1c1917`}
+              <QRCodeImage
+                value={targetUrl}
                 alt={`QR Table ${table.number}`}
                 className="w-44 h-44 mx-auto rounded-lg"
               />

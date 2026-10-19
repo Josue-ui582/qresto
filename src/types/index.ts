@@ -241,11 +241,13 @@ export interface Dish3DSelection {
   id: string;
   name: string;
   price: number;
+  currency: string;
   description: string;
   modelType: DishModelType;
   image: string;
   ingredients: string[];
   prepTime: string;
+  restaurantSlug: string;
 }
 export interface RestaurantItem {
   id: string;
