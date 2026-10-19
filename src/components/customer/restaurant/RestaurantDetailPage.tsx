@@ -20,7 +20,7 @@ export const RestaurantDetailPage: React.FC = () => {
   const router = useRouter();
   const nextParams = useParams();
   const searchParams = useSearchParams();
-  const { addToCart, cartCount, cartRestaurantId } = useCart();
+  const { addToCart, cartCount } = useCart();
   const { showToast } = useToast();
 
   const slug = (nextParams?.slug as string) || (viewParams?.slug as string) || '';
@@ -53,14 +53,16 @@ export const RestaurantDetailPage: React.FC = () => {
           throw new Error('Erreur lors du chargement de la carte.');
         }
 
-        const data = await res.json();
-        // Supporte { success: true, restaurant: ... } ou { data: ... }
-        const fetchedRestaurant = data.restaurant || data.data || data;
+        const data: {
+          restaurant?: RestaurantMenuData;
+          data?: RestaurantMenuData;
+        } = await res.json();
+        const fetchedRestaurant = data.restaurant || data.data;
 
         if (fetchedRestaurant) {
           setRestaurant(fetchedRestaurant);
 
-          const fetchedCategories: Category[] = fetchedRestaurant.categories || [];
+          const fetchedCategories: RestaurantMenuCategory[] = fetchedRestaurant.categories || [];
           setCategories(fetchedCategories);
 
           // Extraction ultra-sécurisée des plats (qu'ils soient dans categories[].dishes ou restaurant.dishes)
@@ -69,23 +71,30 @@ export const RestaurantDetailPage: React.FC = () => {
           if (fetchedRestaurant.dishes && fetchedRestaurant.dishes.length > 0) {
             extractedDishes = fetchedRestaurant.dishes;
           } else if (fetchedCategories.length > 0) {
-            extractedDishes = fetchedCategories.flatMap((cat: any) =>
-              (cat.dishes || []).map((d: any) => ({
-                ...d,
-                categoryId: d.categoryId || cat.id,
+            extractedDishes = fetchedCategories.flatMap((cat) =>
+              (cat.dishes || []).map((dish) => ({
+                ...dish,
+                categoryId: dish.categoryId || cat.id,
               }))
             );
           }
 
           setDishes(extractedDishes);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Erreur API detail restaurant:', err);
-        setError(err.message || 'Impossible de charger le menu.');
+        setError(err instanceof Error ? err.message : 'Impossible de charger le menu.');
       } finally {
         setIsLoading(false);
       }
     };
+
+    type RestaurantMenuData = Restaurant & {
+      categories?: RestaurantMenuCategory[];
+      dishes?: Dish[];
+    };
+
+    type RestaurantMenuCategory = Category & { dishes?: Dish[] };
 
     fetchRestaurantDetails();
   }, [slug]);

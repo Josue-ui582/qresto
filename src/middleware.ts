@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-// Si vous utilisez Jose ou JWT pour décoder vos tokens sur l'Edge :
-import { jwtVerify } from 'jose'; 
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'votre-cle-secrete-par-defaut'
-);
+import { jwtVerify } from 'jose';
+import { getJwtSecret, JwtConfigurationError } from '@/lib/auth/jwt';
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
@@ -19,16 +15,20 @@ export async function middleware(request: NextRequest) {
 
   try {
     // 2. Vérification et décodage du JWT (compatible Edge Runtime)
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
 
-    // 3. Vérification du rôle RESTAURANT_OWNER
-    if (payload.role !== 'RESTAURANT_OWNER') {
-      // Si l'utilisateur n'est pas un propriétaire, accès refusé
+    if (payload.role !== 'RESTAURANT_OWNER' && payload.role !== 'RESTAURANT_STAFF') {
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
 
     return NextResponse.next();
   } catch (error) {
+    if (error instanceof JwtConfigurationError) {
+      return NextResponse.json(
+        { error: 'Configuration d’authentification indisponible.' },
+        { status: 500 }
+      );
+    }
     // Token invalide ou expiré -> Redirection vers /login
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);

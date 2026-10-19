@@ -6,7 +6,7 @@ export interface TableRestaurantData {
 
 export interface TableData {
   id: string;
-  number: number;
+  number: number | string;
   capacity?: number;
   name?: string | null;
   restaurantId?: string;

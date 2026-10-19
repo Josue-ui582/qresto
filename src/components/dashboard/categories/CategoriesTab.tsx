@@ -132,8 +132,8 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
       setIsModalOpen(false);
       fetchCategories();
       if (onRefreshNeeded) onRefreshNeeded();
-    } catch (err: any) {
-      setFormError(err.message || 'Erreur lors de la sauvegarde.');
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.');
     } finally {
       setIsSubmitting(false);
     }
@@ -156,8 +156,11 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
       setDeletingId(null);
       fetchCategories();
       if (onRefreshNeeded) onRefreshNeeded();
-    } catch (err: any) {
-      showNotice('error', err.message || 'Impossible de supprimer cette catégorie.');
+    } catch (err: unknown) {
+      showNotice(
+        'error',
+        err instanceof Error ? err.message : 'Impossible de supprimer cette catégorie.'
+      );
     } finally {
       setIsDeleting(false);
     }

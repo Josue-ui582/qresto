@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { storage } from '../../../lib/storage';
+import { z } from 'zod';
+
+const moodSchema = z.string().trim().min(1).max(40);
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const mood = searchParams.get('mood') || 'discovery';
+    const parsedMood = moodSchema.safeParse(searchParams.get('mood') ?? 'discovery');
+    if (!parsedMood.success) {
+      return NextResponse.json({ success: false, error: 'Humeur invalide.' }, { status: 400 });
+    }
+    const mood = parsedMood.data;
 
     const allDishes = storage.getDishes();
     const specialties = allDishes.filter((d) => d.isSpecialty);
@@ -45,9 +52,9 @@ export async function GET(request: NextRequest) {
       mood,
       data: recommendations,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: error.message || 'Erreur serveur' },
+      { success: false, error: error instanceof Error ? error.message : 'Erreur serveur' },
       { status: 500 }
     );
   }

@@ -1,109 +1,125 @@
+import { randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { OrderStatus, OrderType, PaymentMethod, PaymentStatus } from 'generated/prisma/enums';
+import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+import { authorizeRequest } from '@/lib/auth/session';
+import { handleDatabaseError, parseJson } from '@/lib/api/validation';
+import { enforceRateLimit } from '@/lib/rate-limit';
+import { findPublicTrackedOrder } from '@/lib/orders/public-order';
+
+const createOrderSchema = z.object({
+  restaurantId: z.string().min(1),
+  type: z.nativeEnum(OrderType).default(OrderType.DINE_IN),
+  tableNumber: z.union([z.string().trim().min(1).max(30), z.number().int().positive()]).optional(),
+  customerName: z.string().trim().min(1).max(150),
+  customerPhone: z.string().trim().min(8).max(30).refine(
+    (phone) => phone.replace(/\D/g, '').length >= 8,
+    'Un numéro WhatsApp valide est requis.'
+  ),
+  customerAddress: z.string().trim().max(500).optional(),
+  customerNotes: z.string().trim().max(1000).optional(),
+  paymentMethod: z.nativeEnum(PaymentMethod).default(PaymentMethod.CASH_ON_DELIVERY),
+  items: z.array(z.object({
+    dishId: z.string().min(1),
+    quantity: z.number().int().min(1).max(100),
+    notes: z.string().trim().max(500).optional(),
+  })).min(1).max(50),
+}).superRefine((value, context) => {
+  if (value.type === OrderType.DINE_IN && !value.tableNumber) {
+    context.addIssue({
+      code: 'custom',
+      path: ['tableNumber'],
+      message: 'Le numéro de table est requis pour une commande sur place.',
+    });
+  }
+  if (value.type === OrderType.DELIVERY && !value.customerAddress) {
+    context.addIssue({
+      code: 'custom',
+      path: ['customerAddress'],
+      message: 'L’adresse de livraison est requise.',
+    });
+  }
+});
+
+const trackingCodeSchema = z.string().trim().regex(/^QR-(?:\d{4}|[A-F0-9]{12})$/i);
 
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = enforceRateLimit(request, 'order-create', {
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const parsed = await parseJson(request, createOrderSchema);
+  if (!parsed.success) return parsed.response;
+
   try {
-    const body = await request.json();
-    const {
-      restaurantId,
-      type = OrderType.DINE_IN,
-      tableNumber,
-      customerName,
-      customerPhone,
-      customerAddress,
-      customerNotes,
-      paymentMethod = PaymentMethod.CASH_ON_DELIVERY,
-      items,
-    } = body;
-
-    // 1. Validation des champs obligatoires
-    if (!restaurantId || !items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Informations de commande incomplètes.' },
-        { status: 400 }
-      );
-    }
-
-    if (!customerName || !customerPhone) {
-      return NextResponse.json(
-        { success: false, error: 'Nom et téléphone du client obligatoires.' },
-        { status: 400 }
-      );
-    }
-
-    if (type === OrderType.DINE_IN && !tableNumber) {
-      return NextResponse.json(
-        { success: false, error: 'Numéro de table obligatoire pour les commandes sur place.' },
-        { status: 400 }
-      );
-    }
-
-    if (type === OrderType.DELIVERY && !customerAddress) {
-      return NextResponse.json(
-        { success: false, error: 'Adresse de livraison obligatoire.' },
-        { status: 400 }
-      );
-    }
-
-    // 2. Récupération des informations du restaurant (Requis pour restaurantName et restaurantPhone)
+    const input = parsed.data;
     const restaurant = await prisma.restaurant.findUnique({
-      where: { id: restaurantId },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        deliveryFee: true,
-      },
+      where: { id: input.restaurantId },
+      select: { id: true, name: true, phone: true, deliveryFee: true },
     });
-
     if (!restaurant) {
+      return NextResponse.json({ error: 'Restaurant introuvable.' }, { status: 404 });
+    }
+
+    const dishIds = [...new Set(input.items.map((item) => item.dishId))];
+    const dishes = await prisma.dish.findMany({
+      where: {
+        id: { in: dishIds },
+        restaurantId: restaurant.id,
+        isAvailable: true,
+      },
+      select: { id: true, name: true, price: true },
+    });
+    const dishesById = new Map(dishes.map((dish) => [dish.id, dish]));
+    if (dishesById.size !== dishIds.length) {
       return NextResponse.json(
-        { success: false, error: 'Restaurant introuvable.' },
-        { status: 404 }
+        { error: 'Un ou plusieurs plats ne sont plus disponibles.' },
+        { status: 400 }
       );
     }
 
-    // 3. Calculs financiers (Convertis en Int)
-    const rawSubtotal = items.reduce((sum: number, item: any) => {
-      const price = Number(item.price) || 0;
-      const quantity = Number(item.quantity) || 1;
-      return sum + price * quantity;
-    }, 0);
-
-    const subtotal = Math.round(rawSubtotal);
-    const deliveryFee = type === OrderType.DELIVERY ? Math.round(restaurant.deliveryFee || 0) : 0;
+    const items = input.items.map((item) => ({
+      ...item,
+      dish: dishesById.get(item.dishId)!,
+    }));
+    const subtotal = items.reduce(
+      (sum, item) => sum + item.dish.price * item.quantity,
+      0
+    );
+    const deliveryFee = input.type === OrderType.DELIVERY ? restaurant.deliveryFee : 0;
     const total = subtotal + deliveryFee;
+    if (!Number.isSafeInteger(total) || total > 2_147_483_647) {
+      return NextResponse.json({ error: 'Le montant de la commande est invalide.' }, { status: 400 });
+    }
 
-    // 4. Code de suivi unique
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const trackingCode = `QR-${randomSuffix}`;
-
-    // 5. Enregistrement en base de données
+    const trackingCode = `QR-${randomBytes(6).toString('hex').toUpperCase()}`;
     const newOrder = await prisma.order.create({
       data: {
         trackingCode,
-        restaurantId,
+        restaurantId: restaurant.id,
         restaurantName: restaurant.name,
-        restaurantPhone: restaurant.phone || null,
-        type: type as OrderType,
-        tableNumber: type === OrderType.DINE_IN ? String(tableNumber) : null,
+        restaurantPhone: restaurant.phone,
+        type: input.type,
+        tableNumber: input.type === OrderType.DINE_IN ? String(input.tableNumber) : null,
         subtotal,
         deliveryFee,
         total,
         status: OrderStatus.NEW,
-        customerName,
-        customerPhone,
-        customerAddress: type === OrderType.DELIVERY ? customerAddress : null,
-        customerNotes: customerNotes || null,
-        paymentMethod: paymentMethod as PaymentMethod,
+        customerName: input.customerName,
+        customerPhone: input.customerPhone,
+        customerAddress: input.type === OrderType.DELIVERY ? input.customerAddress : null,
+        customerNotes: input.customerNotes || null,
+        paymentMethod: input.paymentMethod,
         paymentStatus: PaymentStatus.PENDING,
         items: {
-          create: items.map((item: any) => ({
-            dishId: item.dishId || null,
-            name: item.name,
-            price: Math.round(Number(item.price)),
-            quantity: Number(item.quantity),
+          create: items.map((item) => ({
+            dishId: item.dish.id,
+            name: item.dish.name,
+            price: item.dish.price,
+            quantity: item.quantity,
             notes: item.notes || null,
           })),
         },
@@ -114,83 +130,59 @@ export async function POST(request: NextRequest) {
           },
         },
       },
-      include: {
-        items: true,
-        statusHistory: true,
-      },
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Commande enregistrée avec succès',
-      data: newOrder,
-    });
-  } catch (err: any) {
-    console.error('Erreur API POST /api/orders :', err);
+    const publicOrder = await findPublicTrackedOrder(newOrder.trackingCode);
+    if (!publicOrder) {
+      throw new Error('La commande créée est introuvable lors de la préparation de sa réponse.');
+    }
     return NextResponse.json(
-      { success: false, error: err.message || 'Erreur serveur lors de la création de la commande.' },
-      { status: 500 }
+      { success: true, message: 'Commande enregistrée avec succès.', data: publicOrder },
+      { status: 201 }
     );
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur serveur lors de la création de la commande.');
   }
 }
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get('restaurantId');
-    const trackingCode = searchParams.get('trackingCode');
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  if (searchParams.has('trackingCode')) {
+    const rateLimitResponse = enforceRateLimit(request, 'order-tracking', {
+      limit: 180,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (rateLimitResponse) return rateLimitResponse;
+    const parsedCode = trackingCodeSchema.safeParse(searchParams.get('trackingCode') ?? '');
+    if (!parsedCode.success) {
+      return NextResponse.json({ error: 'Code de suivi invalide.' }, { status: 400 });
+    }
 
-    // Cas A : Recherche par code de suivi (Page de suivi client)
-    if (trackingCode) {
-      const cleanCode = trackingCode.trim();
-
-      const order = await prisma.order.findFirst({
-        where: {
-          OR: [
-            { trackingCode: cleanCode },
-            { trackingCode: cleanCode.toUpperCase() },
-            { trackingCode: cleanCode.replace('QR-', 'QR- ') },
-          ],
-        },
-        include: {
-          items: true,
-          statusHistory: true, // ✅ On inclut l'historique sans forcer un orderBy sur un champ inexistant
-        },
-      });
-
+    try {
+      const order = await findPublicTrackedOrder(parsedCode.data);
       if (!order) {
         return NextResponse.json(
           { success: false, error: 'Commande introuvable.', data: null },
           { status: 404 }
         );
       }
-
-      return NextResponse.json({ success: true, data: order });
+      return NextResponse.json({ success: true, data: order }, { status: 200 });
+    } catch (error: unknown) {
+      return handleDatabaseError(error, 'Erreur lors de la récupération de la commande.');
     }
+  }
 
-    // Cas B : Récupération par restaurant (Dashboard Administrateur)
-    if (restaurantId) {
-      const orders = await prisma.order.findMany({
-        where: { restaurantId },
-        include: {
-          items: true,
-          statusHistory: true, // ✅ Correct ici aussi
-        },
-        orderBy: { createdAt: 'desc' }, // 'createdAt' existe sur la table Order
-      });
-
-      return NextResponse.json({ success: true, data: orders });
-    }
-
-    return NextResponse.json(
-      { success: false, error: 'Paramètre restaurantId ou trackingCode requis' },
-      { status: 400 }
-    );
-  } catch (error: any) {
-    console.error('Erreur API GET /api/orders :', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Erreur serveur.' },
-      { status: 500 }
-    );
+  const restaurantIdParam = searchParams.get('restaurantId');
+  const auth = await authorizeRequest(request, 'ORDERS_READ', restaurantIdParam);
+  if (auth.response) return auth.response;
+  try {
+    const orders = await prisma.order.findMany({
+      where: { restaurantId: auth.session.restaurantId },
+      include: { items: true, statusHistory: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return NextResponse.json({ success: true, data: orders }, { status: 200 });
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur lors de la récupération des commandes.');
   }
 }

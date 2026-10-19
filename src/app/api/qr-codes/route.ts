@@ -1,23 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { handleDatabaseError } from '@/lib/api/validation';
+import { authorizeRequest } from '@/lib/auth/session';
 
 // GET : Récupérer tous les QR codes configurés avec leurs URLs générées
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get('restaurantId');
+  const restaurantIdParam = z.string().min(1).safeParse(
+    new URL(request.url).searchParams.get('restaurantId')
+  );
+  if (new URL(request.url).searchParams.has('restaurantId') && !restaurantIdParam.success) {
+    return NextResponse.json({ error: 'Identifiant de restaurant invalide.' }, { status: 400 });
+  }
+  const auth = await authorizeRequest(
+    request,
+    'QR_READ',
+    restaurantIdParam.success ? restaurantIdParam.data : null
+  );
+  if (auth.response) return auth.response;
 
+  try {
     // Domaine de base de l'application
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
       request.headers.get('origin') ||
-      'https://qresto.africa';
-
-    const whereCondition = restaurantId ? { restaurantId } : {};
+      request.nextUrl.origin;
 
     // Récupération des tables et des infos restaurant associées
     const tables = await prisma.restaurantTable.findMany({
-      where: whereCondition,
+      where: { restaurantId: auth.session.restaurantId },
       include: {
         restaurant: {
           select: {
@@ -63,11 +74,7 @@ export async function GET(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error('Erreur API GET /api/qr-codes:', error);
-    return NextResponse.json(
-      { success: false, error: 'Erreur lors de la génération des QR codes.' },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleDatabaseError(error, 'Erreur lors de la génération des QR codes.');
   }
 }

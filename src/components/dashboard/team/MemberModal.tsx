@@ -115,7 +115,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                     <option value="CHEF">Cuisinier</option>
                     <option value="CASHIER">Caissier</option>
                     <option value="MANAGER">Gérant / Manager</option>
-                    <option value="OWNER">Propriétaire</option>
+                    <option value="DELIVERY">Livraison</option>
                   </select>
                 </div>
 

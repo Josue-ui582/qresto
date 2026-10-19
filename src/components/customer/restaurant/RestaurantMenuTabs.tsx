@@ -1,8 +1,8 @@
-import { Dish } from '@/types';
+import { Category, Dish } from '@/types';
 import React from 'react';
 
 interface RestaurantMenuTabsProps {
-  categories: any[]; // Remplacez 'any' par 'Category'
+  categories: Category[];
   dishes: Dish[];
   activeCategoryId: string;
   setActiveCategoryId: (id: string) => void;

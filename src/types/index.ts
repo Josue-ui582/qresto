@@ -143,6 +143,19 @@ export interface Order {
   }[];
 }
 
+export interface TrackedOrder {
+  trackingCode: string;
+  restaurantName: string;
+  status: OrderStatus;
+  items: Array<Pick<OrderItem, 'name' | 'price' | 'quantity'>>;
+  total: number;
+  statusHistory: Array<{
+    status: OrderStatus;
+    timestamp: string;
+    note?: string;
+  }>;
+}
+
 export interface Testimonial {
   id: string;
   name: string;
