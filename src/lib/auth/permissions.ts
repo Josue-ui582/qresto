@@ -12,6 +12,7 @@ export const API_PERMISSIONS = [
   'TEAM_ADMIN',
   'COUPONS_ADMIN',
   'REVIEWS_ADMIN',
+  'INVENTORY_ADMIN',
   'SETTINGS_ADMIN',
   'SUBSCRIPTION_ADMIN',
 ] as const;
@@ -32,6 +33,7 @@ const STAFF_ROLE_PERMISSIONS: Record<StaffRole, ReadonlySet<ApiPermission>> = {
     'ANALYTICS_READ',
     'COUPONS_ADMIN',
     'REVIEWS_ADMIN',
+    'INVENTORY_ADMIN',
   ]),
   CHEF: new Set(['MENU_READ', 'MENU_WRITE', 'ORDERS_READ', 'ORDERS_UPDATE']),
   WAITER: new Set(['ORDERS_READ', 'ORDERS_UPDATE', 'TABLES_READ', 'QR_READ']),

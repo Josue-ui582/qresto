@@ -49,6 +49,12 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum InventoryMovementType {
+  RESTOCK
+  ADJUSTMENT
+  ORDER
+}
+
 enum PaymentMethod {
   CASH_ON_DELIVERY
   MTN_MOMO
@@ -232,10 +238,13 @@ model Dish {
   isSpecialty        Boolean           @default(false)
   has3DModel         Boolean           @default(false)
   model3DType        Model3DType?
+  stockQuantity     Int?
+  lowStockThreshold Int?
   createdAt          DateTime          @default(now())
 
   optionGroups DishOptionGroup[]
   reviews      Review[]
+  inventoryMovements InventoryMovement[]
 
   @@unique([restaurantId, slug])
   @@index([restaurantId])
@@ -312,6 +321,7 @@ model Order {
   items         OrderItem[]
   statusHistory OrderStatusHistory[]
   review        Review?
+  inventoryMovements InventoryMovement[]
 
   @@index([restaurantId])
   @@map("orders")
@@ -331,6 +341,21 @@ model OrderItem {
 
   @@index([orderId])
   @@map("order_items")
+}
+
+model InventoryMovement {
+  id             String                @id @default(cuid())
+  dishId         String
+  dish           Dish                  @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  orderId        String?
+  order          Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  quantityChange Int
+  type           InventoryMovementType
+  createdAt      DateTime              @default(now())
+
+  @@index([dishId, createdAt])
+  @@index([orderId])
+  @@map("inventory_movements")
 }
 
 model OrderStatusHistory {

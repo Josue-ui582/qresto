@@ -14,6 +14,13 @@ import { notifyOrderCreated } from '@/lib/orders/order-notifier';
 import { publishOrderEvent } from '@/lib/realtime/event-bus';
 import { enforceSubscriptionWriteAccess } from '@/lib/subscription/service';
 import { calculateCouponDiscount, getCouponValidationError } from '@/lib/orders/coupons';
+import { aggregateRequestedQuantities, hasSufficientStock } from '@/lib/inventory/stock';
+
+class InsufficientStockError extends Error {
+  constructor(dishName: string) {
+    super(`Le plat « ${dishName} » n’est plus disponible en quantité suffisante.`);
+  }
+}
 
 const createOrderSchema = z.object({
   restaurantId: z.string().min(1),
@@ -208,6 +215,58 @@ export async function POST(request: NextRequest) {
         appliedCoupon = { code: coupon.code };
       }
 
+      const stockDeductions: Array<{ dishId: string; quantity: number }> = [];
+      const requestedQuantities = aggregateRequestedQuantities(
+        input.items.map(({ dishId, quantity }) => ({ dishId, quantity }))
+      );
+      for (const [dishId, quantity] of requestedQuantities) {
+        const dish = await transaction.dish.findFirst({
+          where: { id: dishId, restaurantId: restaurant.id },
+          select: { id: true, name: true, stockQuantity: true, lowStockThreshold: true },
+        });
+        if (!dish || dish.stockQuantity === null) continue;
+        if (!hasSufficientStock(dish.stockQuantity, quantity)) {
+          throw new InsufficientStockError(dish.name);
+        }
+
+        const deduction = await transaction.dish.updateMany({
+          where: {
+            id: dish.id,
+            restaurantId: restaurant.id,
+            isAvailable: true,
+            stockQuantity: { gte: quantity },
+          },
+          data: { stockQuantity: { decrement: quantity } },
+        });
+        if (!deduction.count) throw new InsufficientStockError(dish.name);
+
+        const remaining = dish.stockQuantity - quantity;
+        if (remaining === 0) {
+          await transaction.dish.updateMany({
+            where: { id: dish.id, restaurantId: restaurant.id },
+            data: { isAvailable: false },
+          });
+        }
+        if (
+          dish.lowStockThreshold !== null &&
+          dish.stockQuantity > dish.lowStockThreshold &&
+          remaining <= dish.lowStockThreshold
+        ) {
+          await transaction.notification.create({
+            data: {
+              restaurantId: restaurant.id,
+              title: remaining === 0 ? 'Plat épuisé' : 'Stock bas',
+              message: `${dish.name} : ${remaining} unité(s) en stock.`,
+              type: 'LOW_STOCK',
+            },
+          });
+        }
+        stockDeductions.push({
+          dishId: dish.id,
+          quantity: -quantity,
+        });
+      }
+
       const order = await transaction.order.create({
         data: {
           trackingCode,
@@ -248,6 +307,16 @@ export async function POST(request: NextRequest) {
           })),
         })),
       });
+      if (stockDeductions.length > 0) {
+        await transaction.inventoryMovement.createMany({
+          data: stockDeductions.map(({ dishId, quantity }) => ({
+            dishId,
+            orderId: order.id,
+            quantityChange: quantity,
+            type: 'ORDER',
+          })),
+        });
+      }
       await transaction.orderStatusHistory.create({
         data: {
           orderId: order.id,
@@ -291,6 +360,20 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: unknown) {
+    if (error instanceof InsufficientStockError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'P2034'
+    ) {
+      return NextResponse.json(
+        { error: 'Le stock ou le coupon vient d’être modifié. Vérifiez le panier puis réessayez.' },
+        { status: 409 }
+      );
+    }
     return handleDatabaseError(error, 'Erreur serveur lors de la création de la commande.');
   }
 }

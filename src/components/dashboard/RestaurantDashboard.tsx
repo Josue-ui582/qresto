@@ -22,6 +22,7 @@ import { SubscriptionTab } from './subscription/SubscriptionTab';
 import { TablesTab } from './tables/TablesTab';
 import { CouponsTab } from './coupons/CouponsTab';
 import { ReviewsTab } from './reviews/ReviewsTab';
+import { InventoryTab } from './inventory/InventoryTab';
 
 export const RestaurantDashboard: React.FC = () => {
   const { currentUser, currentRestaurant, isLoading, logout } = useAuth();
@@ -209,6 +210,7 @@ export const RestaurantDashboard: React.FC = () => {
     { id: 'team', label: 'Équipe', icon: 'fa-solid fa-user-group' },
     { id: 'coupons', label: 'Promotions', icon: 'fa-solid fa-ticket' },
     { id: 'reviews', label: 'Avis clients', icon: 'fa-solid fa-star' },
+    { id: 'inventory', label: 'Stock', icon: 'fa-solid fa-boxes-stacked' },
     { id: 'subscription', label: 'Abonnement', icon: 'fa-solid fa-credit-card' },
     { id: 'settings', label: 'Paramètres', icon: 'fa-solid fa-gear' },
   ];
@@ -328,6 +330,10 @@ export const RestaurantDashboard: React.FC = () => {
 
           {dashboardTab === 'reviews' && (
             <ReviewsTab restaurantId={restaurantId} />
+          )}
+
+          {dashboardTab === 'inventory' && (
+            <InventoryTab restaurantId={restaurantId} />
           )}
 
           {dashboardTab === 'subscription' && (

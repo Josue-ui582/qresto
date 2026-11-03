@@ -132,7 +132,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
         setDishesList((prev) =>
           prev.map((d) => (d.id === dish.id ? { ...d, isAvailable: dish.isAvailable } : d))
         );
-        showNotice('error', 'Échec du changement de disponibilité.');
+        showNotice('error', data.error || 'Échec du changement de disponibilité.');
       } else {
         showNotice(
           'success',
