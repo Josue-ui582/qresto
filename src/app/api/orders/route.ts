@@ -11,6 +11,7 @@ import { calculateOrderTotals, resolveSelectedDishOptions } from '@/lib/orders/o
 import { isE164WhatsappPhone } from '@/lib/orders/whatsapp-phone';
 import { generateTrackingCode, TRACKING_CODE_PATTERN } from '@/lib/orders/tracking-code';
 import { notifyOrderCreated } from '@/lib/orders/order-notifier';
+import { publishOrderEvent } from '@/lib/realtime/event-bus';
 
 const createOrderSchema = z.object({
   restaurantId: z.string().min(1),
@@ -206,6 +207,8 @@ export async function POST(request: NextRequest) {
 
       return order;
     });
+
+    publishOrderEvent(newOrder.restaurantId, newOrder.trackingCode, 'order.created');
 
     try {
       await notifyOrderCreated({

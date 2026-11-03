@@ -8,6 +8,7 @@ import { enforceRateLimit } from '@/lib/rate-limit';
 import { findPublicTrackedOrder } from '@/lib/orders/public-order';
 import { TRACKING_CODE_PATTERN } from '@/lib/orders/tracking-code';
 import { canTransitionOrderStatus } from '@/lib/orders/order-status';
+import { publishOrderEvent } from '@/lib/realtime/event-bus';
 
 const routeCodeSchema = z.string().trim().regex(TRACKING_CODE_PATTERN);
 const updateStatusSchema = z.object({
@@ -112,6 +113,11 @@ export async function PATCH(request: NextRequest, { params }: TrackingRouteConte
       );
     }
 
+    publishOrderEvent(
+      result.order.restaurantId,
+      result.order.trackingCode,
+      'order.updated'
+    );
     return NextResponse.json(
       { success: true, message: 'Statut mis à jour avec succès.', data: result.order },
       { status: 200 }
