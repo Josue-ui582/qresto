@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/common/Icon';
@@ -17,6 +17,13 @@ export const RegisterRestaurantPage: React.FC = () => {
   const [step, setStep] = useState<1 | 2>(1);
   const [imageFiles, setImageFiles] = useState<{ logo?: File; coverImage?: File }>({});
   const [createdRestaurant, setCreatedRestaurant] = useState<{ id: string } | null>(null);
+  const previewUrls = useRef<Partial<Record<'logoPreview' | 'coverPreview', string>>>({});
+
+  useEffect(() => () => {
+    Object.values(previewUrls.current).forEach((url) => {
+      if (url) URL.revokeObjectURL(url);
+    });
+  }, []);
 
   // Un seul objet d'état pour tout le formulaire !
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -46,12 +53,16 @@ export const RegisterRestaurantPage: React.FC = () => {
       setError('Utilisez une image JPEG, PNG ou WebP.');
       return;
     }
+    const previousUrl = previewUrls.current[target];
+    if (previousUrl) URL.revokeObjectURL(previousUrl);
+    const previewUrl = URL.createObjectURL(file);
+    previewUrls.current[target] = previewUrl;
     setError(null);
     setImageFiles((current) => ({
       ...current,
       [target === 'logoPreview' ? 'logo' : 'coverImage']: file,
     }));
-    updateForm(target, URL.createObjectURL(file));
+    updateForm(target, previewUrl);
   };
 
   const uploadSelectedImages = async () => {
@@ -62,7 +73,11 @@ export const RegisterRestaurantPage: React.FC = () => {
       const response = await fetch('/api/uploads', { method: 'POST', body: uploadData });
       const result: { success?: boolean; imageUrl?: string; error?: string } = await response.json();
       if (!response.ok || !result.success || !result.imageUrl) {
-        throw new Error(result.error || `Impossible de téléverser ${field === 'logo' ? 'le logo' : 'la couverture'}.`);
+        const label = field === 'logo' ? 'le logo' : 'la couverture';
+        const message = response.status === 401
+          ? 'Votre session a expiré. Reconnectez-vous pour téléverser les images du restaurant.'
+          : result.error || `Impossible de téléverser ${label}.`;
+        throw new Error(message);
       }
       uploads[field] = result.imageUrl;
     }
@@ -94,6 +109,10 @@ export const RegisterRestaurantPage: React.FC = () => {
     }
     if (!formData.email.trim() || !formData.password.trim()) {
       setError('Veuillez renseigner votre email et mot de passe.');
+      return;
+    }
+    if (error) {
+      setError(error);
       return;
     }
 

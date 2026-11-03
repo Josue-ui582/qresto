@@ -22,6 +22,18 @@ export function isApiSuccess(payload: unknown): payload is { success: true } {
   return isRecord(payload) && payload.success === true;
 }
 
+export function getApiFieldErrors(payload: unknown): Record<string, string> {
+  if (!isRecord(payload) || !Array.isArray(payload.details)) return {};
+
+  const fieldErrors: Record<string, string> = {};
+  for (const detail of payload.details) {
+    if (!isRecord(detail) || typeof detail.message !== 'string' || !Array.isArray(detail.path)) continue;
+    const field = detail.path.find((part): part is string => typeof part === 'string');
+    if (field && !fieldErrors[field]) fieldErrors[field] = detail.message;
+  }
+  return fieldErrors;
+}
+
 export function getApiErrorMessage(payload: unknown, fallback: string): string {
   if (!isRecord(payload)) return fallback;
 

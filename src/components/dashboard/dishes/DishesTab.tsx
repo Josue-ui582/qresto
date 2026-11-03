@@ -23,6 +23,7 @@ import { DishCard } from './DishCard';
 import { DishFormModal } from './DishFormModal';
 import { DeleteDishModal } from './DeleteDishModal';
 import { getApiErrorMessage, isApiSuccess } from '@/lib/api/client-error';
+import { DishSubmissionError, submitDish } from '@/lib/dishes/client';
 
 export const DishesTab: React.FC<DishesTabProps> = ({
   restaurantId,
@@ -50,6 +51,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
   });
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Suppression
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -167,6 +169,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
       isAvailable: true,
     });
     setFormError(null);
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
@@ -181,6 +184,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
       isAvailable: dish.isAvailable,
     });
     setFormError(null);
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
@@ -189,48 +193,47 @@ export const DishesTab: React.FC<DishesTabProps> = ({
 
     if (!formData.name.trim()) {
       setFormError('Le nom du plat est obligatoire.');
+      setFieldErrors({ name: 'Le nom du plat est obligatoire.' });
       return;
     }
     if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) < 0) {
       setFormError('Veuillez saisir un prix valide.');
+      setFieldErrors({ price: 'Veuillez saisir un prix valide.' });
       return;
     }
     if (!formData.categoryId) {
       setFormError('Veuillez sélectionner une catégorie.');
+      setFieldErrors({ categoryId: 'Veuillez sélectionner une catégorie.' });
       return;
     }
     if (!formData.imageUrl || !formData.imageUrl.trim()) {
-      setFormError('L\'image du plat est obligatoire (fichier ou URL).');
+      setFormError('L’image du plat est obligatoire (fichier ou URL).');
+      setFieldErrors({ imageUrl: 'Une URL valide ou une image téléversée est requise.' });
       return;
     }
 
     try {
       setIsSubmitting(true);
       setFormError(null);
+      setFieldErrors({});
 
-      const method = editingDish ? 'PUT' : 'POST';
       const payload = editingDish
         ? { id: editingDish.id, ...formData, price: Number(formData.price) }
         : { ...formData, price: Number(formData.price), restaurantId: restaurantId || '' };
 
-      const res = await fetch('/api/dishes', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data: unknown = await res.json();
-
-      if (!res.ok || !isApiSuccess(data)) {
-        throw new Error(getApiErrorMessage(data, 'Erreur lors de la sauvegarde.'));
-      }
+      await submitDish(payload, editingDish?.id);
 
       showNotice('success', editingDish ? 'Plat mis à jour !' : 'Nouveau plat ajouté au menu !');
       setIsModalOpen(false);
       fetchData();
       if (onRefreshNeeded) onRefreshNeeded();
     } catch (err: unknown) {
-      setFormError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.');
+      if (err instanceof DishSubmissionError) {
+        setFieldErrors(err.fieldErrors);
+        setFormError(Object.keys(err.fieldErrors).length ? null : err.message);
+      } else {
+        setFormError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -359,6 +362,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
 
       {/* Modales */}
       <DishFormModal
+        key={`${isModalOpen ? 'open' : 'closed'}-${editingDish?.id ?? 'new'}`}
         isOpen={isModalOpen}
         editingDish={editingDish}
         formData={formData}
@@ -368,6 +372,12 @@ export const DishesTab: React.FC<DishesTabProps> = ({
         onClose={() => setIsModalOpen(false)}
         isSubmitting={isSubmitting}
         formError={formError}
+        fieldErrors={fieldErrors}
+        onClearFieldError={(field) => setFieldErrors((current) => {
+          const next = { ...current };
+          delete next[field];
+          return next;
+        })}
       />
 
       <DeleteDishModal
