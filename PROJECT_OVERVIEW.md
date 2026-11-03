@@ -118,7 +118,7 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 | Établissement / Paramètres généraux | ✅ | Chargement des informations via `/api/settings`, champs nom/téléphone/adresse/devise/description préremplis à partir des paramètres ou des données du restaurant. La sauvegarde met également à jour le profil restaurant. |
 | Horaires | ✅ | Édition des jours actifs et heures d’ouverture/fermeture, validation de format et sauvegarde JSON synchronisée aux paramètres et au restaurant. |
 | Enregistrer / rafraîchir les paramètres | ✅ | Le bouton Enregistrer est désactivé si le formulaire n’a pas changé ; actualisation via `fetchSettings`; notifications de succès/erreur présentes. |
-| Abonnement | 🟡 | Onglet visible, chargement du plan, catalogue, factures et action de changement de plan. L’API crée/actualise l’abonnement et une facture, mais aucun paiement réel n’est intégré. |
+| Abonnement | 🟡 | Catalogue partagé, affichage de l’usage, essai de 14 jours, changement sans paiement et annulation. Les plans expirés/annulés ou en attente de règlement passent en lecture seule. Aucun encaissement ni renouvellement automatique n’est intégré. |
 | Équipe | 🟡 | Liste, recherche, filtres par rôle, ajout, édition, activation/désactivation et suppression via `/api/team`. Les opérations sont limitées au restaurant de la session. La création d’un `TeamMember` ne crée toutefois pas de compte `User`; la connexion réelle des nouveaux membres reste à confirmer/implémenter. |
 | Plats | ✅ / 🟡 | Liste, recherche, catégorie, disponibilité, ajout/édition/suppression via API. Le formulaire exige une image/URL ; la gestion de chargement réel d’un fichier n’est pas confirmée. |
 | Catégories | ✅ | CRUD par API, catégories triées et suppression empêchée si des plats y sont encore associés. |
@@ -141,8 +141,8 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 | `/api/notifications` | ✅ | Lecture tenant-scoped des 50 dernières notifications et compteur non lu; PATCH lu/non lu limité au restaurant de session. |
 | `/api/reviews` | 🟡 | Création publique d’avis limitée par IP; avis et notification sont créés dans une transaction. La preuve de commande et une interface de dépôt d’avis restent à faire. |
 | `/api/contact` | ✅ / 🟡 | Persiste les demandes dans `ContactMessage`, applique rate limit et honeypot. L’envoi e-mail dépend du fournisseur qui reste à confirmer; l’état retourné ne prétend pas qu’un e-mail a été délivré. |
-| `/api/dishes`, `/api/categories`, `/api/tables`, `/api/team`, `/api/settings` | ✅ / 🟡 | Endpoints d’administration authentifiés, validés par Zod et filtrés avec le restaurant de session. Les permissions dépendent du rôle staff codé côté serveur; les comptes staff et l’usage du champ libre `TeamMember.permissions` ne sont pas raccordés/confirmés. `/api/dishes/showcase` est une lecture publique dédiée à la vitrine. |
-| `/api/subscription` | 🟡 | Lecture/initialisation d’essai, changement de plan et création de facture; réservé au propriétaire selon la matrice de rôles. Pas de prestataire de paiement visible. |
+| `/api/dishes`, `/api/categories`, `/api/tables`, `/api/team`, `/api/settings` | ✅ / 🟡 | Endpoints d’administration authentifiés, validés par Zod et filtrés avec le restaurant de session. Les créations de plats, tables et membres respectent les limites du plan dans des transactions sérialisables; la réactivation d’un membre est aussi contrôlée. Les modifications métier sont refusées lorsque l’abonnement est expiré, annulé ou en attente de règlement. `/api/dishes/showcase` est une lecture publique dédiée à la vitrine. |
+| `/api/subscription` | 🟡 | Lecture/initialisation d’essai, changement sans paiement et annulation; réservé au propriétaire selon la matrice de rôles. N’émet pas de facture payée sans encaissement. |
 | `/api/qr-codes` | ✅ | Lecture des tables protégée par rôle; renvoie des URLs menu/table et des SVG générés localement. |
 | `/api/recommendations` | 🟡 | Sélectionne dans PostgreSQL les plats disponibles populaires/spécialités; `mood` est validé et renvoyé mais ne personnalise pas encore le classement. |
 
@@ -175,7 +175,11 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 - Les analytics n’utilisent plus de champs inexistants ni de calculs par le composant : Prisma/PostgreSQL agrège les commandes, les plats, les modes et les heures, avec périodes locales et export CSV. Le défaut de fuseau est `Africa/Porto-Novo`; une préférence par restaurant est **à confirmer**.
 - Le dashboard et le suivi client sont branchés aux flux SSE avec reconnexion EventSource et polling de secours. Le bus en mémoire est mono-processus; confirmer la compatibilité des connexions persistantes et prévoir un pub/sub partagé pour plusieurs instances (**à confirmer**).
 - Les notifications de nouvelle commande, transition de statut et nouvel avis sont persistées et listées dans le dashboard avec état lu/non lu et badge animé. L’API de dépôt d’avis est publique et limitée par IP, mais ne vérifie pas que l’avis provient d’une commande terminée.
-- Les horaires et avis de la fiche viennent de données réelles; la devise provient des paramètres. Les demandes de contact et le consentement WhatsApp nécessitent l’application des migrations `20261103080000_add_contact_messages` et `20261103083000_add_order_whatsapp_consent` (`yarn db:migrate`).
+- Les horaires et avis de la fiche viennent de données réelles; la devise provient des paramètres. Les évolutions récentes du schéma nécessitent l’application des migrations `20261103080000_add_contact_messages`, `20261103083000_add_order_whatsapp_consent` et `20261104120000_default_subscription_payments_to_pending` (`yarn db:migrate`).
+- Le catalogue de plans est centralisé dans `src/lib/subscription/catalog.ts` et partagé par l’API, le dashboard, la landing et les CGU. Les tarifs repris de l’ancienne API (Starter 15 000/144 000 FCFA, Pro 35 000/336 000 FCFA, Enterprise 75 000/720 000 FCFA par mois/an) sont **à confirmer**. Starter est limité à 30 plats, 10 tables actives et 3 membres actifs; Pro et Enterprise sont illimités sur ces ressources.
+- Les nouvelles inscriptions reçoivent un essai Pro de 14 jours. Changer de formule active la période choisie sans paiement, facture payée ni renouvellement automatique; l’annulation prend effet immédiatement. À expiration, annulation ou état `PAST_DUE`, les lectures restent accessibles mais les modifications métier sont refusées jusqu’au changement de formule. Les compteurs de tables et membres portent uniquement sur les éléments actifs.
+- Les nouvelles factures et entrées d’historique ont un statut par défaut `PENDING`. Les anciens enregistrements `PAID` ne sont pas une preuve d’encaissement et s’affichent « À vérifier »; leur historique doit être rapproché manuellement avant une éventuelle intégration de paiement.
+- Les offres Enterprise n’ont actuellement aucune capacité active différente de Pro; le prix et la différenciation commerciale sont **à confirmer**. Le champ historique `Restaurant.subscriptionPlan` et l’enum `SubscriptionPlan` contiennent encore les anciens identifiants et ne sont pas utilisés par le cycle courant `Subscription.planId`; leur migration est à confirmer avant réutilisation.
 - `AuthContext.reloadRestaurantData()` utilise `GET /api/restaurant/me`, qui renvoie le restaurant du propriétaire authentifié.
 - Les QR tiers ont été remplacés par `src/lib/qr-code.ts` et la dépendance `qrcode`; les exports incluent SVG local, PNG, impression et options de taille, couleurs et logo. Le lien embarque le slug et le numéro réel de table.
 - Une base de styles avec palette claire, couleurs chaudes et composants utilitaires, mais appliquée de façon inégale sur le front public.
@@ -189,15 +193,15 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 - Les endpoints admin des plats, catégories, tables, équipe, paramètres, abonnement, QR, analytics et commandes utilisent l’ID restaurant issu de la session pour filtrer les requêtes. Les entrées correspondantes sont validées par Zod; les réponses distinguent validation, authentification, autorisation et ressource absente.
 - La création de commande valide les options et calcule le total depuis la base; le DTO de suivi exclut les coordonnées client, mais fournit le téléphone public du restaurant et sa devise. Les codes historiques restent acceptés avec les nouveaux codes `QR-` + 8 caractères sans caractères ambigus.
 - `src/lib/rate-limit.ts` limite la création de commandes (10 requêtes / 10 min / IP), le suivi (180 / 15 min / IP), le contact (5 / heure / IP) et les avis (3 / heure / IP). La mémoire est locale au processus; les quotas ne sont pas partagés entre instances. La confiance envers les en-têtes IP et l’hébergement SSE sont **à confirmer**.
-- Vitest couvre le limiteur, QR, E.164, horaires, calcul des prix/options, analytics (agrégats et plages horaires), export CSV, code de suivi, transitions, notifications, revue et cycle de vie SSE. Les tests Prisma sont mockés; une validation sur PostgreSQL réel reste nécessaire.
+- Vitest couvre le limiteur, QR, E.164, horaires, calcul des prix/options, analytics (agrégats et plages horaires), export CSV, code de suivi, transitions, notifications, revue, cycle de vie SSE et règles de limites/états d’abonnement. Les tests Prisma sont mockés; une validation sur PostgreSQL réel reste nécessaire.
 - `/api/dishes/showcase` fournit les données publiques de la vitrine sans rendre publique la route d’administration `/api/dishes`. Des frontières Suspense autour des composants utilisant `useSearchParams` permettent aussi au build Next de terminer.
 
 ### Dette technique, incohérences et bugs à traiter
 
 1. **Authentification staff incomplète.** `POST /api/team` crée un `TeamMember`, mais ne crée ni ne lie un `User`; un membre créé n’a donc pas nécessairement de compte de connexion. Le processus d’invitation/activation est à confirmer.
 2. **Permissions personnalisées non raccordées.** Le modèle `TeamMember.permissions` existe, mais l’API applique la matrice fixe issue de `TeamMember.role`. L’usage souhaité des permissions personnalisées est à confirmer.
-3. **Paiement et tarifs non alignés.** Le catalogue de `/api/subscription` propose Starter à 15 000 FCFA/mois et Pro à 35 000 FCFA/mois, tandis que `StaticPages.tsx` mentionne des tarifs de 5 000 et 8 000 FCFA. À clarifier. Les moyens de paiement client ne font pas de transaction.
-4. **Contenus de seed et promesses marketing.** Les témoignages et FAQ du seed sont des contenus d’exemple; les affirmations et chiffres de la landing ne sont pas tous liés à des mesures ou fonctionnalités vérifiables.
+3. **Paiement et tarifs à confirmer.** Le catalogue partagé reprend les anciens tarifs API, mais aucun prestataire ni encaissement d’abonnement n’est intégré. Les prix Enterprise et sa différenciation par rapport à Pro sont à confirmer. Les identifiants de l’enum historique `SubscriptionPlan` et du champ `Restaurant.subscriptionPlan` restent obsolètes et ne pilotent pas l’API d’abonnement actuelle.
+4. **Contenus de seed et métriques marketing.** Les témoignages et FAQ du seed sont des contenus d’exemple; les statistiques fixes du hero ne sont pas liées à des mesures réelles.
 5. **Avertissements ESLint résiduels.** Le lint passe mais signale encore des apostrophes JSX, appels d’état dans des effets, éléments `<img>` et imports/variables inutilisés. À traiter progressivement sans désactiver les contrôles TypeScript.
 6. **Convention middleware Next.js.** Le build actuel passe mais affiche un avertissement indiquant que la convention `middleware` est dépréciée au profit de `proxy`; migration ultérieure à planifier en suivant la version Next installée.
 7. **Accès public aux tables de l’aperçu.** `/api/restaurants/featured` inclut les numéros de table nécessaires au simulateur. Confirmer que cette exposition est acceptable; ces numéros ne suffisent pas à accéder aux données privées, mais peuvent alimenter les liens publics de commande.
@@ -219,13 +223,13 @@ Cet audit est statique : il se fonde sur les composants et CSS du dépôt, pas s
 
 | Page / composant | Constats à partir du code |
 |---|---|
-| Accueil (`src/components/pages/LandingPage/`) | Longue page marketing à nombreuses sections, animations en entrée, maquette de téléphone et textes/indicateurs fixes. Les statistiques du hero (« +32 % », « 1.5s ») ne sont pas reliées à des données visibles. Les promesses d’encaissement instantané Mobile Money ne sont pas soutenues par un flux de paiement dans l’API. Le style annoncé « Playfair » ne correspond pas à la police chargée. |
+| Accueil (`src/components/pages/LandingPage/`) | Longue page marketing à nombreuses sections, animations en entrée, maquette de téléphone et textes/indicateurs fixes. Les statistiques du hero (« +32 % », « 1.5s ») ne sont pas reliées à des données visibles. Les paiements Mobile Money automatiques ne sont pas présentés comme une fonction active. Le style annoncé « Playfair » ne correspond pas à la police chargée. |
 | Annuaire (`RestaurantsPage.tsx`) | Cartes à image, note, ville et statut ; la recherche et les filtres sont dans une grande carte de contrôle. Villes et catégories sont dérivées des établissements chargés. |
 | Menu (`RestaurantDetailPage.tsx`, `RestaurantHero.tsx`, `RestaurantDishCard.tsx`) | En-tête photo haut (hauteur responsive jusqu’à `md:h-96`), navigation de catégories sticky, grille d’une colonne mobile puis deux/trois colonnes, bouton panier flottant. Statut ouvert, agrégats d’avis et devise sont désormais issus des données restaurant. Le champ recherche dans les plats n’est pas visible dans cette page. |
 | Carte de plat | Photos d’une hauteur imposée, description limitée à deux lignes, allergènes tronqués, action Ajouter de petite taille visuelle sur écran étroit. Le bouton 3D et les badges ajoutent encore des éléments à l’image. Les images utilisent `<img>` et `next.config.mjs` désactive l’optimisation Next Image. |
 | Panier (`CartPage.tsx`) | Structure responsive à deux colonnes sur desktop et une sur mobile, résumé et formulaire réunis sur le même écran. Les champs d’adresse/table, mode, coordonnées, notes et paiement forment un formulaire dense. Le panier local et la sauvegarde des données après actualisation ne sont pas accompagnés d’un état de synchronisation serveur. |
 | Suivi (`OrderTrackingPage.tsx`, `OrderTrackingTimeline.tsx`) | Timeline à six états, six colonnes dès `md`, empilée sur mobile ; lisibilité des libellés et progression à éprouver sur téléphone. Le statut et l’historique arrivent par SSE avec polling de secours. |
-| Contact et pages légales (`StaticPages.tsx`) | Visuels sobres ; le formulaire contact persiste maintenant les demandes, mais le service e-mail reste non configuré. Le texte des CGU a des tarifs différents du catalogue d’abonnement. |
+| Contact et pages légales (`StaticPages.tsx`) | Visuels sobres ; le formulaire contact persiste maintenant les demandes, mais le service e-mail reste non configuré. Les CGU réutilisent le catalogue partagé et précisent que les tarifs sont à confirmer et le paiement d’abonnement non intégré. |
 
 ### À conserver / à refaire
 
@@ -331,7 +335,7 @@ Les priorités ci-dessous sont des propositions. La complexité et l’impact so
 
 1. Implémenter paiements Mobile Money dans un ordre compatible avec le prestataire retenu; ajouter webhooks et tests de répétition/échec.
 2. Déployer un pub/sub partagé si les SSE doivent desservir plusieurs instances; conserver le polling de secours.
-3. Aligner catalogue, tarifs, factures et textes légaux; décider si abonnement et commande client partagent un prestataire de paiement.
+3. Confirmer les tarifs et la différenciation Enterprise; intégrer un prestataire de paiement avant d’activer encaissement, factures payées ou renouvellement automatique.
 4. Ajouter des tests d’intégration pour authentification/autorisation, CRUD, isolation multi-tenant et calculs financiers.
 5. Reprendre ensuite le redesign public mobile-first décrit en section 6, sans modifier les contrats de sécurité validés.
 
@@ -343,7 +347,7 @@ Les priorités ci-dessous sont des propositions. La complexité et l’impact so
 2. Ajouter promotions/coupons et avis vérifiés, après définition de règles de fraude/modération.
 3. Développer l’inventaire lorsque la gestion opérationnelle et les unités/recettes sont spécifiées.
 4. Ajouter PWA/cache offline pour la consultation, uniquement avec une stratégie de fraîcheur et sans masquer l’échec d’envoi d’une commande.
-5. Évaluer multi-sites et intégrations POS/exports ; les offres Enterprise visibles dans l’API ne démontrent pas à elles seules l’existence de ces intégrations.
+5. Valider le périmètre et le prix Enterprise avant d’y ajouter des fonctions multi-sites, POS ou exports.
 
 ## 9. Guide pour reprendre le projet
 
