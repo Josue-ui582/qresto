@@ -145,6 +145,11 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
         </div>
       ) : statsData ? (
         <>
+          {statsData.totalOrders === 0 && (
+            <p role="status" className="rounded-2xl border border-ink-200 bg-paper-white px-4 py-3 text-sm text-ink-600">
+              Aucune commande sur cette période. Les statistiques s’afficheront dès la première commande.
+            </p>
+          )}
           <KpiGrid stats={statsData} formatCurrency={formatCurrency} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
