@@ -8,9 +8,11 @@ import { OrderTrackingSearch } from './OrderTrackingSearch';
 import { OrderTrackingTimeline } from './OrderTrackingTimeline';
 import { OrderTrackingSummary } from './OrderTrackingSummary';
 import { FaIcon } from '@/components/common/Icon';
+import { useSearchParams } from 'next/navigation';
 
 export const OrderTrackingPage: React.FC = () => {
   const { viewParams } = useNavigation();
+  const searchParams = useSearchParams();
   const {
     trackingCodeInput,
     searchTrackedOrder,
@@ -18,24 +20,35 @@ export const OrderTrackingPage: React.FC = () => {
     refreshTrackedOrder,
   } = useOrder();
 
+  const requestedTrackingCode =
+    searchParams.get('trackingCode') ||
+    (viewParams.trackingCode as string) ||
+    trackingCodeInput ||
+    '';
   const [searchInput, setSearchInput] = useState<string>(
-    (viewParams.trackingCode as string) || trackingCodeInput || ''
+    requestedTrackingCode
   );
   const [currentOrder, setCurrentOrder] = useState<TrackedOrder | null>(trackedOrder);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [autoRefresh] = useState<boolean>(true);
 
-  // 1. Recherche initiale (si un code est dans l'URL ou le contexte)
   useEffect(() => {
-    const code = (viewParams.trackingCode as string) || trackingCodeInput;
-    if (code && !currentOrder) {
-      // searchTrackedOrder interroge maintenant l'API (PostgreSQL)
-      searchTrackedOrder(code).then((found) => {
-        if (found) setCurrentOrder(found);
+    if (requestedTrackingCode) setSearchInput(requestedTrackingCode);
+  }, [requestedTrackingCode]);
+
+  useEffect(() => {
+    if (requestedTrackingCode) {
+      searchTrackedOrder(requestedTrackingCode).then((found) => {
+        if (found) {
+          setCurrentOrder(found);
+          setSearchError(null);
+        } else {
+          setSearchError('Aucune commande ne correspond à ce code. Vérifiez-le puis réessayez.');
+        }
       });
     }
-  }, [viewParams.trackingCode, trackingCodeInput]);
+  }, [requestedTrackingCode, searchTrackedOrder]);
 
-  // 2. Polling : Actualisation silencieuse en arrière-plan toutes les 5 secondes
   useEffect(() => {
     if (!currentOrder || !autoRefresh) return;
     
@@ -44,10 +57,7 @@ export const OrderTrackingPage: React.FC = () => {
         const res = await fetch(`/api/orders?trackingCode=${currentOrder.trackingCode}`);
         if (res.ok) {
           const result = await res.json();
-          // Si le statut a changé en cuisine, on met à jour l'affichage
-          if (result.data && result.data.status !== currentOrder.status) {
-            setCurrentOrder(result.data);
-          }
+          if (result.data) setCurrentOrder(result.data);
         }
       } catch (err) {
         console.error('Erreur lors du rafraîchissement silencieux', err);
@@ -57,15 +67,18 @@ export const OrderTrackingPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentOrder, autoRefresh]);
 
-  // 3. Recherche manuelle
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchInput.trim()) return;
     const found = await searchTrackedOrder(searchInput);
-    if (found) setCurrentOrder(found);
+    if (found) {
+      setCurrentOrder(found);
+      setSearchError(null);
+    } else {
+      setSearchError('Aucune commande ne correspond à ce code. Vérifiez-le puis réessayez.');
+    }
   };
 
-  // 4. Bouton de rafraîchissement manuel
   const handleManualRefresh = async () => {
     if (!currentOrder) return;
     await refreshTrackedOrder();
@@ -80,6 +93,11 @@ export const OrderTrackingPage: React.FC = () => {
         setSearchInput={setSearchInput}
         handleSearch={handleSearch}
       />
+      {searchError && (
+        <p role="status" className="mb-6 text-center text-sm text-stone-600">
+          {searchError}
+        </p>
+      )}
 
       {currentOrder ? (
         <div className="space-y-6">
