@@ -10,10 +10,15 @@ export interface CartItem {
   notes?: string;
 }
 
+export interface AddToCartOptions {
+  restaurantId?: string;
+  notes?: string;
+}
+
 interface CartContextType {
   cart: CartItem[];
   cartRestaurantId: string | null;
-  addToCart: (dish: Dish, quantity?: number, notes?: string) => void;
+  addToCart: (dish: Dish, quantity?: number, options?: AddToCartOptions) => void;
   updateCartQuantity: (dishId: string, delta: number) => void;
   removeFromCart: (dishId: string) => void;
   clearCart: () => void;
@@ -51,23 +56,24 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [cart, cartRestaurantId]);
 
-  const addToCart = (dish: Dish, quantity: number = 1, notes?: string) => {
-    if (cartRestaurantId && cartRestaurantId !== dish.restaurantId && cart.length > 0) {
+  const addToCart = (dish: Dish, quantity: number = 1, options: AddToCartOptions = {}) => {
+    const restaurantId = options.restaurantId || dish.restaurantId;
+    if (cartRestaurantId && cartRestaurantId !== restaurantId && cart.length > 0) {
       const shouldReset = window.confirm("Votre panier contient déjà des plats d'un autre restaurant. Réinitialiser ?");
       if (!shouldReset) return;
       setCart([]);
     }
 
-    setCartRestaurantId(dish.restaurantId);
+    setCartRestaurantId(restaurantId);
     setCart((prev) => {
       const existing = prev.find((item) => item.dish.id === dish.id);
       if (existing) {
         return prev.map((item) => item.dish.id === dish.id
-          ? { ...item, quantity: item.quantity + quantity, notes: notes || item.notes }
+          ? { ...item, quantity: item.quantity + quantity, notes: options.notes || item.notes }
           : item
         );
       }
-      return [...prev, { dish, quantity, notes }];
+      return [...prev, { dish, quantity, notes: options.notes }];
     });
     showToast(`${dish.name} ajouté au panier !`, 'success');
   };

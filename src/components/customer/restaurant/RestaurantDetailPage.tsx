@@ -123,9 +123,7 @@ export const RestaurantDetailPage: React.FC = () => {
   };
 
   const handleAddToCart = (dish: Dish) => {
-    // Si le plat appartient à ce restaurant, on passe aussi l'ID du restaurant
-    addToCart(dish, 1, restaurant?.id);
-    showToast(`"${dish.name}" ajouté au panier !`, 'success');
+    addToCart(dish, 1, { restaurantId: restaurant?.id });
   };
 
   if (isLoading) {
