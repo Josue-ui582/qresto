@@ -2,6 +2,15 @@
 @import './design-system.css';
 @import "tailwindcss";
 
+.restaurant-menu-brand[style] .restaurant-primary-button {
+  background-color: var(--restaurant-primary-color);
+  color: var(--restaurant-primary-foreground);
+}
+
+.restaurant-menu-brand[style] .restaurant-primary-button:hover {
+  filter: brightness(0.9);
+}
+
 /* Animations & micro-interactions */
 @keyframes float {
   0%, 100% {

@@ -14,6 +14,7 @@ interface OrderData {
   whatsappConsent: boolean;
   customerAddress?: string;
   customerNotes?: string;
+  couponCode?: string;
   paymentMethod: PaymentMethod;
 }
 

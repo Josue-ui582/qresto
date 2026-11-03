@@ -13,6 +13,14 @@ import { generateTrackingCode, TRACKING_CODE_PATTERN } from '@/lib/orders/tracki
 import { notifyOrderCreated } from '@/lib/orders/order-notifier';
 import { publishOrderEvent } from '@/lib/realtime/event-bus';
 import { enforceSubscriptionWriteAccess } from '@/lib/subscription/service';
+import { calculateCouponDiscount, getCouponValidationError } from '@/lib/orders/coupons';
+import { aggregateRequestedQuantities, hasSufficientStock } from '@/lib/inventory/stock';
+
+class InsufficientStockError extends Error {
+  constructor(dishName: string) {
+    super(`Le plat « ${dishName} » n’est plus disponible en quantité suffisante.`);
+  }
+}
 
 const createOrderSchema = z.object({
   restaurantId: z.string().min(1),
@@ -26,6 +34,8 @@ const createOrderSchema = z.object({
   whatsappConsent: z.literal(true),
   customerAddress: z.string().trim().max(500).optional(),
   customerNotes: z.string().trim().max(1000).optional(),
+  couponCode: z.string().trim().min(3).max(30).regex(/^[A-Za-z0-9_-]+$/)
+    .transform((value) => value.toUpperCase()).optional(),
   paymentMethod: z.nativeEnum(PaymentMethod).default(PaymentMethod.CASH_ON_DELIVERY),
   items: z.array(z.object({
     dishId: z.string().min(1),
@@ -163,10 +173,100 @@ export async function POST(request: NextRequest) {
     if (!totals) {
       return NextResponse.json({ error: 'Le montant de la commande est invalide.' }, { status: 400 });
     }
-    const { subtotal, total } = totals;
+    const { subtotal } = totals;
 
     const trackingCode = generateTrackingCode();
     const newOrder = await prisma.$transaction(async (transaction) => {
+      let couponDiscount = 0;
+      let appliedCoupon: { code: string } | null = null;
+      if (input.couponCode) {
+        const coupon = await transaction.coupon.findFirst({
+          where: {
+            restaurantId: restaurant.id,
+            code: input.couponCode,
+          },
+        });
+        if (!coupon) {
+          return { error: 'Code promotionnel invalide.' as const };
+        }
+
+        const couponError = getCouponValidationError(coupon, subtotal);
+        if (couponError) return { error: couponError };
+        const discount = calculateCouponDiscount(subtotal, coupon);
+        if (discount === null) {
+          return { error: 'La remise ne peut pas être calculée.' as const };
+        }
+
+        const useResult = await transaction.coupon.updateMany({
+          where: {
+            id: coupon.id,
+            active: true,
+            AND: [
+              { usageCount: coupon.usageCount },
+              ...(coupon.maxUses === null ? [] : [{ usageCount: { lt: coupon.maxUses } }]),
+            ],
+          },
+          data: { usageCount: { increment: 1 } },
+        });
+        if (!useResult.count) {
+          return { error: 'Ce code promotionnel vient d’atteindre sa limite d’utilisation.' as const };
+        }
+        couponDiscount = discount;
+        appliedCoupon = { code: coupon.code };
+      }
+
+      const stockDeductions: Array<{ dishId: string; quantity: number }> = [];
+      const requestedQuantities = aggregateRequestedQuantities(
+        input.items.map(({ dishId, quantity }) => ({ dishId, quantity }))
+      );
+      for (const [dishId, quantity] of requestedQuantities) {
+        const dish = await transaction.dish.findFirst({
+          where: { id: dishId, restaurantId: restaurant.id },
+          select: { id: true, name: true, stockQuantity: true, lowStockThreshold: true },
+        });
+        if (!dish || dish.stockQuantity === null) continue;
+        if (!hasSufficientStock(dish.stockQuantity, quantity)) {
+          throw new InsufficientStockError(dish.name);
+        }
+
+        const deduction = await transaction.dish.updateMany({
+          where: {
+            id: dish.id,
+            restaurantId: restaurant.id,
+            isAvailable: true,
+            stockQuantity: { gte: quantity },
+          },
+          data: { stockQuantity: { decrement: quantity } },
+        });
+        if (!deduction.count) throw new InsufficientStockError(dish.name);
+
+        const remaining = dish.stockQuantity - quantity;
+        if (remaining === 0) {
+          await transaction.dish.updateMany({
+            where: { id: dish.id, restaurantId: restaurant.id },
+            data: { isAvailable: false },
+          });
+        }
+        if (
+          dish.lowStockThreshold !== null &&
+          dish.stockQuantity > dish.lowStockThreshold &&
+          remaining <= dish.lowStockThreshold
+        ) {
+          await transaction.notification.create({
+            data: {
+              restaurantId: restaurant.id,
+              title: remaining === 0 ? 'Plat épuisé' : 'Stock bas',
+              message: `${dish.name} : ${remaining} unité(s) en stock.`,
+              type: 'LOW_STOCK',
+            },
+          });
+        }
+        stockDeductions.push({
+          dishId: dish.id,
+          quantity: -quantity,
+        });
+      }
+
       const order = await transaction.order.create({
         data: {
           trackingCode,
@@ -177,7 +277,9 @@ export async function POST(request: NextRequest) {
           tableNumber: verifiedTableNumber,
           subtotal,
           deliveryFee,
-          total,
+          total: subtotal + deliveryFee - couponDiscount,
+          couponDiscount,
+          couponCode: appliedCoupon?.code ?? null,
           status: OrderStatus.NEW,
           customerName: input.customerName,
           customerPhone: input.customerWhatsapp,
@@ -205,6 +307,16 @@ export async function POST(request: NextRequest) {
           })),
         })),
       });
+      if (stockDeductions.length > 0) {
+        await transaction.inventoryMovement.createMany({
+          data: stockDeductions.map(({ dishId, quantity }) => ({
+            dishId,
+            orderId: order.id,
+            quantityChange: quantity,
+            type: 'ORDER',
+          })),
+        });
+      }
       await transaction.orderStatusHistory.create({
         data: {
           orderId: order.id,
@@ -221,22 +333,25 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return order;
-    });
+      return { order };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    if ('error' in newOrder) {
+      return NextResponse.json({ error: newOrder.error }, { status: 400 });
+    }
 
-    publishOrderEvent(newOrder.restaurantId, newOrder.trackingCode, 'order.created');
+    publishOrderEvent(newOrder.order.restaurantId, newOrder.order.trackingCode, 'order.created');
 
     try {
       await notifyOrderCreated({
-        id: newOrder.id,
-        trackingCode: newOrder.trackingCode,
-        restaurantId: newOrder.restaurantId,
+        id: newOrder.order.id,
+        trackingCode: newOrder.order.trackingCode,
+        restaurantId: newOrder.order.restaurantId,
       });
     } catch (error: unknown) {
       console.error('Échec de la notification après création de commande.', error);
     }
 
-    const publicOrder = await findPublicTrackedOrder(newOrder.trackingCode);
+    const publicOrder = await findPublicTrackedOrder(newOrder.order.trackingCode);
     if (!publicOrder) {
       throw new Error('La commande créée est introuvable lors de la préparation de sa réponse.');
     }
@@ -245,6 +360,20 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: unknown) {
+    if (error instanceof InsufficientStockError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'P2034'
+    ) {
+      return NextResponse.json(
+        { error: 'Le stock ou le coupon vient d’être modifié. Vérifiez le panier puis réessayez.' },
+        { status: 409 }
+      );
+    }
     return handleDatabaseError(error, 'Erreur serveur lors de la création de la commande.');
   }
 }

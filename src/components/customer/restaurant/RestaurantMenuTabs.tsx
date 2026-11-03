@@ -38,7 +38,7 @@ export const RestaurantMenuTabs: React.FC<RestaurantMenuTabsProps> = ({
               onClick={() => setActiveCategoryId(cat.id)}
               className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeCategoryId === cat.id
-                  ? 'bg-amber-600 text-white shadow-xs'
+                  ? 'restaurant-primary-button bg-amber-600 text-white shadow-xs'
                   : 'bg-white hover:bg-stone-100 text-stone-700 border border-stone-200/70'
               }`}
             >

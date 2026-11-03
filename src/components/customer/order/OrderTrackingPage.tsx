@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { OrderTrackingSearch } from './OrderTrackingSearch';
 import { OrderTrackingTimeline } from './OrderTrackingTimeline';
 import { OrderTrackingSummary } from './OrderTrackingSummary';
+import { OrderReviewForm } from './OrderReviewForm';
 import { FaIcon } from '@/components/common/Icon';
 import { useSearchParams } from 'next/navigation';
 
@@ -135,6 +136,12 @@ export const OrderTrackingPage: React.FC = () => {
           <OrderTrackingSummary 
             currentOrder={currentOrder} 
           />
+          {currentOrder.status === 'DELIVERED' && !currentOrder.hasReview && (
+            <OrderReviewForm
+              trackingCode={currentOrder.trackingCode}
+              onSubmitted={() => setCurrentOrder((order) => order ? { ...order, hasReview: true } : order)}
+            />
+          )}
         </div>
       ) : (
         <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-stone-300 p-8">

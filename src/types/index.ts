@@ -39,6 +39,7 @@ export interface Restaurant {
   email: string;
   logo: string;
   coverImage: string;
+  primaryColor?: string | null;
   openingHours: string;
   isOpen: boolean;
   currency: string; // "FCFA"
@@ -166,6 +167,7 @@ export interface TrackedOrder {
   restaurantPhone?: string | null;
   currency: string;
   status: OrderStatus;
+  hasReview: boolean;
   items: Array<Pick<OrderItem, 'name' | 'price' | 'quantity'>>;
   total: number;
   statusHistory: Array<{

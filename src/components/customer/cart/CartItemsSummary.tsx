@@ -10,6 +10,7 @@ interface CartItemsSummaryProps {
   currency: string;
   cartTotal: number;
   deliveryFee: number;
+  couponDiscount: number;
   grandTotal: number;
   orderType: OrderType;
   onUpdateQuantity: (cartItemId: string, delta: number) => void;
@@ -22,6 +23,7 @@ export const CartItemsSummary: React.FC<CartItemsSummaryProps> = ({
   currency,
   cartTotal,
   deliveryFee,
+  couponDiscount,
   grandTotal,
   orderType,
   onUpdateQuantity,
@@ -97,6 +99,12 @@ export const CartItemsSummary: React.FC<CartItemsSummaryProps> = ({
           {orderType === 'DELIVERY' ? `${deliveryFee.toLocaleString()} ${currency}` : 'Gratuit (Sur place / À emporter)'}
         </span>
       </div>
+      {couponDiscount > 0 && (
+        <div className="flex justify-between text-emerald-700">
+          <span>Remise promotionnelle</span>
+          <span className="font-semibold">−{couponDiscount.toLocaleString()} {currency}</span>
+        </div>
+      )}
       <div className="flex justify-between text-base font-extrabold text-stone-900 pt-2 border-t border-stone-100">
         <span>Total à régler</span>
         <span className="text-amber-600">{grandTotal.toLocaleString()} {currency}</span>

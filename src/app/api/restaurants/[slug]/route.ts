@@ -35,6 +35,7 @@ export async function GET(
         phone: true,
         logo: true,
         coverImage: true,
+        primaryColor: true,
         openingHours: true,
         isOpen: true,
         currency: true,
@@ -102,7 +103,7 @@ export async function GET(
     }
 
     const reviewAggregate = await prisma.review.aggregate({
-      where: { restaurantId: restaurant.id },
+      where: { restaurantId: restaurant.id, isApproved: true },
       _avg: { rating: true },
       _count: { _all: true },
     });

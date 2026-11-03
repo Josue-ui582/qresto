@@ -156,7 +156,7 @@ export const RestaurantDishCard: React.FC<RestaurantDishCardProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onAddToCart(dish, selectedOptionIds)}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 transition-all cursor-pointer"
+            className="restaurant-primary-button flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Ajouter</span>
