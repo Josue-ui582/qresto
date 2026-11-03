@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from 'generated/prisma/client';
 import { OrderStatus, OrderType, PaymentMethod, PaymentStatus } from 'generated/prisma/enums';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
@@ -7,6 +8,7 @@ import { authorizeRequest } from '@/lib/auth/session';
 import { handleDatabaseError, parseJson } from '@/lib/api/validation';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { findPublicTrackedOrder } from '@/lib/orders/public-order';
+import { calculateOrderTotals, resolveSelectedDishOptions } from '@/lib/orders/order-pricing';
 
 const createOrderSchema = z.object({
   restaurantId: z.string().min(1),
@@ -24,7 +26,15 @@ const createOrderSchema = z.object({
     dishId: z.string().min(1),
     quantity: z.number().int().min(1).max(100),
     notes: z.string().trim().max(500).optional(),
-  })).min(1).max(50),
+    optionIds: z.array(z.string().min(1).max(100)).max(30).default([]),
+  })).min(1).max(50).superRefine((items, context) => {
+    if (new Set(items.map((item) => item.dishId)).size !== items.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Chaque plat doit apparaître une seule fois dans la commande.',
+      });
+    }
+  }),
 }).superRefine((value, context) => {
   if (value.type === OrderType.DINE_IN && !value.tableNumber) {
     context.addIssue({
@@ -71,7 +81,22 @@ export async function POST(request: NextRequest) {
         restaurantId: restaurant.id,
         isAvailable: true,
       },
-      select: { id: true, name: true, price: true },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        optionGroups: {
+          select: {
+            id: true,
+            minSelection: true,
+            maxSelection: true,
+            isRequired: true,
+            options: {
+              select: { id: true, name: true, price: true, available: true },
+            },
+          },
+        },
+      },
     });
     const dishesById = new Map(dishes.map((dish) => [dish.id, dish]));
     if (dishesById.size !== dishIds.length) {
@@ -81,19 +106,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const items = input.items.map((item) => ({
-      ...item,
-      dish: dishesById.get(item.dishId)!,
-    }));
-    const subtotal = items.reduce(
-      (sum, item) => sum + item.dish.price * item.quantity,
-      0
-    );
+    const items: Array<{
+      dish: (typeof dishes)[number];
+      quantity: number;
+      notes?: string;
+      selectedOptions: NonNullable<ReturnType<typeof resolveSelectedDishOptions>>;
+      unitPrice: number;
+    }> = [];
+    for (const item of input.items) {
+      const dish = dishesById.get(item.dishId);
+      if (!dish) {
+        return NextResponse.json({ error: 'Un ou plusieurs plats ne sont plus disponibles.' }, { status: 400 });
+      }
+
+      const selectedOptions = resolveSelectedDishOptions(dish.optionGroups, item.optionIds);
+      if (!selectedOptions) {
+        return NextResponse.json({ error: 'Les options sélectionnées ne sont pas valides.' }, { status: 400 });
+      }
+      items.push({
+        ...item,
+        dish,
+        selectedOptions,
+        unitPrice: dish.price + selectedOptions.reduce((sum, option) => sum + option.price, 0),
+      });
+    }
     const deliveryFee = input.type === OrderType.DELIVERY ? restaurant.deliveryFee : 0;
-    const total = subtotal + deliveryFee;
-    if (!Number.isSafeInteger(total) || total > 2_147_483_647) {
+    const totals = calculateOrderTotals(
+      items.map(({ unitPrice, quantity }) => ({ unitPrice, quantity })),
+      deliveryFee
+    );
+    if (!totals) {
       return NextResponse.json({ error: 'Le montant de la commande est invalide.' }, { status: 400 });
     }
+    const { subtotal, total } = totals;
 
     const trackingCode = `QR-${randomBytes(6).toString('hex').toUpperCase()}`;
     const newOrder = await prisma.order.create({
@@ -118,9 +163,14 @@ export async function POST(request: NextRequest) {
           create: items.map((item) => ({
             dishId: item.dish.id,
             name: item.dish.name,
-            price: item.dish.price,
+            price: item.unitPrice,
             quantity: item.quantity,
             notes: item.notes || null,
+            options: item.selectedOptions.map((option): Prisma.InputJsonObject => ({
+              id: option.id,
+              name: option.name,
+              price: option.price,
+            })),
           })),
         },
         statusHistory: {
