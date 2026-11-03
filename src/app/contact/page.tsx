@@ -8,7 +8,7 @@ import { ContactPage } from '@/components/pages/StaticPages';
 
 export default function ContactRoute() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+    <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1">
         <ContactPage />

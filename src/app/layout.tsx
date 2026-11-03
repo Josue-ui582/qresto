@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from 'next';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 
 import { AppProviders } from '@/context/AppProviders'; 
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-plus-jakarta-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'QResto - Digitalisation Restaurants & Menus QR Afrique',
@@ -33,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className="scroll-smooth">
+    <html lang="fr" className={`${plusJakartaSans.variable} scroll-smooth`}>
       <body className="bg-background text-text antialiased">
         <AppProviders>
           {children}

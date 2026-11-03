@@ -4,16 +4,16 @@ import React, { useState } from 'react';
 import { useNavigation } from '../../context/NavigationContext';
 import Link from 'next/link';
 import { useToast } from '../../context/ToastContext';
-import { FaIcon } from '../common/Icon';
+import { Icon } from '../common/Icon';
 import { PLAN_CURRENCY, PLANS_CATALOG } from '@/lib/subscription/catalog';
 
 export const CguPage: React.FC = () => {
   const { navigateTo } = useNavigation();
 
   return (
-    <div className="min-h-screen bg-stone-50 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-      <Link href="/" className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-stone-900">
-        <FaIcon name="fa-solid fa-arrow-left" />
+    <div className="min-h-screen bg-ink-50 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+      <Link href="/" className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-ink-500 hover:text-ink-900">
+        <Icon name="arrow-left" />
         <span>Retour à l'accueil</span>
       </Link>
 
@@ -53,17 +53,17 @@ export const PrivacyPage: React.FC = () => {
   const { navigateTo } = useNavigation();
 
   return (
-    <div className="min-h-screen bg-stone-50 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-      <Link href="/" className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-stone-900">
-        <FaIcon name="fa-solid fa-arrow-left" />
+    <div className="min-h-screen bg-ink-50 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+      <Link href="/" className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-ink-500 hover:text-ink-900">
+        <Icon name="arrow-left" />
         <span>Retour à l'accueil</span>
       </Link>
 
-      <div className="bg-white p-8 sm:p-12 rounded-3xl border border-stone-200 shadow-sm space-y-6">
-        <h1 className="text-3xl font-extrabold text-stone-900">Politique de Confidentialité</h1>
-        <p className="text-xs text-stone-400">Protection des données • République du Bénin</p>
+      <div className="bg-paper-white p-8 sm:p-12 rounded-3xl border border-ink-200 shadow-sm space-y-6">
+        <h1 className="text-3xl font-extrabold text-ink-900">Politique de Confidentialité</h1>
+        <p className="text-xs text-ink-400">Protection des données • République du Bénin</p>
 
-        <section className="space-y-3 text-sm text-stone-600 leading-relaxed">
+        <section className="space-y-3 text-sm text-ink-600 leading-relaxed">
           <p>
             La confidentialité de nos restaurateurs et des clients est primordiale. QResto applique une stricte isolation multi-tenant : les données d'un restaurant (chiffre d'affaires, commandes, liste des clients) ne sont jamais accessibles par un autre restaurant.
           </p>
@@ -128,67 +128,67 @@ export const ContactPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-      <Link href="/" className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-stone-900">
-        <FaIcon name="fa-solid fa-arrow-left" />
+    <div className="min-h-screen bg-ink-50 py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
+      <Link href="/" className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-ink-500 hover:text-ink-900">
+        <Icon name="arrow-left" />
         <span>Retour à l'accueil</span>
       </Link>
 
-      <div className="bg-white p-8 sm:p-12 rounded-3xl border border-stone-200 shadow-sm space-y-8">
+      <div className="bg-paper-white p-8 sm:p-12 rounded-3xl border border-ink-200 shadow-sm space-y-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-stone-900">Contactez l'Équipe QResto</h1>
-          <p className="text-sm text-stone-500 mt-2">
+          <h1 className="text-3xl font-extrabold text-ink-900">Contactez l'Équipe QResto</h1>
+          <p className="text-sm text-ink-500 mt-2">
             Notre équipe est basée à Cotonou et accompagne les restaurants 7j/7.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
-            <FaIcon name="fa-brands fa-whatsapp" className="text-emerald-600 text-xl mb-2" />
-            <h4 className="font-bold text-stone-900 text-sm">Assistance WhatsApp 7j/7</h4>
-            <p className="text-xs text-stone-600 mt-1">+229 97 00 00 00</p>
+          <div className="p-4 bg-brand-50 rounded-2xl border border-brand-200">
+            <Icon name="whatsapp" className="text-positive-600 text-xl mb-2" />
+            <h4 className="font-bold text-ink-900 text-sm">Assistance WhatsApp 7j/7</h4>
+            <p className="text-xs text-ink-600 mt-1">+229 97 00 00 00</p>
           </div>
-          <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200">
-            <FaIcon name="fa-solid fa-envelope" className="text-amber-600 text-xl mb-2" />
-            <h4 className="font-bold text-stone-900 text-sm">Email Support</h4>
-            <p className="text-xs text-stone-600 mt-1">support@qresto.bj</p>
+          <div className="p-4 bg-ink-50 rounded-2xl border border-ink-200">
+            <Icon name="envelope" className="text-brand-600 text-xl mb-2" />
+            <h4 className="font-bold text-ink-900 text-sm">Email Support</h4>
+            <p className="text-xs text-ink-600 mt-1">support@qresto.bj</p>
           </div>
         </div>
 
         <form onSubmit={handleSend} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-stone-700 mb-1">Votre Nom & Prénom</label>
+            <label className="block text-xs font-medium text-ink-700 mb-1">Votre Nom & Prénom</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm"
+              className="w-full px-3.5 py-2.5 bg-ink-50 border border-ink-200 rounded-xl text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-stone-700 mb-1">Votre Email ou Téléphone</label>
+            <label className="block text-xs font-medium text-ink-700 mb-1">Votre Email ou Téléphone</label>
             <input
               type="text"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm"
+              className="w-full px-3.5 py-2.5 bg-ink-50 border border-ink-200 rounded-xl text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-stone-700 mb-1">Message</label>
+            <label className="block text-xs font-medium text-ink-700 mb-1">Message</label>
             <textarea
               rows={4}
               required
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm"
+              className="w-full px-3.5 py-2.5 bg-ink-50 border border-ink-200 rounded-xl text-sm"
             />
           </div>
           <div
             aria-hidden="true"
-            className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden"
+            className="absolute -left-[625rem] top-auto h-px w-px overflow-hidden"
           >
             <label htmlFor="contact-website">Ne pas remplir ce champ</label>
             <input
@@ -203,7 +203,7 @@ export const ContactPage: React.FC = () => {
           <button
             type="submit"
             disabled={isSending}
-            className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md"
+            className="w-full py-3.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-paper-white font-bold text-sm shadow-md"
           >
             {isSending ? 'Envoi en cours...' : 'Envoyer mon message'}
           </button>

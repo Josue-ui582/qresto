@@ -19,21 +19,21 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({ notice, on
           exit={{ opacity: 0, y: -20 }}
           className={`p-4 rounded-2xl flex items-center justify-between border text-xs sm:text-sm font-bold shadow-lg ${
             notice.type === 'success'
-              ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-              : 'bg-rose-50 text-rose-900 border-rose-200'
+              ? 'bg-positive-50 text-positive-900 border-positive-200'
+              : 'bg-alert-50 text-alert-900 border-alert-200'
           }`}
         >
           <div className="flex items-center gap-2">
             {notice.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              <CheckCircle2 className="w-5 h-5 text-positive-600" />
             ) : (
-              <AlertTriangle className="w-5 h-5 text-rose-600" />
+              <AlertTriangle className="w-5 h-5 text-alert-600" />
             )}
             <span>{notice.msg}</span>
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-700 p-1 cursor-pointer"
+            className="text-ink-400 hover:text-ink-700 p-1 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>

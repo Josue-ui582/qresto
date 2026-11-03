@@ -108,15 +108,15 @@ export const InventoryTab: React.FC<{ restaurantId: string }> = ({ restaurantId 
 
   return (
     <section className="space-y-5">
-      <header className="rounded-3xl border border-stone-200/80 bg-white p-6 sm:p-8">
-        <h2 className="text-xl font-black text-stone-950">Gestion du stock</h2>
-        <p className="mt-1 text-xs text-stone-500">Le stock est décrémenté avec la commande. Les plats épuisés sont automatiquement désactivés.</p>
-        <p className="mt-3 text-xs font-bold text-amber-800">{lowStockCount} plat(s) au seuil d’alerte ou en rupture.</p>
+      <header className="rounded-3xl border border-ink-200/80 bg-paper-white p-6 sm:p-8">
+        <h2 className="text-xl font-black text-ink-950">Gestion du stock</h2>
+        <p className="mt-1 text-xs text-ink-500">Le stock est décrémenté avec la commande. Les plats épuisés sont automatiquement désactivés.</p>
+        <p className="mt-3 text-xs font-bold text-brand-800">{lowStockCount} plat(s) au seuil d’alerte ou en rupture.</p>
       </header>
-      {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-800">{error}</p>}
-      {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800">{notice}</p>}
-      {isLoading ? <p className="text-sm text-stone-500">Chargement de l’inventaire…</p> : dishes.length === 0 ? (
-        <p className="rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-500">Ajoutez des plats avant de configurer l’inventaire.</p>
+      {error && <p role="alert" className="rounded-xl border border-negative-200 bg-negative-50 p-4 text-xs text-negative-800">{error}</p>}
+      {notice && <p role="status" className="rounded-xl border border-positive-200 bg-positive-50 p-4 text-xs text-positive-800">{notice}</p>}
+      {isLoading ? <p className="text-sm text-ink-500">Chargement de l’inventaire…</p> : dishes.length === 0 ? (
+        <p className="rounded-2xl border border-ink-200 bg-paper-white p-6 text-sm text-ink-500">Ajoutez des plats avant de configurer l’inventaire.</p>
       ) : (
         <div className="space-y-4">
           {dishes.map((dish) => {
@@ -125,17 +125,17 @@ export const InventoryTab: React.FC<{ restaurantId: string }> = ({ restaurantId 
               dish.lowStockThreshold !== null &&
               dish.stockQuantity <= dish.lowStockThreshold;
             return (
-              <article key={dish.id} className="rounded-2xl border border-stone-200 bg-white p-5">
+              <article key={dish.id} className="rounded-2xl border border-ink-200 bg-paper-white p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0">
-                    <h3 className="font-bold text-stone-900">{dish.name}</h3>
-                    <p className={`mt-1 text-xs font-semibold ${!isTracked ? 'text-stone-500' : isLow ? 'text-red-700' : 'text-emerald-700'}`}>
+                    <h3 className="font-bold text-ink-900">{dish.name}</h3>
+                    <p className={`mt-1 text-xs font-semibold ${!isTracked ? 'text-ink-500' : isLow ? 'text-negative-700' : 'text-positive-700'}`}>
                       {!isTracked ? 'Suivi du stock non activé' : isLow ? 'Stock bas ou épuisé' : 'Stock disponible'}
                       {isTracked && !dish.isAvailable ? ' · plat désactivé' : ''}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-stone-500">
+                    <div className="mt-3 flex flex-wrap gap-2 text-[0.6875rem] text-ink-500">
                       {dish.inventoryMovements.map((movement) => (
-                        <span key={movement.id} className="rounded-full bg-stone-100 px-2.5 py-1">
+                        <span key={movement.id} className="rounded-full bg-ink-100 px-2.5 py-1">
                           {movement.type === 'ORDER' ? 'Commande' : movement.type === 'RESTOCK' ? 'Réapprovisionnement' : 'Ajustement'}
                           {' '}{movement.quantityChange > 0 ? '+' : ''}{movement.quantityChange}
                         </span>
@@ -143,21 +143,21 @@ export const InventoryTab: React.FC<{ restaurantId: string }> = ({ restaurantId 
                     </div>
                   </div>
                   <div className="flex flex-wrap items-end gap-3">
-                    <label className="text-xs font-semibold text-stone-700">
+                    <label className="text-xs font-semibold text-ink-700">
                       Quantité en stock
                       <input type="number" min={0} step={1} value={quantities[dish.id] ?? '0'}
                         onChange={(event) => setQuantities((current) => ({ ...current, [dish.id]: event.target.value }))}
-                        className="mt-1 block w-28 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5" />
+                        className="mt-1 block w-28 rounded-xl border border-ink-200 bg-ink-50 px-3 py-2.5" />
                     </label>
-                    <label className="text-xs font-semibold text-stone-700">
+                    <label className="text-xs font-semibold text-ink-700">
                       Seuil d’alerte
                       <input type="number" min={0} step={1} value={thresholds[dish.id] ?? '5'}
                         onChange={(event) => setThresholds((current) => ({ ...current, [dish.id]: event.target.value }))}
-                        className="mt-1 block w-28 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5" />
+                        className="mt-1 block w-28 rounded-xl border border-ink-200 bg-ink-50 px-3 py-2.5" />
                     </label>
                     <button type="button" disabled={savingDishId === dish.id}
                       onClick={() => void saveInventory(dish)}
-                      className="rounded-xl bg-stone-900 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-50">
+                      className="rounded-xl bg-ink-900 px-4 py-2.5 text-xs font-bold text-paper-white disabled:opacity-50">
                       {savingDishId === dish.id ? 'Enregistrement…' : isTracked ? 'Enregistrer' : 'Activer le suivi'}
                     </button>
                   </div>

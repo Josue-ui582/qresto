@@ -47,7 +47,7 @@ export const QRCodeImage: React.FC<QRCodeImageProps> = ({
 
   const currentGeneration = generation?.key === generationKey ? generation : null;
   if (currentGeneration?.hasError) {
-    return <span role="alert" className="text-xs font-semibold text-red-700">QR code indisponible</span>;
+    return <span role="alert" className="text-xs font-semibold text-negative-700">QR code indisponible</span>;
   }
   if (!currentGeneration?.imageUrl) {
     return <span className={className} aria-hidden="true" />;

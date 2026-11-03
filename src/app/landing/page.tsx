@@ -9,8 +9,7 @@ import { LandingPage } from '@/components/pages/LandingPage/LandingPage';
 export default function LandingRoute() {
   return (
     <div
-      className="min-h-screen flex flex-col bg-stone-50 text-stone-900 selection:bg-amber-500 selection:text-white"
-      style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+      className="min-h-screen flex flex-col bg-ink-50 text-ink-900 selection:bg-brand-500 selection:text-paper-white"
     >
       <Navbar />
       <main className="flex-1">

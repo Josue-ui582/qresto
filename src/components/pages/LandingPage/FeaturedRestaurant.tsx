@@ -29,7 +29,7 @@ export const FeaturedRestaurants: React.FC = () => {
   }, []);
 
   return (
-    <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-white">
+    <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-paper-white">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 25 }}
@@ -39,20 +39,20 @@ export const FeaturedRestaurants: React.FC = () => {
           className="mb-12 flex flex-col items-center gap-5 text-center"
         >
           <div className="max-w-3xl">
-            <div className="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-2">
+            <div className="text-xs uppercase font-extrabold tracking-widest text-brand-700 mb-2">
               Établissements Certifiés
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
+            <h2 className="text-3xl sm:text-4xl font-black text-ink-950">
               Restaurants digitalisés
             </h2>
-            <p className="text-sm sm:text-base text-stone-500 mt-2 font-normal">
+            <p className="text-sm sm:text-base text-ink-500 mt-2 font-normal">
               Découvrez comment les meilleurs chefs et gérants modernisent leur service en salle.
             </p>
           </div>
 
           <Link href="/restaurants">
             <motion.p
-              className="px-5 py-2.5 rounded-full border border-stone-200 hover:border-stone-900 text-stone-800 font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-full border border-ink-200 hover:border-ink-900 text-ink-800 font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
@@ -63,8 +63,8 @@ export const FeaturedRestaurants: React.FC = () => {
         </motion.div>
 
         {isLoading ? (
-          <div className="py-16 flex flex-col items-center justify-center text-stone-400">
-            <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-2" />
+          <div className="py-16 flex flex-col items-center justify-center text-ink-400">
+            <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-2" />
             <span className="text-xs font-medium">Chargement des établissements...</span>
           </div>
         ) : restaurants.length > 0 ? (
@@ -84,10 +84,10 @@ export const FeaturedRestaurants: React.FC = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: i * 0.12 }}
                   whileHover={{ y: -6 }}
-                  className="bg-[#fbf9f5] rounded-3xl overflow-hidden border border-stone-200/90 shadow-xs hover:shadow-xl transition-all flex flex-col justify-between group cursor-pointer"
+                  className="bg-surface-warm rounded-3xl overflow-hidden border border-ink-200/90 shadow-xs hover:shadow-xl transition-all flex flex-col justify-between group cursor-pointer"
                 >
                   <div>
-                    <div className="relative h-52 overflow-hidden bg-stone-100">
+                    <div className="relative h-52 overflow-hidden bg-ink-100">
                       {image ? (
                         <img
                           src={image}
@@ -95,56 +95,56 @@ export const FeaturedRestaurants: React.FC = () => {
                           className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-500"
                         />
                       ) : (
-                        <div className="h-full flex items-center justify-center text-stone-400">
+                        <div className="h-full flex items-center justify-center text-ink-400">
                           <UtensilsCrossed className="w-10 h-10" />
                         </div>
                       )}
                       {badge && (
-                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-stone-900/80 backdrop-blur-xs text-white text-[10px] font-bold">
+                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-ink-900/80 backdrop-blur-xs text-paper-white text-[0.625rem] font-bold">
                           {badge}
                         </div>
                       )}
-                      <div className={`absolute top-3 right-3 px-2.5 py-1 rounded-lg text-white text-[10px] font-bold flex items-center gap-1 shadow-sm ${
-                        resto.isOpen ? 'bg-emerald-500' : 'bg-red-500'
+                      <div className={`absolute top-3 right-3 px-2.5 py-1 rounded-lg text-paper-white text-[0.625rem] font-bold flex items-center gap-1 shadow-sm ${
+                        resto.isOpen ? 'bg-positive-500' : 'bg-negative-500'
                       }`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-paper-white" />
                         <span>{status}</span>
                       </div>
                     </div>
 
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-stone-500">{neighborhood}</span>
+                        <span className="text-xs font-semibold text-ink-500">{neighborhood}</span>
                         {resto.rating > 0 && resto.reviewCount > 0 && (
-                          <div className="flex items-center gap-1 text-xs font-bold text-amber-600">
-                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          <div className="flex items-center gap-1 text-xs font-bold text-brand-600">
+                            <Star className="w-3.5 h-3.5 fill-brand-400 text-brand-400" />
                             <span>{resto.rating.toFixed(1)}</span>
-                            <span className="text-stone-400 font-normal">({resto.reviewCount})</span>
+                            <span className="text-ink-400 font-normal">({resto.reviewCount})</span>
                           </div>
                         )}
                       </div>
 
-                      <h3 className="text-xl font-bold text-stone-950 mb-2 group-hover:text-amber-700 transition-colors">
+                      <h3 className="text-xl font-bold text-ink-950 mb-2 group-hover:text-brand-700 transition-colors">
                         {resto.name}
                       </h3>
                       {resto.description && (
-                        <p className="text-xs text-stone-600 leading-relaxed font-normal mb-4 line-clamp-2">
+                        <p className="text-xs text-ink-600 leading-relaxed font-normal mb-4 line-clamp-2">
                           {resto.description}
                         </p>
                       )}
 
-                      <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
-                        <QrCode className="w-3.5 h-3.5 text-amber-600" />
+                      <div className="flex items-center gap-2 text-xs font-medium text-ink-500">
+                        <QrCode className="w-3.5 h-3.5 text-brand-600" />
                         <span>{tableCount > 0 ? `${tableCount} tables équipées en QR dynamique` : 'Menu QR Code à table'}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-6 pt-0 border-t border-stone-200/60 mt-3 flex items-center justify-between">
-                    <Link href={`/restaurant/${resto.slug}`} className="text-xs font-bold text-stone-700 group-hover:text-stone-950">
+                  <div className="p-6 pt-0 border-t border-ink-200/60 mt-3 flex items-center justify-between">
+                    <Link href={`/restaurant/${resto.slug}`} className="text-xs font-bold text-ink-700 group-hover:text-ink-950">
                       Consulter la carte
                     </Link>
-                    <Link href={`/restaurant/${resto.slug}`} className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center group-hover:bg-amber-600 transition-colors">
+                    <Link href={`/restaurant/${resto.slug}`} className="w-8 h-8 rounded-full bg-ink-900 text-paper-white flex items-center justify-center group-hover:bg-brand-600 transition-colors">
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   </div>
@@ -153,10 +153,10 @@ export const FeaturedRestaurants: React.FC = () => {
             })}
           </div>
         ) : (
-          <div className="bg-[#fbf9f5] rounded-3xl p-8 text-center border border-stone-200 max-w-md mx-auto">
-            <UtensilsCrossed className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-            <p className="text-sm font-bold text-stone-800">Aucun établissement disponible</p>
-            <p className="text-xs text-stone-500 mt-1">
+          <div className="bg-surface-warm rounded-3xl p-8 text-center border border-ink-200 max-w-md mx-auto">
+            <UtensilsCrossed className="w-10 h-10 text-ink-300 mx-auto mb-3" />
+            <p className="text-sm font-bold text-ink-800">Aucun établissement disponible</p>
+            <p className="text-xs text-ink-500 mt-1">
               Les établissements partenaires seront affichés dès leur inscription.
             </p>
           </div>

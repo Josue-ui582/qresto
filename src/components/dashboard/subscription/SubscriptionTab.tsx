@@ -170,17 +170,17 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
       <Header isLoading={isLoading} onRefresh={fetchSubscription} />
 
       {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center text-stone-400 bg-white rounded-3xl border border-stone-200/80">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-3" />
+        <div className="py-20 flex flex-col items-center justify-center text-ink-400 bg-paper-white rounded-3xl border border-ink-200/80">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-3" />
           <span className="text-xs font-semibold">Chargement des informations de licence...</span>
         </div>
       ) : loadError ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-semibold text-rose-800">
+        <div className="rounded-2xl border border-alert-200 bg-alert-50 p-5 text-sm font-semibold text-alert-800">
           {loadError}
         </div>
       ) : (
         <>
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+          <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-xs text-brand-900">
             Tarifs indicatifs à confirmer. Le changement de formule est sans paiement ni renouvellement automatique.
           </div>
           {subData ? (
@@ -191,19 +191,19 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
               isCancelling={isCancelling}
             />
           ) : (
-            <div className="rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-500">
+            <div className="rounded-2xl border border-ink-200 bg-paper-white p-6 text-sm text-ink-500">
               Aucun abonnement n’est actuellement associé à ce restaurant.
             </div>
           )}
 
           {usageRows.length > 0 && (
-            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs">
-              <h3 className="text-lg font-bold text-stone-950 mb-4">Utilisation de votre formule</h3>
+            <section className="bg-paper-white rounded-3xl p-6 sm:p-8 border border-ink-200/80 shadow-xs">
+              <h3 className="text-lg font-bold text-ink-950 mb-4">Utilisation de votre formule</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {usageRows.map(({ label, usage, limit }) => (
-                  <div key={label} className="rounded-2xl bg-stone-50 border border-stone-200 p-4">
-                    <div className="text-xs text-stone-500">{label}</div>
-                    <div className="mt-1 text-lg font-black text-stone-950">
+                  <div key={label} className="rounded-2xl bg-ink-50 border border-ink-200 p-4">
+                    <div className="text-xs text-ink-500">{label}</div>
+                    <div className="mt-1 text-lg font-black text-ink-950">
                       {usage} / {limit === null ? 'Illimité' : limit}
                     </div>
                   </div>
@@ -231,7 +231,7 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-500">
+            <div className="rounded-2xl border border-ink-200 bg-paper-white p-6 text-sm text-ink-500">
               Aucun plan n’est disponible pour le moment.
             </div>
           )}

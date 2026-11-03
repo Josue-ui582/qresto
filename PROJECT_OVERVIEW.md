@@ -32,7 +32,7 @@ La proposition de valeur est de relier le menu numérique et la prise de command
 | Couche | Technologies et constats |
 |---|---|
 | Application web | Next.js 16 (App Router), React 19, TypeScript. Routes et pages dans `src/app/`. |
-| Interface | Tailwind CSS 4 via `@tailwindcss/postcss`, CSS global et variables de thème dans `src/app/globals.css` et `src/app/design-system.css`. Icônes `lucide-react` et Font Awesome chargé via CDN. Animations avec `motion`/`motion/react` et `framer-motion` importés selon les composants. |
+| Interface | Tailwind CSS 4 via `@tailwindcss/postcss`, tokens CSS et thème `@theme` dans `src/app/design-system.css`, importés par `src/app/globals.css`. Icônes `lucide-react`; animations `motion/react`; police Plus Jakarta Sans via `next/font`. |
 | Serveur / API | Route handlers Next.js dans `src/app/api/`. Authentification par cookie JWT signé avec `jose`; mots de passe hachés avec `bcryptjs`. |
 | Données | PostgreSQL via Prisma 6. Schéma dans `prisma/schema.prisma`, migrations dans `prisma/migrations/`, client généré vers `generated/prisma`. Accès partagé par `src/lib/prisma.ts`. |
 | État client | Contextes React dans `src/context/`; seul le panier temporaire reste dans `localStorage`, sans compte client. Les données métier sont chargées depuis l’API/Prisma. |
@@ -190,12 +190,12 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 - Les offres Enterprise n’ont actuellement aucune capacité active différente de Pro; le prix et la différenciation commerciale sont **à confirmer**. Le champ historique `Restaurant.subscriptionPlan` et l’enum `SubscriptionPlan` contiennent encore les anciens identifiants et ne sont pas utilisés par le cycle courant `Subscription.planId`; leur migration est à confirmer avant réutilisation.
 - `AuthContext.reloadRestaurantData()` utilise `GET /api/restaurant/me`, qui renvoie le restaurant du propriétaire authentifié.
 - Les QR tiers ont été remplacés par `src/lib/qr-code.ts` et la dépendance `qrcode`; les exports incluent SVG local, PNG, impression et options de taille, couleurs et logo. Le lien embarque le slug et le numéro réel de table.
-- Une base de styles avec palette claire, couleurs chaudes et composants utilitaires, mais appliquée de façon inégale sur le front public.
+- Les tokens CSS/Tailwind 4 sont centralisés dans `src/app/design-system.css` et documentés dans `docs/DESIGN_TOKENS.md`. Les utilitaires de palette ont été remplacés par des clés sémantiques, les tailles CSS codées en pixels par des `rem`, et les animations/icônes/polices ont été unifiées sans refonte de mise en page.
 
 ### Socle qualité et sécurité ajouté
 
 - `next.config.mjs` ne masque plus les erreurs de TypeScript/ESLint; `tsconfig.json` active `strict: true`. Le script `lint` lance ESLint CLI et `test` lance Vitest. `yarn.lock` est le lockfile de référence; `bun.lock` a été supprimé.
-- ESLint 9 et `eslint-config-next` sont alignés sur Next 16.3.6. `yarn lint` s’exécute sans erreur bloquante; des avertissements de base subsistent (apostrophes JSX, effets React, `<img>` et variables/imports inutilisés). Aucun `any` explicite ne reste dans `src/`.
+- ESLint 9 et `eslint-config-next` sont alignés sur Next 16.3.6. `yarn lint` inclut `design-tokens/no-hardcoded-css-values` pour détecter les couleurs hex et les tailles en pixels dans le style JSX; des avertissements de base subsistent (apostrophes JSX, effets React, `<img>` et variables/imports inutilisés). Aucun `any` explicite ne reste dans `src/`.
 - `src/lib/auth/jwt.ts`, `src/lib/auth/session.ts` et `src/lib/auth/permissions.ts` centralisent la vérification du cookie, le rechargement du compte depuis la base et la matrice des rôles. `JWT_SECRET` n’a pas de valeur de repli. Le middleware accepte le propriétaire et le staff; les handlers appliquent ensuite leur permission.
 - Le propriétaire dispose des permissions d’administration; `MANAGER` gère menu, commandes, tables, QR et analytics; `CHEF` gère menu et commandes; `WAITER` gère commandes, lecture tables et QR; `CASHIER` gère commandes et analytics; `DELIVERY` gère les commandes. La matrice est dans `src/lib/auth/permissions.ts`.
 - Les endpoints admin des plats, catégories, tables, équipe, paramètres, abonnement, QR, analytics et commandes utilisent l’ID restaurant issu de la session pour filtrer les requêtes. Les entrées correspondantes sont validées par Zod; les réponses distinguent validation, authentification, autorisation et ressource absente.
@@ -220,12 +220,12 @@ Cet audit est statique : il se fonde sur les composants et CSS du dépôt, pas s
 
 ### Styles, composants et cohérence
 
-- La base existe déjà : fond ivoire, surfaces claires, terre cuite et vert (`src/app/design-system.css`), règles globales et animations dans `src/app/globals.css`.
-- La police définie est **Plus Jakarta Sans**, chargée par URL Google Fonts ; l’import Font Awesome est aussi externe. La section hero de `HeroSection.tsx` parle de « Playfair Display », mais aucune police de ce nom n’est chargée dans les styles consultés.
-- Les composants emploient beaucoup de classes Tailwind `stone-*`, `amber-*` et `orange-*` directement, en parallèle des tokens. La palette du système et les couleurs écrites dans les pages ne forment donc pas une source de vérité unique.
+- La base visuelle ivoire, terre cuite et verte est conservée. Les propriétés partagées (couleurs, typographie, espacements, rayons, ombres, z-index, animations, largeurs, breakpoints et tailles tactiles) sont exposées par les tokens de `src/app/design-system.css` et le thème Tailwind 4.
+- La police **Plus Jakarta Sans** est chargée avec `next/font`; les styles d’impression réutilisent la feuille de style locale. Il n’y a plus d’import Google Fonts CSS ou de CDN Font Awesome.
+- Les classes de palette utilisent des noms sémantiques (`ink-*`, `brand-*`, `positive-*`, `negative-*`, `info-*`, etc.) qui conservent les valeurs Tailwind antérieures. Les tailles en pixels ont été converties en rem; `1px` reste réservé aux bordures fines et les breakpoints sont définis en rem.
 - Les cartes à grands rayons, ombres, dégradés, badges, animations et effets hover sont récurrents. Cela donne une direction chaleureuse, mais l’empilement peut concurrencer le contenu et les photos de plats.
-- L’interface utilise à la fois Lucide et Font Awesome. Les classes de présentation, libellés, devises et règles de fallback sont parfois codés au niveau des pages plutôt que centralisés.
-- Il existe une base responsive (grilles et breakpoints Tailwind), mais aucun test visuel/mobile ou rapport d’accessibilité n’est fourni.
+- Les icônes sont rendues par Lucide et les animations par `motion/react`. Les palettes d’états de commande et les couleurs de feedback disposent de clés dédiées.
+- La page d’accueil de production a été inspectée dans le navigateur après migration, y compris le calcul de Plus Jakarta Sans et des tokens CSS. La capture de référence avant changement n’étant pas disponible, la comparaison visuelle avant/après et les tests multi-navigateurs restent à effectuer. Aucun rapport d’accessibilité complet n’est fourni.
 
 ### Problèmes concrets par page
 
@@ -267,7 +267,7 @@ Ces valeurs sont une proposition, pas des valeurs déjà toutes codées :
 | Ombres | Une ombre diffuse légère, réservée aux éléments élevés | Réduire les ombres superposées et les bordures décoratives. |
 | Typographie | Sans-serif lisible pour les UI ; éventuellement une serif éditoriale limitée aux grands titres | Une seule hiérarchie de tailles/poids ; héberger les fontes retenues ou prévoir des fallbacks. |
 
-Centraliser ces tokens dans `src/app/design-system.css`, puis remplacer progressivement les couleurs et rayons ad hoc. Respecter les contrastes, `prefers-reduced-motion` et les tailles tactiles (cible d’au moins 44 × 44 px pour les actions principales).
+La centralisation initiale est réalisée dans `src/app/design-system.css`; consulter `docs/DESIGN_TOKENS.md` pour les noms et règles d’usage. Une refonte future pourra faire évoluer les valeurs en conservant les mêmes clés. Respecter les contrastes, `prefers-reduced-motion` et les tailles tactiles (cible d’au moins 2.75rem pour les actions principales).
 
 ### Composants à créer ou refondre
 

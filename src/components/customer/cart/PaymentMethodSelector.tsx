@@ -1,4 +1,4 @@
-import { FaIcon } from '@/components/common/Icon';
+import { Icon } from '@/components/common/Icon';
 import { PaymentMethod } from '@/types';
 import React from 'react';
 
@@ -14,19 +14,19 @@ const PAYMENT_METHODS: PaymentOption[] = [
     id: 'MTN_MOMO',
     label: 'MTN MoMo',
     desc: 'Paiement mobile instantané',
-    color: 'text-yellow-600 bg-yellow-50',
+    color: 'text-caution-600 bg-caution-50',
   },
   {
     id: 'MOOV_MONEY',
     label: 'Moov Money',
     desc: 'Paiement mobile rapide',
-    color: 'text-blue-600 bg-blue-50',
+    color: 'text-info-600 bg-info-50',
   },
   {
     id: 'CASH_ON_DELIVERY',
     label: 'Espèces',
     desc: 'À la livraison ou à table',
-    color: 'text-stone-700 bg-stone-100',
+    color: 'text-ink-700 bg-ink-100',
   },
 ];
 
@@ -40,7 +40,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   setPaymentMethod,
 }) => (
   <div className="pt-2">
-    <label className="form-label" style={{ marginBottom: '0.75rem' }}>
+    <label className="form-label form-label-spaced">
       3. Mode de paiement
     </label>
 
@@ -52,7 +52,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
           className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
             paymentMethod === pm.id
               ? 'border-brand bg-primary-soft shadow-sm'
-              : 'border-soft hover:border-stone-300 bg-surface-alt'
+              : 'border-soft hover:border-ink-300 bg-surface-alt'
           }`}
         >
           <div className="flex items-center justify-between mb-1">
@@ -60,10 +60,10 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
               {pm.label}
             </span>
             {paymentMethod === pm.id && (
-              <FaIcon name="fa-solid fa-circle-check" className="text-amber-500 text-sm" />
+              <Icon name="circle-check" className="text-brand-500 text-sm" />
             )}
           </div>
-          <p className="text-[11px] text-stone-500 mt-1">{pm.desc}</p>
+          <p className="text-[0.6875rem] text-ink-500 mt-1">{pm.desc}</p>
         </div>
       ))}
     </div>

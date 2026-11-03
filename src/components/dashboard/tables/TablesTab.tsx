@@ -219,8 +219,8 @@ export const TablesTab: React.FC<TablesTabProps> = ({
       />
 
       {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center text-stone-400 bg-white rounded-3xl border border-stone-200/80">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-3" />
+        <div className="py-20 flex flex-col items-center justify-center text-ink-400 bg-paper-white rounded-3xl border border-ink-200/80">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-3" />
           <span className="text-xs font-semibold">Chargement des tables...</span>
         </div>
       ) : filteredTables.length > 0 ? (

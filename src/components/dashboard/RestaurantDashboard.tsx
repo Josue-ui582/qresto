@@ -175,9 +175,9 @@ export const RestaurantDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
-        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-medium text-stone-600">Chargement de votre espace...</p>
+      <div className="min-h-screen bg-ink-50 flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-medium text-ink-600">Chargement de votre espace...</p>
       </div>
     );
   }
@@ -200,19 +200,19 @@ export const RestaurantDashboard: React.FC = () => {
   ).length;
 
   const navItems = [
-    { id: 'overview', label: 'Dashboard', icon: 'fa-solid fa-table-cells-large' },
-    { id: 'orders', label: 'Commandes', icon: 'fa-solid fa-receipt', badge: pendingOrdersCount },
-    { id: 'categories', label: 'Catégories', icon: 'fa-solid fa-tags' },
-    { id: 'dishes', label: 'Plats', icon: 'fa-solid fa-utensils' },
-    { id: 'tables', label: 'Tables', icon: 'fa-solid fa-border-all' },
-    { id: 'qrcodes', label: 'QR Codes', icon: 'fa-solid fa-qrcode' },
-    { id: 'analytics', label: 'Analytics', icon: 'fa-solid fa-chart-simple' },
-    { id: 'team', label: 'Équipe', icon: 'fa-solid fa-user-group' },
-    { id: 'coupons', label: 'Promotions', icon: 'fa-solid fa-ticket' },
-    { id: 'reviews', label: 'Avis clients', icon: 'fa-solid fa-star' },
-    { id: 'inventory', label: 'Stock', icon: 'fa-solid fa-boxes-stacked' },
-    { id: 'subscription', label: 'Abonnement', icon: 'fa-solid fa-credit-card' },
-    { id: 'settings', label: 'Paramètres', icon: 'fa-solid fa-gear' },
+    { id: 'overview', label: 'Dashboard', icon: 'table-cells-large' },
+    { id: 'orders', label: 'Commandes', icon: 'receipt', badge: pendingOrdersCount },
+    { id: 'categories', label: 'Catégories', icon: 'tags' },
+    { id: 'dishes', label: 'Plats', icon: 'utensils' },
+    { id: 'tables', label: 'Tables', icon: 'border-all' },
+    { id: 'qrcodes', label: 'QR Codes', icon: 'qrcode' },
+    { id: 'analytics', label: 'Analytics', icon: 'chart-simple' },
+    { id: 'team', label: 'Équipe', icon: 'user-group' },
+    { id: 'coupons', label: 'Promotions', icon: 'ticket' },
+    { id: 'reviews', label: 'Avis clients', icon: 'star' },
+    { id: 'inventory', label: 'Stock', icon: 'boxes-stacked' },
+    { id: 'subscription', label: 'Abonnement', icon: 'credit-card' },
+    { id: 'settings', label: 'Paramètres', icon: 'gear' },
   ];
 
   const advanceOrderStatus = async (orderId: string, nextStatus: OrderStatus) => {
@@ -238,8 +238,7 @@ export const RestaurantDashboard: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-white flex flex-col md:flex-row text-stone-900"
-      style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+      className="min-h-screen bg-paper-white flex flex-col md:flex-row text-ink-900"
     >
       <DashboardSidebar
         collapsed={sidebarCollapsed}
@@ -253,7 +252,7 @@ export const RestaurantDashboard: React.FC = () => {
         onNavigateHome={() => router.push('/')}
       />
 
-      <div className="flex-1 flex flex-col min-w-0 bg-stone-50/50">
+      <div className="flex-1 flex flex-col min-w-0 bg-ink-50/50">
         <DashboardTopbar
           topSearch={topSearch}
           setTopSearch={setTopSearch}

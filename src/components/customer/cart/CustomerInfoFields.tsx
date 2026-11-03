@@ -78,7 +78,7 @@ export const CustomerInfoFields: React.FC<CustomerInfoFieldsProps> = ({
             className="input-field min-w-0"
           />
         </div>
-        <p className="mt-1 text-[11px] text-stone-500">
+        <p className="mt-1 text-[0.6875rem] text-ink-500">
           Votre code de suivi sera envoyé sur ce numéro WhatsApp.
         </p>
       </div>
@@ -113,7 +113,7 @@ export const CustomerInfoFields: React.FC<CustomerInfoFieldsProps> = ({
       />
     </div>
 
-    <label className="flex items-start gap-2 text-xs text-stone-600">
+    <label className="flex items-start gap-2 text-xs text-ink-600">
       <input
         type="checkbox"
         required

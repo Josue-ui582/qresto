@@ -16,35 +16,35 @@ export const CategoriesHeader: React.FC<CategoriesHeaderProps> = ({
   onOpenCreateModal,
 }) => {
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/80 shadow-xs">
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-paper-white p-6 sm:p-8 rounded-3xl border border-ink-200/80 shadow-xs">
       <div>
-        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-amber-700 mb-1">
-          <FolderTree className="w-4 h-4 text-amber-600" />
+        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-700 mb-1">
+          <FolderTree className="w-4 h-4 text-brand-600" />
           <span>Organisation du Menu</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-stone-950">
+        <h2 className="text-2xl sm:text-3xl font-black text-ink-950">
           Catégories de Plats
         </h2>
-        <p className="text-xs sm:text-sm text-stone-500 mt-1 font-normal">
+        <p className="text-xs sm:text-sm text-ink-500 mt-1 font-normal">
           Structurez votre carte en catégories claires pour faciliter la commande à vos clients.
         </p>
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="px-4 py-3 rounded-2xl bg-[#fbf9f5] border border-stone-200/80 text-center min-w-27.5">
-          <span className="block text-2xl font-black text-stone-950">
+        <div className="px-4 py-3 rounded-2xl bg-surface-warm border border-ink-200/80 text-center min-w-27.5">
+          <span className="block text-2xl font-black text-ink-950">
             {categoriesCount}
           </span>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+          <span className="text-[0.625rem] font-bold uppercase tracking-wider text-ink-500">
             Catégories
           </span>
         </div>
 
-        <div className="px-4 py-3 rounded-2xl bg-[#fbf9f5] border border-stone-200/80 text-center min-w-27.5">
-          <span className="block text-2xl font-black text-amber-600">
+        <div className="px-4 py-3 rounded-2xl bg-surface-warm border border-ink-200/80 text-center min-w-27.5">
+          <span className="block text-2xl font-black text-brand-600">
             {totalDishesCount}
           </span>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+          <span className="text-[0.625rem] font-bold uppercase tracking-wider text-ink-500">
             Plats Associés
           </span>
         </div>
@@ -53,9 +53,9 @@ export const CategoriesHeader: React.FC<CategoriesHeaderProps> = ({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={onOpenCreateModal}
-          className="px-5 py-3.5 rounded-2xl bg-stone-950 hover:bg-stone-800 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer shrink-0"
+          className="px-5 py-3.5 rounded-2xl bg-ink-950 hover:bg-ink-800 text-paper-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer shrink-0"
         >
-          <Plus className="w-4 h-4 text-amber-400" />
+          <Plus className="w-4 h-4 text-brand-400" />
           <span>Ajouter une catégorie</span>
         </motion.button>
       </div>

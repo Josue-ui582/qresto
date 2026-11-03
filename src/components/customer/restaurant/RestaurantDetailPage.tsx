@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion'; // ou 'motion/react' selon votre package
+import { motion, AnimatePresence } from 'motion/react';
 import { QrCode, ArrowRight, X, RotateCw, ShoppingBag, Loader2, UtensilsCrossed } from 'lucide-react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -150,20 +150,20 @@ export const RestaurantDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#fbf9f5] flex flex-col items-center justify-center py-24">
-        <Loader2 className="w-10 h-10 text-amber-500 animate-spin mb-4" />
-        <p className="text-sm font-medium text-stone-600">Chargement du menu en direct...</p>
+      <div className="min-h-screen bg-surface-warm flex flex-col items-center justify-center py-24">
+        <Loader2 className="w-10 h-10 text-brand-500 animate-spin mb-4" />
+        <p className="text-sm font-medium text-ink-600">Chargement du menu en direct...</p>
       </div>
     );
   }
 
   if (error || !restaurant) {
     return (
-      <div className="min-h-screen bg-[#fbf9f5] flex flex-col items-center justify-center py-24 px-4 text-center">
-        <p className="text-stone-500 mb-4 font-medium">{error || 'Restaurant non trouvé.'}</p>
+      <div className="min-h-screen bg-surface-warm flex flex-col items-center justify-center py-24 px-4 text-center">
+        <p className="text-ink-500 mb-4 font-medium">{error || 'Restaurant non trouvé.'}</p>
         <Link
           href="/restaurants"
-          className="px-5 py-2.5 bg-stone-900 text-white rounded-xl text-xs font-bold inline-block hover:bg-stone-800 transition-colors"
+          className="px-5 py-2.5 bg-ink-900 text-paper-white rounded-xl text-xs font-bold inline-block hover:bg-ink-800 transition-colors"
         >
           Retour aux restaurants
         </Link>
@@ -175,12 +175,12 @@ export const RestaurantDetailPage: React.FC = () => {
     ? {
         '--restaurant-primary-color': restaurant.primaryColor,
         '--restaurant-primary-foreground':
-          getAccessibleForeground(restaurant.primaryColor) || '#ffffff',
+          getAccessibleForeground(restaurant.primaryColor) || 'var(--qr-text-inverse)',
       }
     : undefined;
 
   return (
-    <div className="restaurant-menu-brand min-h-screen bg-[#fbf9f5] pb-28" style={brandStyle}>
+    <div className="restaurant-menu-brand min-h-screen bg-surface-warm pb-28" style={brandStyle}>
       {/* 1. HERO */}
       <RestaurantHero 
         restaurant={restaurant}
@@ -194,23 +194,23 @@ export const RestaurantDetailPage: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-amber-500 to-orange-500 text-stone-950 font-bold py-3.5 px-4 shadow-md"
+          className="bg-gradient-to-r from-brand-500 to-highlight-500 text-ink-950 font-bold py-3.5 px-4 shadow-md"
         >
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-stone-950 text-amber-400 flex items-center justify-center shrink-0 shadow-sm">
+              <div className="w-9 h-9 rounded-xl bg-ink-950 text-brand-400 flex items-center justify-center shrink-0 shadow-sm">
                 <QrCode className="w-5 h-5" />
               </div>
               <div className="text-left">
                 <p className="text-sm sm:text-base font-extrabold leading-tight">
                   Bienvenue à la Table #{tableParam} !
                 </p>
-                <p className="text-xs text-stone-900/80 font-medium">
+                <p className="text-xs text-ink-900/80 font-medium">
                   Vos commandes seront envoyées directement en cuisine pour la Table #{tableParam}.
                 </p>
               </div>
             </div>
-            <span className="px-3.5 py-1.5 bg-stone-950 text-white rounded-full text-xs font-black uppercase tracking-wider">
+            <span className="px-3.5 py-1.5 bg-ink-950 text-paper-white rounded-full text-xs font-black uppercase tracking-wider">
               Table #{tableParam}
             </span>
           </div>
@@ -249,10 +249,10 @@ export const RestaurantDetailPage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-3xl p-10 text-center border border-stone-200 max-w-lg mx-auto my-8">
-            <UtensilsCrossed className="w-12 h-12 text-stone-300 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-stone-900 mb-1">Menu en cours de configuration</h3>
-            <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
+          <div className="bg-paper-white rounded-3xl p-10 text-center border border-ink-200 max-w-lg mx-auto my-8">
+            <UtensilsCrossed className="w-12 h-12 text-ink-300 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-ink-900 mb-1">Menu en cours de configuration</h3>
+            <p className="text-xs text-ink-500 max-w-md mx-auto leading-relaxed">
               Aucun plat n'est encore enregistré pour cette catégorie dans la base de données.
             </p>
           </div>
@@ -273,15 +273,15 @@ export const RestaurantDetailPage: React.FC = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push(`/cart?table=${encodeURIComponent(tableParam || '')}&restaurantId=${restaurant.id}`)}
-              className="w-full py-4 px-6 rounded-2xl bg-stone-950 text-white font-black text-sm shadow-2xl flex items-center justify-between border border-amber-500/50 hover:bg-black transition-all cursor-pointer"
+              className="w-full py-4 px-6 rounded-2xl bg-ink-950 text-paper-white font-black text-sm shadow-2xl flex items-center justify-between border border-brand-500/50 hover:bg-ink-black transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-stone-950 flex items-center justify-center font-black text-xs">
+                <span className="w-8 h-8 rounded-full bg-gradient-to-r from-brand-500 to-highlight-500 text-ink-950 flex items-center justify-center font-black text-xs">
                   {cartCount}
                 </span>
                 <span>Voir mon panier</span>
               </div>
-              <div className="flex items-center gap-2 text-amber-400 font-bold">
+              <div className="flex items-center gap-2 text-brand-400 font-bold">
                 <span>Commander</span>
                 <ArrowRight className="w-4 h-4" />
               </div>
@@ -293,39 +293,39 @@ export const RestaurantDetailPage: React.FC = () => {
       {/* 6. MODAL 3D */}
       <AnimatePresence>
         {active3DDish && (
-          <div className="fixed inset-0 z-50 bg-stone-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-ink-950/80 backdrop-blur-md flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.92, opacity: 0 }}
-              className="bg-stone-900 border border-stone-800 rounded-3xl max-w-xl w-full p-6 sm:p-8 relative text-white shadow-2xl text-left"
+              className="bg-ink-900 border border-ink-800 rounded-3xl max-w-xl w-full p-6 sm:p-8 relative text-paper-white shadow-2xl text-left"
             >
               <button
                 type="button"
                 onClick={() => setActive3DDish(null)}
-                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 flex items-center justify-center text-sm transition-colors cursor-pointer"
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-ink-800 hover:bg-ink-700 text-ink-300 flex items-center justify-center text-sm transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
               <div className="mb-4">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold mb-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/20 text-brand-300 text-xs font-bold mb-2">
                   <RotateCw className="w-3.5 h-3.5 animate-spin" />
                   <span>Visualisation 3D Interactive</span>
                 </div>
-                <h3 className="text-2xl font-black text-white mb-1">
+                <h3 className="text-2xl font-black text-paper-white mb-1">
                   {active3DDish.name}
                 </h3>
-                <p className="text-xs text-stone-400">{active3DDish.description}</p>
+                <p className="text-xs text-ink-400">{active3DDish.description}</p>
               </div>
-              <div className="rounded-2xl overflow-hidden border border-stone-800 bg-stone-950 mb-5">
+              <div className="rounded-2xl overflow-hidden border border-ink-800 bg-ink-950 mb-5">
                 <Dish3DViewer
                   modelType={active3DDish.model3DType || 'poulet_braise'}
                   dishName={active3DDish.name}
                 />
               </div>
-              <div className="flex items-center justify-between pt-2 border-t border-stone-800">
+              <div className="flex items-center justify-between pt-2 border-t border-ink-800">
                 <div>
-                  <span className="text-2xl font-black text-amber-400">
+                  <span className="text-2xl font-black text-brand-400">
                     {active3DDish.price.toLocaleString()} {restaurant.currency}
                   </span>
                 </div>
@@ -336,7 +336,7 @@ export const RestaurantDetailPage: React.FC = () => {
                   onClick={() => {
                     if (handleAddToCart(active3DDish)) setActive3DDish(null);
                   }}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-stone-950 font-black text-xs flex items-center gap-2 shadow-lg hover:shadow-amber-500/30 transition-all cursor-pointer"
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-brand-500 to-highlight-500 text-ink-950 font-black text-xs flex items-center gap-2 shadow-lg hover:shadow-brand-500/30 transition-all cursor-pointer"
                 >
                   <ShoppingBag className="w-4 h-4" />
                   <span>Ajouter au panier</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { QrCode } from 'lucide-react';
 import { TableData, QrCodesTabProps } from './types';
 import { QrCodesHeader } from './QrCodesHeader';
@@ -20,12 +20,22 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
-  const [qrOptions, setQrOptions] = useState<QrCodeOptions>({
-    size: 500,
-    darkColor: '#1c1917',
-    lightColor: '#ffffff',
-  });
+  const [qrOptions, setQrOptions] = useState<QrCodeOptions>({ size: 500 });
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
+
+  useEffect(() => {
+    const styles = getComputedStyle(document.documentElement);
+    const darkColor = styles.getPropertyValue('--color-ink-900').trim();
+    const lightColor = styles.getPropertyValue('--color-paper-white').trim();
+    if (!darkColor || !lightColor) {
+      throw new Error('QR design color tokens are unavailable.');
+    }
+    setQrOptions((options) => ({
+      ...options,
+      darkColor: options.darkColor ?? darkColor,
+      lightColor: options.lightColor ?? lightColor,
+    }));
+  }, []);
   // Filtrage par recherche
   const filteredTables = useMemo(() => {
     return tables.filter((t) => {
@@ -114,8 +124,8 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
         onPrintAll={handlePrintAll}
       />
 
-      <section className="grid grid-cols-1 gap-4 rounded-2xl border border-stone-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <label className="text-xs font-semibold text-stone-700">
+      <section className="grid grid-cols-1 gap-4 rounded-2xl border border-ink-200 bg-paper-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="text-xs font-semibold text-ink-700">
           Taille de l’image
           <select
             value={qrOptions.size}
@@ -123,14 +133,14 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
               ...current,
               size: Number(event.target.value),
             }))}
-            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-ink-300 bg-paper-white px-3 py-2"
           >
             <option value={300}>300 × 300</option>
             <option value={500}>500 × 500</option>
             <option value={800}>800 × 800</option>
           </select>
         </label>
-        <label className="text-xs font-semibold text-stone-700">
+        <label className="text-xs font-semibold text-ink-700">
           Couleur du code
           <input
             type="color"
@@ -139,10 +149,10 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
               ...current,
               darkColor: event.target.value,
             }))}
-            className="mt-1 block h-10 w-full rounded-lg border border-stone-300 bg-white p-1"
+            className="mt-1 block h-10 w-full rounded-lg border border-ink-300 bg-paper-white p-1"
           />
         </label>
-        <label className="text-xs font-semibold text-stone-700">
+        <label className="text-xs font-semibold text-ink-700">
           Couleur du fond
           <input
             type="color"
@@ -151,10 +161,10 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
               ...current,
               lightColor: event.target.value,
             }))}
-            className="mt-1 block h-10 w-full rounded-lg border border-stone-300 bg-white p-1"
+            className="mt-1 block h-10 w-full rounded-lg border border-ink-300 bg-paper-white p-1"
           />
         </label>
-        <label className="text-xs font-semibold text-stone-700">
+        <label className="text-xs font-semibold text-ink-700">
           Logo (optionnel, max. 2 Mo)
           <input
             type="file"
@@ -164,7 +174,7 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
           />
         </label>
         {(downloadError || logoError) && (
-          <p role="alert" className="text-xs font-semibold text-red-700 sm:col-span-2 lg:col-span-4">
+          <p role="alert" className="text-xs font-semibold text-negative-700 sm:col-span-2 lg:col-span-4">
             {downloadError || logoError}
           </p>
         )}
@@ -195,14 +205,14 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
         </div>
       ) : (
         /* État vide */
-        <div className="bg-white rounded-3xl p-12 text-center border border-stone-200/80 max-w-lg mx-auto my-8">
-          <div className="w-14 h-14 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-4">
+        <div className="bg-paper-white rounded-3xl p-12 text-center border border-ink-200/80 max-w-lg mx-auto my-8">
+          <div className="w-14 h-14 rounded-full bg-brand-500/10 text-brand-600 flex items-center justify-center mx-auto mb-4">
             <QrCode className="w-7 h-7" />
           </div>
-          <h3 className="text-lg font-bold text-stone-900">
+          <h3 className="text-lg font-bold text-ink-900">
             {searchQuery ? 'Aucun QR Code trouvé' : 'Aucune table disponible'}
           </h3>
-          <p className="text-xs text-stone-500 mt-1 mb-4 leading-relaxed font-normal">
+          <p className="text-xs text-ink-500 mt-1 mb-4 leading-relaxed font-normal">
             {searchQuery
               ? `Aucun résultat ne correspond à "${searchQuery}".`
               : 'Vous devez créer des tables dans l’onglet "Tables" pour pouvoir générer leurs QR codes uniques.'}

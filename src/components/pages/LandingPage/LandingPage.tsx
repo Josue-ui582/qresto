@@ -22,7 +22,7 @@ export const LandingPage: React.FC = () => {
   const [selected3DDish, setSelected3DDish] = useState<Dish3DSelection | null>(null);
 
   return (
-    <div className="w-full bg-[#fbf9f5] text-stone-900 overflow-x-hidden">
+    <div className="w-full bg-surface-warm text-ink-900 overflow-x-hidden">
       <HeroSection onSelectDish={setSelected3DDish} />
       <ProcessSteps />
       <DishesShowcase onSelectDish={setSelected3DDish} />

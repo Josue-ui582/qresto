@@ -26,17 +26,17 @@ export const Footer: React.FC = () => {
             <h4 className="text-sm font-bold text-text mb-4">Plateforme</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link href="/restaurants" className="text-stone-600 hover:text-stone-900 transition-colors">
+                <Link href="/restaurants" className="text-ink-600 hover:text-ink-900 transition-colors">
                   Restaurants
                 </Link>
               </li>
               <li>
-                <Link href="/order-tracking" className="text-stone-600 hover:text-stone-900 transition-colors">
+                <Link href="/order-tracking" className="text-ink-600 hover:text-ink-900 transition-colors">
                   Suivre une commande
                 </Link>
               </li>
               <li>
-                <Link href="/register-restaurant" className="text-stone-600 hover:text-stone-900 transition-colors">
+                <Link href="/register-restaurant" className="text-ink-600 hover:text-ink-900 transition-colors">
                   Créer un restaurant
                 </Link>
               </li>
@@ -45,20 +45,20 @@ export const Footer: React.FC = () => {
 
           {/* Légal Col - EXACT as Screenshot 8 */}
           <div>
-            <h4 className="text-sm font-bold text-stone-900 mb-4">Légal</h4>
+            <h4 className="text-sm font-bold text-ink-900 mb-4">Légal</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link href="/cgu" className="text-stone-600 hover:text-stone-900 transition-colors">
+                <Link href="/cgu" className="text-ink-600 hover:text-ink-900 transition-colors">
                   Conditions d&apos;utilisation
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="text-stone-600 hover:text-stone-900 transition-colors">
+                <Link href="/privacy" className="text-ink-600 hover:text-ink-900 transition-colors">
                   Confidentialité
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-stone-600 hover:text-stone-900 transition-colors">
+                <Link href="/contact" className="text-ink-600 hover:text-ink-900 transition-colors">
                   Contact
                 </Link>
               </li>
@@ -67,15 +67,15 @@ export const Footer: React.FC = () => {
 
           {/* Contact Col - EXACT as Screenshot 8 */}
           <div>
-            <h4 className="text-sm font-bold text-stone-900 mb-4">Contact</h4>
+            <h4 className="text-sm font-bold text-ink-900 mb-4">Contact</h4>
             <ul className="space-y-3 text-sm">
-              <li className="text-stone-600">
+              <li className="text-ink-600">
                 Cotonou, Bénin
               </li>
               <li>
                 <a
                   href="mailto:contact@qresto.africa"
-                  className="text-stone-600 hover:text-stone-900 transition-colors"
+                  className="text-ink-600 hover:text-ink-900 transition-colors"
                 >
                   contact@qresto.africa
                 </a>
