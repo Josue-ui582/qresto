@@ -8,18 +8,22 @@ export async function GET(
 ) {
   try {
     // 1. Déballer params avec await (Requis sur Next.js 15+)
-    const { slug } = await params;
-    const parsedSlug = z.string().trim().min(1).max(150).regex(/^[a-z0-9-]+$/i).safeParse(slug);
-    if (!parsedSlug.success) {
+    const { slug: identifier } = await params;
+    const parsedIdentifier = z.string().trim().min(1).max(150).safeParse(identifier);
+    if (!parsedIdentifier.success) {
       return NextResponse.json(
         { error: 'Identifiant de restaurant invalide.' },
         { status: 400 }
       );
     }
 
-    // 2. Recherche en BDD avec le slug récupéré
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { slug: parsedSlug.data },
+    const restaurant = await prisma.restaurant.findFirst({
+      where: {
+        OR: [
+          { slug: parsedIdentifier.data },
+          { id: parsedIdentifier.data },
+        ],
+      },
       select: {
         id: true,
         name: true,
