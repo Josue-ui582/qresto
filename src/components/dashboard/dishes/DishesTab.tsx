@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   UtensilsCrossed,
@@ -22,6 +22,7 @@ import { DishSearchBar } from './DishSearchBar';
 import { DishCard } from './DishCard';
 import { DishFormModal } from './DishFormModal';
 import { DeleteDishModal } from './DeleteDishModal';
+import { getApiErrorMessage, isApiSuccess } from '@/lib/api/client-error';
 
 export const DishesTab: React.FC<DishesTabProps> = ({
   restaurantId,
@@ -32,6 +33,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
   const [dishesList, setDishesList] = useState<DishData[]>(initialDishes);
   const [categoriesList, setCategoriesList] = useState<CategoryOption[]>(initialCategories);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
 
@@ -61,35 +63,42 @@ export const DishesTab: React.FC<DishesTabProps> = ({
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      const dishesUrl = restaurantId ? `/api/dishes?restaurantId=${restaurantId}` : '/api/dishes';
+      const dishesUrl = restaurantId
+        ? `/api/dishes?restaurantId=${encodeURIComponent(restaurantId)}`
+        : '/api/dishes';
       const resDishes = await fetch(dishesUrl);
-      const dataDishes = await resDishes.json();
-      if (dataDishes.success) {
-        setDishesList(dataDishes.dishes || []);
+      const dataDishes: { success?: boolean; dishes?: DishData[]; error?: string } = await resDishes.json();
+      if (!resDishes.ok || !dataDishes.success || !dataDishes.dishes) {
+        throw new Error(dataDishes.error || 'Impossible de récupérer les plats.');
       }
+      setDishesList(dataDishes.dishes);
 
       if (initialCategories.length === 0) {
-        const catUrl = restaurantId ? `/api/categories?restaurantId=${restaurantId}` : '/api/categories';
+        const catUrl = restaurantId
+          ? `/api/categories?restaurantId=${encodeURIComponent(restaurantId)}`
+          : '/api/categories';
         const resCat = await fetch(catUrl);
-        const dataCat = await resCat.json();
-        if (dataCat.success) {
-          setCategoriesList(dataCat.categories || []);
+        const dataCat: { success?: boolean; categories?: CategoryOption[]; error?: string } = await resCat.json();
+        if (!resCat.ok || !dataCat.success || !dataCat.categories) {
+          throw new Error(dataCat.error || 'Impossible de récupérer les catégories.');
         }
+        setCategoriesList(dataCat.categories);
       }
-    } catch (err) {
-      console.error('Erreur chargement plats:', err);
+      setLoadError(null);
+    } catch (err: unknown) {
+      setLoadError(err instanceof Error ? err.message : 'Erreur lors du chargement des plats.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [initialCategories.length, restaurantId]);
 
   useEffect(() => {
-    fetchData();
-  }, [restaurantId]);
+    void fetchData();
+  }, [fetchData]);
 
   const filteredDishes = useMemo(() => {
     return dishesList.filter((dish) => {
@@ -126,21 +135,24 @@ export const DishesTab: React.FC<DishesTabProps> = ({
         body: JSON.stringify({ id: dish.id, isAvailable: newStatus }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
+      const data: unknown = await res.json();
+      if (!res.ok || !isApiSuccess(data)) {
         // Rollback
         setDishesList((prev) =>
           prev.map((d) => (d.id === dish.id ? { ...d, isAvailable: dish.isAvailable } : d))
         );
-        showNotice('error', data.error || 'Échec du changement de disponibilité.');
+        showNotice('error', getApiErrorMessage(data, 'Échec du changement de disponibilité.'));
       } else {
         showNotice(
           'success',
           `Plat ${newStatus ? 'rendu disponible' : 'marqué comme indisponible'}.`
         );
       }
-    } catch (err) {
-      console.error('Erreur bascule disponibilité:', err);
+    } catch (err: unknown) {
+      setDishesList((prev) =>
+        prev.map((item) => (item.id === dish.id ? { ...item, isAvailable: dish.isAvailable } : item))
+      );
+      showNotice('error', err instanceof Error ? err.message : 'Échec du changement de disponibilité.');
     }
   };
 
@@ -207,10 +219,10 @@ export const DishesTab: React.FC<DishesTabProps> = ({
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de la sauvegarde.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Erreur lors de la sauvegarde.'));
       }
 
       showNotice('success', editingDish ? 'Plat mis à jour !' : 'Nouveau plat ajouté au menu !');
@@ -231,10 +243,10 @@ export const DishesTab: React.FC<DishesTabProps> = ({
         method: 'DELETE',
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de la suppression.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Erreur lors de la suppression.'));
       }
 
       showNotice('success', 'Plat supprimé du menu.');
@@ -279,6 +291,15 @@ export const DishesTab: React.FC<DishesTabProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {loadError && (
+        <div role="alert" className="rounded-2xl border border-negative-200 bg-negative-50 p-5 text-sm text-negative-800">
+          <p>{loadError}</p>
+          <button type="button" onClick={() => void fetchData()} className="mt-3 font-bold underline">
+            Réessayer
+          </button>
+        </div>
+      )}
 
       <DishesHeader stats={stats} onOpenCreateModal={handleOpenCreateModal} />
 

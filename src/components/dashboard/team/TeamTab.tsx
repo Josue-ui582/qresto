@@ -8,6 +8,7 @@ import { TeamFilters } from './TeamFilters';
 import { MemberGrid } from './MemberGrid';
 import { MemberModal } from './MemberModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { getApiErrorMessage, isApiSuccess } from '@/lib/api/client-error';
 
 interface TeamTabProps {
   restaurantId?: string;
@@ -60,9 +61,9 @@ export const TeamTab: React.FC<TeamTabProps> = ({
 
       setIsLoading(true);
       const res = await fetch(`/api/team?restaurantId=${encodeURIComponent(restaurantId)}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Impossible de récupérer les membres de l’équipe.');
+      const data: { success?: boolean; members?: TeamMemberData[]; error?: string } = await res.json();
+      if (!res.ok || data.success !== true) {
+        throw new Error(getApiErrorMessage(data, 'Impossible de récupérer les membres de l’équipe.'));
       }
       setTeamList(data.members || []);
     } catch (err: unknown) {
@@ -154,10 +155,10 @@ export const TeamTab: React.FC<TeamTabProps> = ({
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de la sauvegarde.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Erreur lors de la sauvegarde.'));
       }
 
       showNotice('success', editingMember ? 'Membre mis à jour !' : 'Nouveau membre ajouté !');
@@ -185,14 +186,14 @@ export const TeamTab: React.FC<TeamTabProps> = ({
 
     try {
       setIsDeleting(true);
-      const res = await fetch(`/api/team?id=${deletingId}`, {
+      const res = await fetch(`/api/team?id=${encodeURIComponent(deletingId)}`, {
         method: 'DELETE',
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de la suppression.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Erreur lors de la suppression.'));
       }
 
       showNotice('success', 'Membre retiré de l’équipe.');
@@ -217,16 +218,17 @@ export const TeamTab: React.FC<TeamTabProps> = ({
         }),
       });
 
-      const data = await res.json();
-      if (data.success) {
-        showNotice(
-          'success',
-          !member.isActive ? 'Accès membre réactivé' : 'Accès membre suspendu'
-        );
-        fetchTeam();
+      const data: { success?: boolean; error?: string } = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Impossible de modifier l’accès de ce membre.');
       }
-    } catch (err) {
-      console.error('Erreur bascule statut:', err);
+      showNotice(
+        'success',
+        !member.isActive ? 'Accès membre réactivé' : 'Accès membre suspendu'
+      );
+      await fetchTeam();
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'Impossible de modifier l’accès de ce membre.');
     }
   };
 
