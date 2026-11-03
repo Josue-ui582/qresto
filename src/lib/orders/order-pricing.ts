@@ -19,6 +19,17 @@ export interface SelectedDishOption {
   price: number;
 }
 
+export function getSelectedDishOptionTotal(
+  groups: SelectableDishOptionGroup[],
+  selectedIds: string[]
+): number {
+  const selectedIdsSet = new Set(selectedIds);
+  return groups
+    .flatMap((group) => group.options)
+    .filter((option) => selectedIdsSet.has(option.id))
+    .reduce((total, option) => total + option.price, 0);
+}
+
 export function resolveSelectedDishOptions(
   groups: SelectableDishOptionGroup[],
   selectedIds: string[]

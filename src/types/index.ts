@@ -80,7 +80,22 @@ export interface Dish {
   isSpecialty?: boolean;
   has3DModel?: boolean;
   model3DType?: 'poulet_braise' | 'poisson_grille' | 'igname_pile' | 'burger' | 'alloco' | 'cocktail';
+  optionGroups?: DishOptionGroup[];
   createdAt: string;
+}
+
+export interface DishOptionGroup {
+  id: string;
+  name: string;
+  isRequired: boolean;
+  minSelection: number;
+  maxSelection: number;
+  options: Array<{
+    id: string;
+    name: string;
+    price: number;
+    available: boolean;
+  }>;
 }
 
 export interface RestaurantTable {

@@ -71,6 +71,19 @@ export async function GET(
                 has3DModel: true,
                 model3DType: true,
                 createdAt: true,
+                optionGroups: {
+                  select: {
+                    id: true,
+                    name: true,
+                    isRequired: true,
+                    minSelection: true,
+                    maxSelection: true,
+                    options: {
+                      where: { available: true },
+                      select: { id: true, name: true, price: true, available: true },
+                    },
+                  },
+                },
               },
               where: { isAvailable: true },
             },

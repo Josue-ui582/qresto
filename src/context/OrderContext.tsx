@@ -46,6 +46,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       dishId: item.dish.id,
       quantity: item.quantity,
       notes: item.notes,
+      optionIds: item.optionIds,
     }));
 
     const response = await fetch('/api/orders', {

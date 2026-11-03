@@ -30,14 +30,7 @@ const createOrderSchema = z.object({
     quantity: z.number().int().min(1).max(100),
     notes: z.string().trim().max(500).optional(),
     optionIds: z.array(z.string().min(1).max(100)).max(30).default([]),
-  })).min(1).max(50).superRefine((items, context) => {
-    if (new Set(items.map((item) => item.dishId)).size !== items.length) {
-      context.addIssue({
-        code: 'custom',
-        message: 'Chaque plat doit apparaître une seule fois dans la commande.',
-      });
-    }
-  }),
+  })).min(1).max(50),
 }).superRefine((value, context) => {
   if (value.type === OrderType.DINE_IN && !value.tableNumber) {
     context.addIssue({
