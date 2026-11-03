@@ -112,7 +112,10 @@ export async function GET(request: NextRequest) {
         WHERE o.restaurant_id = ${auth.session.restaurantId}
           ${timeSql}
           AND o.status <> 'CANCELLED'
-        GROUP BY d.id, d.name, c.name, oi.name
+        GROUP BY
+          COALESCE(d.id, oi.name),
+          COALESCE(d.name, oi.name),
+          COALESCE(c.name, 'Général')
         ORDER BY quantity DESC, revenue DESC
         LIMIT 5
       `),
