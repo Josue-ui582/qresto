@@ -10,6 +10,8 @@ interface OrderData {
   tableNumber?: string | number;
   customerName: string;
   customerPhone: string;
+  customerWhatsapp: string;
+  whatsappConsent: boolean;
   customerAddress?: string;
   customerNotes?: string;
   paymentMethod: PaymentMethod;
@@ -53,6 +55,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         restaurantId: cartRestaurantId,
         items,
         ...orderData,
+        customerPhone: orderData.customerWhatsapp,
       }),
     });
 
