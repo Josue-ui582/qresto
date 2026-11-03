@@ -12,14 +12,16 @@ export function createSseResponse(
         if (!disposed) controller.enqueue(encoder.encode(': heartbeat\n\n'));
       }, 15_000);
 
-      const dispose = () => {
+      const dispose = (closeStream: boolean) => {
         if (disposed) return;
         disposed = true;
         clearInterval(heartbeat);
         unsubscribe();
-        request.signal.removeEventListener('abort', dispose);
+        request.signal.removeEventListener('abort', onAbort);
+        if (closeStream) controller.close();
       };
-      cleanup = dispose;
+      const onAbort = () => dispose(true);
+      cleanup = () => dispose(false);
       unsubscribe = subscribe((event) => {
         if (!disposed) {
           controller.enqueue(
@@ -27,8 +29,8 @@ export function createSseResponse(
           );
         }
       });
-      request.signal.addEventListener('abort', dispose, { once: true });
-      if (request.signal.aborted) dispose();
+      request.signal.addEventListener('abort', onAbort, { once: true });
+      if (request.signal.aborted) onAbort();
     },
     cancel() {
       cleanup();
