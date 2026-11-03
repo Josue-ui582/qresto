@@ -92,7 +92,9 @@ Le modèle de données est défini dans `prisma/schema.prisma`.
 - `Coupon` et `Notification` appartiennent à un restaurant.
 - `Testimonial` et `FAQItem` sont des entités sans relation obligatoire à un restaurant, chargées depuis PostgreSQL et initialisées par `prisma/seed.ts`.
 
-**À noter :** les options de plats et les notifications ont un cycle fonctionnel dans l’application. Les coupons et la gestion du stock restent des entités de schéma sans cycle complet.
+**À noter :** les options de plats, notifications et coupons ont un cycle fonctionnel dans l’application. La gestion du stock reste une entité de schéma sans cycle complet.
+
+Les coupons sont administrés dans le dashboard (CRUD réservé aux propriétaires/gestionnaires), prévisualisés via une API publique limitée en débit, puis revérifiés et consommés atomiquement avec la commande. Les dates, seuils minimum, plafond d’utilisations et montants sont validés côté serveur. Les remises s’appliquent au sous-total des plats, pas aux frais de livraison.
 
 ## 3. Fonctionnalités existantes
 
@@ -312,7 +314,7 @@ Les priorités ci-dessous sont des propositions. La complexité et l’impact so
 | Haute | Diffusion SSE multi-instance | Assurer les événements lorsque plusieurs instances ou un hébergement serverless sont utilisés. | Moyenne | Choisir un pub/sub partagé et vérifier les limites de connexions persistantes et de buffering de l’hébergement (**à confirmer**). |
 | Moyenne | Personnalisation de marque par restaurant | Rendre les menus plus reconnaissables : logo, couverture, couleurs, éventuellement police et présentation. | Moyenne | Ajouter un thème validé au modèle restaurant/settings et l’appliquer avec variables CSS sur les pages menu ; conserver une palette accessible. |
 | Moyenne | Fuseau horaire paramétrable | Aligner les périodes analytics et horaires sur le fuseau propre à chaque restaurant. | Faible à moyenne | Ajouter et valider un champ IANA dans les paramètres restaurant; actuellement `Africa/Porto-Novo` est le défaut (**à confirmer**). |
-| Moyenne | Promotions / coupons | Permettre des campagnes simples avec dates, seuil minimum et remise ; `Coupon` existe déjà dans Prisma. | Moyenne | Ajouter CRUD et validation serveur, calcul du prix, application atomique de la remise et règles d’expiration ; écran dashboard et affichage menu. |
+| Moyenne | Promotions / coupons | Permettre des campagnes simples avec dates, seuil minimum et remise ; CRUD, dashboard, validation et consommation atomique actifs. | Moyenne | Étendre les tests d’intégration de commande et confirmer les règles commerciales de cumul/annulation des coupons. |
 | Moyenne | Multilingue FR/EN (puis langues locales selon besoin) | Servir les touristes et clients aux préférences linguistiques différentes. | Élevée | Introduire des messages localisés, préférence de langue et traductions de contenu restaurant ; modifier routes, formulaire, menu et dashboard. Choix des langues locales à confirmer avec les utilisateurs. |
 | Moyenne | Gestion du stock / disponibilité | Éviter de vendre un plat ou ingrédient épuisé et aider l’équipe à réapprovisionner. | Élevée | Modèle d’inventaire/mouvements, seuils et décrémentation cohérente avec la commande ; le `isAvailable` du plat ne constitue pas un stock. |
 | Basse | Avis clients vérifiés après commande | Augmenter la confiance avec des retours liés à une expérience réelle ; `Review` existe mais n’est pas relié à une commande. | Moyenne | Lier l’avis à une commande terminée, ajouter API/modération et alimenter rating/reviewCount avec des agrégats réels. |

@@ -20,6 +20,7 @@ import { QrCodesTab } from './qr-codes/QrCodesTab';
 import { SettingsTab } from './settings/SettingsTab';
 import { SubscriptionTab } from './subscription/SubscriptionTab';
 import { TablesTab } from './tables/TablesTab';
+import { CouponsTab } from './coupons/CouponsTab';
 
 export const RestaurantDashboard: React.FC = () => {
   const { currentUser, currentRestaurant, isLoading, logout } = useAuth();
@@ -205,6 +206,7 @@ export const RestaurantDashboard: React.FC = () => {
     { id: 'qrcodes', label: 'QR Codes', icon: 'fa-solid fa-qrcode' },
     { id: 'analytics', label: 'Analytics', icon: 'fa-solid fa-chart-simple' },
     { id: 'team', label: 'Équipe', icon: 'fa-solid fa-user-group' },
+    { id: 'coupons', label: 'Promotions', icon: 'fa-solid fa-ticket' },
     { id: 'subscription', label: 'Abonnement', icon: 'fa-solid fa-credit-card' },
     { id: 'settings', label: 'Paramètres', icon: 'fa-solid fa-gear' },
   ];
@@ -316,6 +318,10 @@ export const RestaurantDashboard: React.FC = () => {
 
           {dashboardTab === 'team' && (
             <TeamTab restaurantId={restaurantId} />
+          )}
+
+          {dashboardTab === 'coupons' && (
+            <CouponsTab restaurantId={restaurantId} currency={currentRestaurant.currency || 'FCFA'} />
           )}
 
           {dashboardTab === 'subscription' && (

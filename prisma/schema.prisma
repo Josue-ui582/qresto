@@ -295,6 +295,7 @@ model Order {
   subtotal        Int
   deliveryFee     Int           @default(0)
   total           Int
+  couponDiscount  Int           @default(0)
   status          OrderStatus   @default(NEW)
   customerName    String
   customerPhone   String
@@ -369,7 +370,10 @@ model Coupon {
   discount     Int        // Montant ou pourcentage
   isPercentage Boolean    @default(false)
   minOrder     Int        @default(0)
+  startsAt     DateTime?
   expiresAt    DateTime?
+  maxUses      Int?
+  usageCount   Int        @default(0)
   active       Boolean    @default(true)
   createdAt    DateTime   @default(now())
 

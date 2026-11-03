@@ -41,6 +41,10 @@ export const CartPage: React.FC = () => {
   const [customerAddress, setCustomerAddress] = useState<string>('');
   const [customerNotes, setCustomerNotes] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('MTN_MOMO');
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [isCheckingCoupon, setIsCheckingCoupon] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -72,7 +76,54 @@ export const CartPage: React.FC = () => {
 
   // Calcul du total avec frais de livraison
   const deliveryFee = orderType === 'DELIVERY' && restaurant ? (restaurant.deliveryFee || 0) : 0;
-  const grandTotal = cartTotal + deliveryFee;
+  const grandTotal = cartTotal + deliveryFee - (appliedCoupon?.discount ?? 0);
+
+  const handleApplyCoupon = async () => {
+    const activeRestaurantId = restaurant?.id || cartRestaurantId || restaurantUrlParam;
+    if (!activeRestaurantId || !couponCode.trim()) {
+      setCouponError('Saisissez un code promotionnel.');
+      return;
+    }
+
+    const checkedSubtotal = cartTotal;
+    try {
+      setIsCheckingCoupon(true);
+      setCouponError(null);
+      setAppliedCoupon(null);
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurantId: activeRestaurantId,
+          code: couponCode.trim(),
+          subtotal: checkedSubtotal,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.data) {
+        throw new Error(result.error || 'Ce code promotionnel ne peut pas être appliqué.');
+      }
+      if (checkedSubtotal !== cartTotal) return;
+      setAppliedCoupon({ code: result.data.code, discount: result.data.discount });
+      setCouponCode(result.data.code);
+    } catch (error: unknown) {
+      setCouponError(error instanceof Error ? error.message : 'Impossible de vérifier ce code promotionnel.');
+    } finally {
+      setIsCheckingCoupon(false);
+    }
+  };
+
+  const handleUpdateQuantity = (cartItemId: string, delta: number) => {
+    setAppliedCoupon(null);
+    setCouponError(null);
+    updateCartQuantity(cartItemId, delta);
+  };
+
+  const handleRemoveItem = (cartItemId: string) => {
+    setAppliedCoupon(null);
+    setCouponError(null);
+    removeFromCart(cartItemId);
+  };
 
   // 2. Soumission de la commande vers l'API PostgreSQL
   const handleCheckout = async (e: React.FormEvent) => {
@@ -120,6 +171,7 @@ export const CartPage: React.FC = () => {
         whatsappConsent,
         customerAddress: orderType === 'DELIVERY' ? customerAddress : undefined,
         customerNotes,
+        couponCode: appliedCoupon?.code,
         paymentMethod,
       });
 
@@ -160,10 +212,11 @@ export const CartPage: React.FC = () => {
             currency={restaurant?.currency || 'FCFA'}
             cartTotal={cartTotal}
             deliveryFee={deliveryFee}
+            couponDiscount={appliedCoupon?.discount ?? 0}
             grandTotal={grandTotal}
             orderType={orderType}
-            onUpdateQuantity={updateCartQuantity}
-            onRemoveItem={removeFromCart}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
           />
         </div>
 
@@ -176,6 +229,41 @@ export const CartPage: React.FC = () => {
                 <span>{formError}</span>
               </div>
             )}
+
+            <section className="space-y-2">
+              <label htmlFor="coupon-code" className="block text-xs font-bold text-stone-700">
+                Code promotionnel
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="coupon-code"
+                  value={couponCode}
+                  onChange={(event) => {
+                    setCouponCode(event.target.value.toUpperCase());
+                    setAppliedCoupon(null);
+                    setCouponError(null);
+                  }}
+                  maxLength={30}
+                  autoComplete="off"
+                  placeholder="Ex. BIENVENUE"
+                  className="min-w-0 flex-1 px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold uppercase"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={isCheckingCoupon || !couponCode.trim()}
+                  className="px-4 py-3 rounded-xl bg-stone-900 text-white text-xs font-bold disabled:opacity-50"
+                >
+                  {isCheckingCoupon ? 'Vérification…' : 'Appliquer'}
+                </button>
+              </div>
+              {couponError && <p role="alert" className="text-xs text-red-700">{couponError}</p>}
+              {appliedCoupon && (
+                <p className="text-xs text-emerald-700">
+                  Code {appliedCoupon.code} appliqué : −{appliedCoupon.discount.toLocaleString()} {restaurant?.currency || 'FCFA'}
+                </p>
+              )}
+            </section>
 
             <OrderTypeSelector
               orderType={orderType}
