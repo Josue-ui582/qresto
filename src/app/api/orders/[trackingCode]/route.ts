@@ -6,8 +6,9 @@ import { authorizeRequest } from '@/lib/auth/session';
 import { handleDatabaseError, parseJson } from '@/lib/api/validation';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { findPublicTrackedOrder } from '@/lib/orders/public-order';
+import { TRACKING_CODE_PATTERN } from '@/lib/orders/tracking-code';
 
-const routeCodeSchema = z.string().trim().regex(/^QR-(?:\d{4}|[A-F0-9]{12})$/i);
+const routeCodeSchema = z.string().trim().regex(TRACKING_CODE_PATTERN);
 const updateStatusSchema = z.object({
   status: z.nativeEnum(OrderStatus),
 });

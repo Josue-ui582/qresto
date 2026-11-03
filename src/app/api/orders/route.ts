@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from 'generated/prisma/client';
 import { OrderStatus, OrderType, PaymentMethod, PaymentStatus } from 'generated/prisma/enums';
@@ -10,6 +9,8 @@ import { enforceRateLimit } from '@/lib/rate-limit';
 import { findPublicTrackedOrder } from '@/lib/orders/public-order';
 import { calculateOrderTotals, resolveSelectedDishOptions } from '@/lib/orders/order-pricing';
 import { isE164WhatsappPhone } from '@/lib/orders/whatsapp-phone';
+import { generateTrackingCode, TRACKING_CODE_PATTERN } from '@/lib/orders/tracking-code';
+import { notifyOrderCreated } from '@/lib/orders/order-notifier';
 
 const createOrderSchema = z.object({
   restaurantId: z.string().min(1),
@@ -54,7 +55,7 @@ const createOrderSchema = z.object({
   }
 });
 
-const trackingCodeSchema = z.string().trim().regex(/^QR-(?:\d{4}|[A-F0-9]{12})$/i);
+const trackingCodeSchema = z.string().trim().regex(TRACKING_CODE_PATTERN);
 
 export async function POST(request: NextRequest) {
   const rateLimitResponse = enforceRateLimit(request, 'order-create', {
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
     }
     const { subtotal, total } = totals;
 
-    const trackingCode = `QR-${randomBytes(6).toString('hex').toUpperCase()}`;
+    const trackingCode = generateTrackingCode();
     const newOrder = await prisma.$transaction(async (transaction) => {
       const order = await transaction.order.create({
         data: {
@@ -212,6 +213,16 @@ export async function POST(request: NextRequest) {
 
       return order;
     });
+
+    try {
+      await notifyOrderCreated({
+        id: newOrder.id,
+        trackingCode: newOrder.trackingCode,
+        restaurantId: newOrder.restaurantId,
+      });
+    } catch (error: unknown) {
+      console.error('Échec de la notification après création de commande.', error);
+    }
 
     const publicOrder = await findPublicTrackedOrder(newOrder.trackingCode);
     if (!publicOrder) {
