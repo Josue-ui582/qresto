@@ -89,7 +89,7 @@ export const RestaurantDashboard: React.FC = () => {
         if (
           payload.type?.startsWith('order.') ||
           payload.type === 'review.created' ||
-          payload.type === 'notification.created'
+          payload.type?.startsWith('notification.')
         ) {
           setNotificationRefreshToken((token) => token + 1);
         }

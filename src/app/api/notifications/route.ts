@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { authorizeRequest } from '@/lib/auth/session';
 import { handleDatabaseError, parseJson } from '@/lib/api/validation';
 import { prisma } from '@/lib/prisma';
+import { publishRestaurantEvent } from '@/lib/realtime/event-bus';
 
 const updateNotificationSchema = z.object({
   id: z.string().trim().min(1).max(100),
@@ -58,6 +59,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Notification introuvable.' }, { status: 404 });
     }
 
+    publishRestaurantEvent(auth.session.restaurantId, { type: 'notification.updated' });
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return handleDatabaseError(error, 'Impossible de modifier la notification.');

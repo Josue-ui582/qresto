@@ -2,7 +2,8 @@ export type RealtimeEvent =
   | { type: 'order.created'; trackingCode: string }
   | { type: 'order.updated'; trackingCode: string }
   | { type: 'review.created' }
-  | { type: 'notification.created' };
+  | { type: 'notification.created' }
+  | { type: 'notification.updated' };
 
 type Subscriber = (event: RealtimeEvent) => void;
 type SubscriberMap = Map<string, Set<Subscriber>>;
