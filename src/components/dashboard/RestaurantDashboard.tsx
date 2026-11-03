@@ -62,8 +62,35 @@ export const RestaurantDashboard: React.FC = () => {
 
     void fetchOrders(true);
 
-    const interval = setInterval(() => void fetchOrders(), 10000);
-    return () => clearInterval(interval);
+    const eventSource = new EventSource(
+      `/api/events/restaurants/${encodeURIComponent(currentRestaurant.id)}`
+    );
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+    const stopFallback = () => {
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      fallbackInterval = null;
+    };
+    const startFallback = () => {
+      if (!fallbackInterval) {
+        fallbackInterval = setInterval(() => void fetchOrders(), 10000);
+      }
+    };
+
+    eventSource.onopen = stopFallback;
+    eventSource.onerror = startFallback;
+    eventSource.onmessage = (event) => {
+      try {
+        const payload: { type?: string } = JSON.parse(event.data);
+        if (payload.type?.startsWith('order.')) void fetchOrders();
+      } catch (error: unknown) {
+        console.error('Événement temps réel invalide reçu pour le dashboard.', error);
+      }
+    };
+
+    return () => {
+      eventSource.close();
+      stopFallback();
+    };
   }, [currentRestaurant?.id, showToast]);
 
   useEffect(() => {

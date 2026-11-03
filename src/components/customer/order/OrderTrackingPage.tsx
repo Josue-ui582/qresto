@@ -30,7 +30,6 @@ export const OrderTrackingPage: React.FC = () => {
   );
   const [currentOrder, setCurrentOrder] = useState<TrackedOrder | null>(trackedOrder);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [autoRefresh] = useState<boolean>(true);
 
   useEffect(() => {
     if (requestedTrackingCode) setSearchInput(requestedTrackingCode);
@@ -50,22 +49,50 @@ export const OrderTrackingPage: React.FC = () => {
   }, [requestedTrackingCode, searchTrackedOrder]);
 
   useEffect(() => {
-    if (!currentOrder || !autoRefresh) return;
-    
-    const interval = setInterval(async () => {
+    const trackingCode = currentOrder?.trackingCode;
+    if (!trackingCode) return;
+
+    let active = true;
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+    const refreshOrder = async () => {
       try {
-        const res = await fetch(`/api/orders?trackingCode=${currentOrder.trackingCode}`);
+        const res = await fetch(`/api/orders?trackingCode=${encodeURIComponent(trackingCode)}`);
         if (res.ok) {
           const result = await res.json();
-          if (result.data) setCurrentOrder(result.data);
+          if (active && result.data) setCurrentOrder(result.data);
         }
       } catch (err) {
-        console.error('Erreur lors du rafraîchissement silencieux', err);
+        console.error('Erreur lors du rafraîchissement du suivi de commande.', err);
       }
-    }, 5000);
+    };
+    const stopFallback = () => {
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      fallbackInterval = null;
+    };
+    const startFallback = () => {
+      if (!fallbackInterval) fallbackInterval = setInterval(() => void refreshOrder(), 5000);
+    };
 
-    return () => clearInterval(interval);
-  }, [currentOrder, autoRefresh]);
+    const eventSource = new EventSource(
+      `/api/events/orders/${encodeURIComponent(trackingCode)}`
+    );
+    eventSource.onopen = stopFallback;
+    eventSource.onerror = startFallback;
+    eventSource.onmessage = (event) => {
+      try {
+        const payload: { type?: string } = JSON.parse(event.data);
+        if (payload.type?.startsWith('order.')) void refreshOrder();
+      } catch (error: unknown) {
+        console.error('Événement temps réel invalide reçu pour le suivi.', error);
+      }
+    };
+
+    return () => {
+      active = false;
+      eventSource.close();
+      stopFallback();
+    };
+  }, [currentOrder?.trackingCode]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
