@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeWhatsappPhone } from './whatsapp-phone';
+import { normalizeWhatsappPhone, whatsappLinkDigits } from './whatsapp-phone';
 
 describe('normalizeWhatsappPhone', () => {
   it('normalizes a local Beninese number to E.164', () => {
     expect(normalizeWhatsappPhone('97 00 11 22', '+229')).toBe('+22997001122');
+  });
+
+  describe('whatsappLinkDigits', () => {
+    it('prepares local and international restaurant phones for wa.me', () => {
+      expect(whatsappLinkDigits('97 00 11 22')).toBe('22997001122');
+      expect(whatsappLinkDigits('+229 97 00 11 22')).toBe('22997001122');
+      expect(whatsappLinkDigits('22997001122')).toBe('22997001122');
+    });
+
+    it('returns null when the restaurant phone is not a valid contact number', () => {
+      expect(whatsappLinkDigits(null)).toBeNull();
+      expect(whatsappLinkDigits('123')).toBeNull();
+    });
   });
 
   it('removes a local trunk prefix before adding the country calling code', () => {

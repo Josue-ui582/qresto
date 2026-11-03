@@ -7,14 +7,14 @@ interface RestaurantHeroProps {
   restaurant: Restaurant;
   onBack: () => void;
   onShareMenu: () => void;
-  onShareWhatsApp: () => void;
+  onContactRestaurant: () => void;
 }
 
 export const RestaurantHero: React.FC<RestaurantHeroProps> = ({
   restaurant,
   onBack,
   onShareMenu,
-  onShareWhatsApp,
+  onContactRestaurant,
 }) => {
   return (
     <div className="relative h-64 sm:h-80 md:h-96 w-full bg-stone-950 overflow-hidden">
@@ -43,12 +43,12 @@ export const RestaurantHero: React.FC<RestaurantHeroProps> = ({
           type="button"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={onShareWhatsApp}
+          onClick={onContactRestaurant}
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-lg transition-all cursor-pointer"
-          title="Partager sur WhatsApp"
+          title="Contacter le restaurant sur WhatsApp"
         >
-          <Share2 className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">WhatsApp</span>
+          <Phone className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Contacter le restaurant</span>
         </motion.button>
 
         <button

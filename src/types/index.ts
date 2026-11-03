@@ -146,6 +146,7 @@ export interface Order {
 export interface TrackedOrder {
   trackingCode: string;
   restaurantName: string;
+  restaurantPhone?: string | null;
   status: OrderStatus;
   items: Array<Pick<OrderItem, 'name' | 'price' | 'quantity'>>;
   total: number;

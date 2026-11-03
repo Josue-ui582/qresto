@@ -6,6 +6,7 @@ export async function findPublicTrackedOrder(code: string) {
     select: {
       trackingCode: true,
       restaurantName: true,
+      restaurantPhone: true,
       status: true,
       total: true,
       items: { select: { name: true, price: true, quantity: true } },

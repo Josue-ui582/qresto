@@ -3,6 +3,7 @@ import { OrderStatus, TrackedOrder } from '@/types';
 import { useToast } from '@/context/ToastContext';
 import Link from 'next/link';
 import React from 'react';
+import { whatsappLinkDigits } from '@/lib/orders/whatsapp-phone';
 
 interface OrderTrackingTimelineProps {
   currentOrder: TrackedOrder;
@@ -34,6 +35,7 @@ export const OrderTrackingTimeline: React.FC<OrderTrackingTimelineProps> = ({ cu
   };
 
   const currentStepIdx = getStepIndex(currentOrder.status);
+  const restaurantWhatsapp = whatsappLinkDigits(currentOrder.restaurantPhone);
 
   const copyTrackingCode = async () => {
     try {
@@ -94,6 +96,18 @@ export const OrderTrackingTimeline: React.FC<OrderTrackingTimelineProps> = ({ cu
               </Link>
             </div>
             <h2 className="text-xl font-extrabold text-stone-900 mt-2">{currentOrder.restaurantName}</h2>
+            {restaurantWhatsapp && (
+              <a
+                href={`https://wa.me/${restaurantWhatsapp}?text=${encodeURIComponent(
+                  `Bonjour ${currentOrder.restaurantName}, je vous contacte au sujet de ma commande ${currentOrder.trackingCode}.`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex text-xs font-semibold text-emerald-700 hover:text-emerald-900 underline"
+              >
+                Contacter le restaurant sur WhatsApp
+              </a>
+            )}
           </div>
           <button
             type="button"

@@ -30,3 +30,18 @@ export function normalizeWhatsappPhone(
 
   return E164_PATTERN.test(normalized) ? normalized : null;
 }
+
+export function whatsappLinkDigits(phone: string | null | undefined): string | null {
+  if (!phone?.trim()) return null;
+
+  const trimmedPhone = phone.trim();
+  const digits = trimmedPhone.replace(/\D/g, '');
+  const internationalPhone = trimmedPhone.startsWith('+')
+    ? trimmedPhone
+    : digits.startsWith('229')
+      ? `+${digits}`
+      : trimmedPhone;
+  const normalizedPhone = normalizeWhatsappPhone(internationalPhone, '+229');
+
+  return normalizedPhone?.slice(1) ?? null;
+}
