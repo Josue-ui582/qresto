@@ -144,4 +144,18 @@ describe('POST /api/orders', () => {
     expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
     expect(mocks.transaction.order.create).not.toHaveBeenCalled();
   });
+
+  it('keeps the created order successful when the notifier fails', async () => {
+    mocks.notifyOrderCreated.mockRejectedValueOnce(new Error('Notifier unavailable'));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      const response = await createOrder(request(validPayload()));
+
+      expect(response.status).toBe(201);
+      expect(mocks.transaction.order.create).toHaveBeenCalledOnce();
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
 });
