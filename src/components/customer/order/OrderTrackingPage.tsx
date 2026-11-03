@@ -22,6 +22,7 @@ export const OrderTrackingPage: React.FC = () => {
   } = useOrder();
 
   const requestedTrackingCode =
+    searchParams.get('code') ||
     searchParams.get('trackingCode') ||
     (viewParams.trackingCode as string) ||
     trackingCodeInput ||
@@ -136,9 +137,11 @@ export const OrderTrackingPage: React.FC = () => {
           <OrderTrackingSummary 
             currentOrder={currentOrder} 
           />
-          {currentOrder.status === 'DELIVERED' && !currentOrder.hasReview && (
+          {currentOrder.status === 'DELIVERED' && (
             <OrderReviewForm
+              key={currentOrder.trackingCode}
               trackingCode={currentOrder.trackingCode}
+              customerName={currentOrder.customerName}
               onSubmitted={() => setCurrentOrder((order) => order ? { ...order, hasReview: true } : order)}
             />
           )}

@@ -164,6 +164,7 @@ export interface Order {
 export interface TrackedOrder {
   trackingCode: string;
   restaurantName: string;
+  customerName?: string;
   restaurantPhone?: string | null;
   currency: string;
   status: OrderStatus;

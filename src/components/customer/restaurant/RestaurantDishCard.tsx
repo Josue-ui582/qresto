@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Clock, RotateCw, Flame, Plus } from 'lucide-react';
 import { Dish } from '@/types';
+import { ImageWithFallback } from '@/components/common/ImageWithFallback';
 
 interface RestaurantDishCardProps {
   dish: Dish;
@@ -45,7 +46,7 @@ export const RestaurantDishCard: React.FC<RestaurantDishCardProps> = ({
     >
       <div>
         <div className="relative h-48 overflow-hidden bg-ink-100">
-          <img
+          <ImageWithFallback
             src={dish.image}
             alt={dish.name}
             className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-500"

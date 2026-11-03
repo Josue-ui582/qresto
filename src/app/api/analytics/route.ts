@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     ...where,
     status: { not: 'CANCELLED' },
   };
-  const timeSql = Prisma.sql`AND o.created_at >= ${range.startDate} AND o.created_at < ${range.endDate}`;
+  const timeSql = Prisma.sql`AND o."createdAt" >= ${range.startDate} AND o."createdAt" < ${range.endDate}`;
 
   try {
     const [
@@ -106,10 +106,10 @@ export async function GET(request: NextRequest) {
           SUM(oi.quantity)::int AS quantity,
           SUM(oi.price * oi.quantity)::int AS revenue
         FROM order_items oi
-        INNER JOIN orders o ON o.id = oi.order_id
-        LEFT JOIN dishes d ON d.id = oi.dish_id
-        LEFT JOIN categories c ON c.id = d.category_id
-        WHERE o.restaurant_id = ${auth.session.restaurantId}
+        INNER JOIN orders o ON o.id = oi."orderId"
+        LEFT JOIN dishes d ON d.id = oi."dishId"
+        LEFT JOIN categories c ON c.id = d."categoryId"
+        WHERE o."restaurantId" = ${auth.session.restaurantId}
           ${timeSql}
           AND o.status <> 'CANCELLED'
         GROUP BY
@@ -120,21 +120,21 @@ export async function GET(request: NextRequest) {
         LIMIT 5
       `),
       prisma.$queryRaw<PeakHour[]>(Prisma.sql`
-        SELECT EXTRACT(HOUR FROM o.created_at AT TIME ZONE ${timeZone})::int AS hour,
+        SELECT EXTRACT(HOUR FROM (o."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${timeZone}))::int AS hour,
           COUNT(*)::int AS count
         FROM orders o
-        WHERE o.restaurant_id = ${auth.session.restaurantId}
+        WHERE o."restaurantId" = ${auth.session.restaurantId}
           ${timeSql}
           AND o.status <> 'CANCELLED'
         GROUP BY hour
         ORDER BY count DESC, hour ASC
       `),
       prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
-        SELECT COUNT(DISTINCT o.table_number)::int AS count
+        SELECT COUNT(DISTINCT o."tableNumber")::int AS count
         FROM orders o
-        WHERE o.restaurant_id = ${auth.session.restaurantId}
+        WHERE o."restaurantId" = ${auth.session.restaurantId}
           ${timeSql}
-          AND o.table_number IS NOT NULL
+          AND o."tableNumber" IS NOT NULL
           AND o.status <> 'CANCELLED'
       `),
     ]);

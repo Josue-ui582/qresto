@@ -8,6 +8,7 @@ export async function findPublicTrackedOrder(code: string) {
       restaurantName: true,
       restaurantPhone: true,
       restaurant: { select: { currency: true } },
+      customerName: true,
       status: true,
       total: true,
       review: { select: { id: true } },

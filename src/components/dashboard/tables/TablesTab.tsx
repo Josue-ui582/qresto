@@ -13,6 +13,7 @@ import { QrModal } from './QrModal';
 import { TableFormModal } from './TableFormModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { createTableMenuUrl, generateQrCodePngDataUrl } from '@/lib/qr-code';
+import { getApiErrorMessage, isApiSuccess } from '@/lib/api/client-error';
 
 export const TablesTab: React.FC<TablesTabProps> = ({
   restaurantId,
@@ -23,6 +24,7 @@ export const TablesTab: React.FC<TablesTabProps> = ({
 }) => {
   const [tablesList, setTablesList] = useState<TableData[]>(initialTables);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
 
@@ -56,14 +58,18 @@ export const TablesTab: React.FC<TablesTabProps> = ({
   const fetchTables = useCallback(async () => {
     try {
       setIsLoading(true);
-      const url = restaurantId ? `/api/tables?restaurantId=${restaurantId}` : '/api/tables';
+      const url = restaurantId
+        ? `/api/tables?restaurantId=${encodeURIComponent(restaurantId)}`
+        : '/api/tables';
       const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setTablesList(data.tables || []);
+      const data: { success?: boolean; tables?: TableData[]; error?: string } = await res.json();
+      if (!res.ok || !data.success || !data.tables) {
+        throw new Error(data.error || 'Impossible de récupérer les tables.');
       }
-    } catch (err) {
-      console.error('Erreur chargement tables:', err);
+      setTablesList(data.tables);
+      setLoadError(null);
+    } catch (err: unknown) {
+      setLoadError(err instanceof Error ? err.message : 'Erreur lors du chargement des tables.');
     } finally {
       setIsLoading(false);
     }
@@ -139,10 +145,10 @@ export const TablesTab: React.FC<TablesTabProps> = ({
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de la sauvegarde.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Erreur lors de la sauvegarde.'));
       }
 
       showNotice('success', editingTable ? 'Table mise à jour !' : 'Nouvelle table créée !');
@@ -165,10 +171,10 @@ export const TablesTab: React.FC<TablesTabProps> = ({
         method: 'DELETE',
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de la suppression.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Erreur lors de la suppression.'));
       }
 
       showNotice('success', 'Table supprimée avec succès.');
@@ -218,7 +224,14 @@ export const TablesTab: React.FC<TablesTabProps> = ({
         onRefresh={fetchTables}
       />
 
-      {isLoading ? (
+      {loadError ? (
+        <div role="alert" className="rounded-2xl border border-negative-200 bg-negative-50 p-5 text-sm text-negative-800">
+          <p>{loadError}</p>
+          <button type="button" onClick={() => void fetchTables()} className="mt-3 font-bold underline">
+            Réessayer
+          </button>
+        </div>
+      ) : isLoading ? (
         <div className="py-20 flex flex-col items-center justify-center text-ink-400 bg-paper-white rounded-3xl border border-ink-200/80">
           <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-3" />
           <span className="text-xs font-semibold">Chargement des tables...</span>

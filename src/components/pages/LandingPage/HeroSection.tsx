@@ -13,6 +13,7 @@ import {
   Flame,
 } from 'lucide-react';
 import { Dish3DSelection, DishModelType } from '@/types';
+import { ImageWithFallback } from '@/components/common/ImageWithFallback';
 import Link from 'next/link';
 
 interface HeroDish {
@@ -195,17 +196,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectDish }) => {
                 {dish ? (
                   <div className="mt-3.5 relative bg-paper-white rounded-2xl p-3 border border-ink-200/90 shadow-sm group">
                     <div className="relative h-40 rounded-xl overflow-hidden mb-3 bg-ink-100">
-                      {dish.image ? (
-                        <img
-                          src={dish.image}
-                          alt={dish.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-ink-400">
-                          <Utensils className="w-8 h-8" />
-                        </div>
-                      )}
+                      <ImageWithFallback
+                        src={dish.image}
+                        alt={dish.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        placeholderClassName="flex h-full w-full items-center justify-center bg-ink-100 text-ink-400"
+                      />
                       {dish.isPopular && (
                         <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-ink-950/80 backdrop-blur-xs text-paper-white text-[0.625rem] font-bold flex items-center gap-1">
                           <Flame className="w-3 h-3 text-brand-400" />

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, UtensilsCrossed, FolderPlus, Check, AlertTriangle, X } from 'lucide-react';
 import { CategoryData, CategoryFormData, CategoriesTabProps, ActionNoticeState } from './types';
@@ -9,6 +9,7 @@ import { CategorySearchBar } from './CategorySearchBar';
 import { CategoryCard } from './CategoryCard';
 import { CategoryFormModal } from './CategoryFormModal';
 import { DeleteCategoryModal } from './DeleteCategoryModal';
+import { getApiErrorMessage, isApiSuccess } from '@/lib/api/client-error';
 
 export const CategoriesTab: React.FC<CategoriesTabProps> = ({
   restaurantId,
@@ -17,6 +18,7 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
 }) => {
   const [categoriesList, setCategoriesList] = useState<CategoryData[]>(initialCategories);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // États du Formulaire
@@ -35,27 +37,29 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [actionNotice, setActionNotice] = useState<ActionNoticeState | null>(null);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setIsLoading(true);
       const url = restaurantId
-        ? `/api/categories?restaurantId=${restaurantId}`
+        ? `/api/categories?restaurantId=${encodeURIComponent(restaurantId)}`
         : '/api/categories';
       const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setCategoriesList(data.categories || []);
+      const data: { success?: boolean; categories?: CategoryData[]; error?: string } = await res.json();
+      if (!res.ok || !data.success || !data.categories) {
+        throw new Error(data.error || 'Impossible de récupérer les catégories.');
       }
-    } catch (err) {
-      console.error('Erreur chargement catégories:', err);
+      setCategoriesList(data.categories);
+      setLoadError(null);
+    } catch (err: unknown) {
+      setLoadError(err instanceof Error ? err.message : 'Erreur lors du chargement des catégories.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [restaurantId]);
 
   useEffect(() => {
-    fetchCategories();
-  }, [restaurantId]);
+    void fetchCategories();
+  }, [fetchCategories]);
 
   const showNotice = (type: 'success' | 'error', msg: string) => {
     setActionNotice({ type, msg });
@@ -119,10 +123,10 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Une erreur est survenue.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Une erreur est survenue.'));
       }
 
       showNotice(
@@ -146,10 +150,10 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
         method: 'DELETE',
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de la suppression.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Erreur lors de la suppression.'));
       }
 
       showNotice('success', 'Catégorie supprimée avec succès.');
@@ -212,7 +216,14 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
       />
 
       {/* Grille des Catégories */}
-      {isLoading ? (
+      {loadError ? (
+        <div role="alert" className="rounded-2xl border border-negative-200 bg-negative-50 p-5 text-sm text-negative-800">
+          <p>{loadError}</p>
+          <button type="button" onClick={() => void fetchCategories()} className="mt-3 font-bold underline">
+            Réessayer
+          </button>
+        </div>
+      ) : isLoading ? (
         <div className="py-20 flex flex-col items-center justify-center text-ink-400 bg-paper-white rounded-3xl border border-ink-200/80">
           <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-3" />
           <span className="text-xs font-semibold">Chargement des catégories depuis la BDD...</span>

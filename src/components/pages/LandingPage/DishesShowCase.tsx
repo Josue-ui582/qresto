@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { RotateCw, Clock, Loader2, UtensilsCrossed } from 'lucide-react';
 import { Dish3DSelection, DishModelType } from '@/types';
+import { ImageWithFallback } from '@/components/common/ImageWithFallback';
 import Link from 'next/link';
 
 interface ShowcaseDish {
@@ -153,17 +154,12 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                 >
                   <div>
                     <div className="relative h-48 overflow-hidden bg-ink-100">
-                      {dish.image ? (
-                        <img
-                          src={dish.image}
-                          alt={dish.name}
-                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-ink-400">
-                          <UtensilsCrossed className="w-8 h-8" />
-                        </div>
-                      )}
+                      <ImageWithFallback
+                        src={dish.image}
+                        alt={dish.name}
+                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                        placeholderClassName="flex h-full w-full items-center justify-center bg-ink-100 text-ink-400"
+                      />
                       {dish.prepTime && (
                         <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-ink-900/80 backdrop-blur-xs text-paper-white text-[0.625rem] font-bold flex items-center gap-1">
                           <Clock className="w-3 h-3 text-brand-400" />

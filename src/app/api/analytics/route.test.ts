@@ -102,4 +102,42 @@ describe('GET /api/analytics', () => {
     expect(response.status).toBe(400);
     expect(mocks.aggregate).not.toHaveBeenCalled();
   });
+
+  it('uses the quoted camelCase columns in raw SQL and scopes every aggregate to the session restaurant', async () => {
+    await GET(request('?period=week&restaurantId=restaurant-1'));
+
+    expect(mocks.aggregate).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ restaurantId: 'restaurant-1' }),
+    }));
+    expect(mocks.queryRaw.mock.calls.map(([query]) => query.sql).join('\n')).toContain('"restaurantId"');
+    expect(mocks.queryRaw.mock.calls.map(([query]) => query.sql).join('\n')).toContain('"createdAt"');
+    expect(mocks.queryRaw.mock.calls.map(([query]) => query.sql).join('\n')).toContain('"dishId"');
+    expect(mocks.queryRaw.mock.calls.map(([query]) => query.sql).join('\n')).not.toContain('created_at');
+    expect(mocks.queryRaw.mock.calls.map(([query]) => query.sql).join('\n')).not.toContain('dish_id');
+  });
+
+  it('returns stable zero-valued aggregates when the restaurant has no orders', async () => {
+    mocks.aggregate.mockResolvedValue({
+      _sum: { total: null },
+      _count: { id: 0 },
+      _avg: { total: null },
+    });
+    mocks.groupBy.mockResolvedValue([]);
+    mocks.queryRaw.mockResolvedValue([]);
+
+    const response = await GET(request('?period=week'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.stats).toEqual({
+      totalRevenue: 0,
+      totalOrders: 0,
+      averageOrderValue: 0,
+      activeTablesCount: 0,
+      ordersByStatus: [],
+      ordersByType: [],
+      topItems: [],
+      peakHours: [],
+    });
+  });
 });

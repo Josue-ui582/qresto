@@ -2,6 +2,7 @@ export type RealtimeEvent =
   | { type: 'order.created'; trackingCode: string }
   | { type: 'order.updated'; trackingCode: string }
   | { type: 'review.created' }
+  | { type: 'review.updated' }
   | { type: 'notification.created' }
   | { type: 'notification.updated' };
 

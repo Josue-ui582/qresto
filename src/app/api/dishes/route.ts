@@ -6,13 +6,18 @@ import { handleDatabaseError, parseJson, parseQueryParam } from '@/lib/api/valid
 import { authorizeRequest } from '@/lib/auth/session';
 import { dishesSlugify } from '@/utils';
 import { createPlanLimitMessage, getPlanResourceUsage, isResourceLimitReached } from '@/lib/subscription/service';
+import { validateImageUrl } from '@/lib/uploads/image-validation';
+
+const imageUrlSchema = z.string().trim().min(1).max(2048).refine(validateImageUrl, {
+  message: 'URL image invalide. Les data URLs ne sont pas acceptées ; téléversez plutôt le fichier.',
+});
 
 const createDishSchema = z.object({
   name: z.string().trim().min(1).max(150),
   description: z.string().trim().max(2000).optional(),
   price: z.number().finite().min(0).max(100_000_000),
-  imageUrl: z.string().trim().min(1).max(2048).optional(),
-  image: z.string().trim().min(1).max(2048).optional(),
+  imageUrl: imageUrlSchema.optional(),
+  image: imageUrlSchema.optional(),
   isAvailable: z.boolean().optional(),
   categoryId: z.string().min(1),
   restaurantId: z.string().optional(),
@@ -26,8 +31,8 @@ const updateDishSchema = z.object({
   name: z.string().trim().min(1).max(150).optional(),
   description: z.string().trim().max(2000).nullable().optional(),
   price: z.number().finite().min(0).max(100_000_000).optional(),
-  imageUrl: z.string().trim().max(2048).nullable().optional(),
-  image: z.string().trim().max(2048).nullable().optional(),
+  imageUrl: imageUrlSchema.nullable().optional(),
+  image: imageUrlSchema.nullable().optional(),
   isAvailable: z.boolean().optional(),
   categoryId: z.string().min(1).optional(),
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/common/Icon';
@@ -15,6 +15,15 @@ export const RegisterRestaurantPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
+  const [imageFiles, setImageFiles] = useState<{ logo?: File; coverImage?: File }>({});
+  const [createdRestaurant, setCreatedRestaurant] = useState<{ id: string } | null>(null);
+  const previewUrls = useRef<Partial<Record<'logoPreview' | 'coverPreview', string>>>({});
+
+  useEffect(() => () => {
+    Object.values(previewUrls.current).forEach((url) => {
+      if (url) URL.revokeObjectURL(url);
+    });
+  }, []);
 
   // Un seul objet d'état pour tout le formulaire !
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -35,6 +44,56 @@ export const RegisterRestaurantPage: React.FC = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleImageFileChange = (target: 'logoPreview' | 'coverPreview', file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Chaque image doit faire 5 Mo maximum.');
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('Utilisez une image JPEG, PNG ou WebP.');
+      return;
+    }
+    const previousUrl = previewUrls.current[target];
+    if (previousUrl) URL.revokeObjectURL(previousUrl);
+    const previewUrl = URL.createObjectURL(file);
+    previewUrls.current[target] = previewUrl;
+    setError(null);
+    setImageFiles((current) => ({
+      ...current,
+      [target === 'logoPreview' ? 'logo' : 'coverImage']: file,
+    }));
+    updateForm(target, previewUrl);
+  };
+
+  const uploadSelectedImages = async () => {
+    const uploads: { logo?: string; coverImage?: string } = {};
+    for (const [field, file] of Object.entries(imageFiles) as Array<['logo' | 'coverImage', File]>) {
+      const uploadData = new FormData();
+      uploadData.set('file', file);
+      const response = await fetch('/api/uploads', { method: 'POST', body: uploadData });
+      const result: { success?: boolean; imageUrl?: string; error?: string } = await response.json();
+      if (!response.ok || !result.success || !result.imageUrl) {
+        const label = field === 'logo' ? 'le logo' : 'la couverture';
+        const message = response.status === 401
+          ? 'Votre session a expiré. Reconnectez-vous pour téléverser les images du restaurant.'
+          : result.error || `Impossible de téléverser ${label}.`;
+        throw new Error(message);
+      }
+      uploads[field] = result.imageUrl;
+    }
+    if (Object.keys(uploads).length) {
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(uploads),
+      });
+      const result: { success?: boolean; error?: string } = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Impossible d’enregistrer les images du restaurant.');
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -52,27 +111,35 @@ export const RegisterRestaurantPage: React.FC = () => {
       setError('Veuillez renseigner votre email et mot de passe.');
       return;
     }
+    if (error) {
+      setError(error);
+      return;
+    }
 
     try {
       setIsLoading(true);
-      await registerOwnerAndRestaurant(
-        {
-          fullName: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-        },
-        {
-          name: formData.restaurantName,
-          city: formData.city,
-          address: formData.address || `${formData.city}, Bénin`,
-          category: formData.category,
-          description: formData.description || `Bienvenue au restaurant ${formData.restaurantName}`,
-          logo: formData.logoPreview,
-          coverImage: formData.coverPreview,
-        }
-      );
+      if (!createdRestaurant) {
+        const registration = await registerOwnerAndRestaurant(
+          {
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            password: formData.password,
+          },
+          {
+            name: formData.restaurantName,
+            city: formData.city,
+            address: formData.address || `${formData.city}, Bénin`,
+            category: formData.category,
+            description: formData.description || `Bienvenue au restaurant ${formData.restaurantName}`,
+            logo: formData.logoPreview.startsWith('blob:') ? undefined : formData.logoPreview,
+            coverImage: formData.coverPreview.startsWith('blob:') ? undefined : formData.coverPreview,
+          }
+        );
+        setCreatedRestaurant({ id: registration.restaurant.id });
+      }
 
+      await uploadSelectedImages();
       router.push('/dashboard');
     } catch (err) {
       // CORRECTION TYPESCRIPT : Plus de "err: any"
@@ -130,7 +197,7 @@ export const RegisterRestaurantPage: React.FC = () => {
             </>
           ) : (
             <>
-              <RestaurantSection formData={formData} updateForm={updateForm} />
+              <RestaurantSection formData={formData} updateForm={updateForm} onImageFileChange={handleImageFileChange} />
               <div className="flex flex-col-reverse gap-3 sm:flex-row">
                 <button type="button" onClick={() => setStep(1)} className="w-full rounded-full border border-ink-300 px-5 py-3.5 text-sm font-semibold text-ink-800 transition-colors hover:bg-ink-50 sm:w-auto">
                   Retour

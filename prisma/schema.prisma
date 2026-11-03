@@ -381,13 +381,16 @@ model Review {
   order        Order?     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   dishId       String?
   dish         Dish?      @relation(fields: [dishId], references: [id], onDelete: Cascade)
-  customerName String
+  customerName String?
   rating       Int        @default(5)
   comment      String?
   isApproved   Boolean    @default(false)
+  isVisible    Boolean    @default(true)
   createdAt    DateTime   @default(now())
 
   @@index([restaurantId, isApproved])
+  @@index([restaurantId, createdAt])
+  @@index([restaurantId, isVisible, createdAt])
   @@map("reviews")
 }
 

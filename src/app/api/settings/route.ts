@@ -4,11 +4,12 @@ import { prisma } from '@/lib/prisma';
 import { handleDatabaseError, parseJson } from '@/lib/api/validation';
 import { authorizeRequest } from '@/lib/auth/session';
 import { getAccessibleForeground } from '@/lib/branding/color-contrast';
+import { validateImageUrl } from '@/lib/uploads/image-validation';
 
-const imageUrlSchema = z.union([
-  z.string().url().max(2048).refine((value) => /^https?:\/\//i.test(value)),
-  z.literal(''),
-]);
+const imageUrlSchema = z.string().max(2048).refine(
+  (value) => value === '' || validateImageUrl(value),
+  { message: 'URL image invalide. Les data URLs ne sont pas acceptées ; téléversez plutôt le fichier.' }
+);
 
 const openingHoursSchema = z.union([
   z.string().max(5000),
