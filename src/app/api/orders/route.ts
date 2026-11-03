@@ -141,45 +141,52 @@ export async function POST(request: NextRequest) {
     const { subtotal, total } = totals;
 
     const trackingCode = `QR-${randomBytes(6).toString('hex').toUpperCase()}`;
-    const newOrder = await prisma.order.create({
-      data: {
-        trackingCode,
-        restaurantId: restaurant.id,
-        restaurantName: restaurant.name,
-        restaurantPhone: restaurant.phone,
-        type: input.type,
-        tableNumber: input.type === OrderType.DINE_IN ? String(input.tableNumber) : null,
-        subtotal,
-        deliveryFee,
-        total,
-        status: OrderStatus.NEW,
-        customerName: input.customerName,
-        customerPhone: input.customerPhone,
-        customerAddress: input.type === OrderType.DELIVERY ? input.customerAddress : null,
-        customerNotes: input.customerNotes || null,
-        paymentMethod: input.paymentMethod,
-        paymentStatus: PaymentStatus.PENDING,
-        items: {
-          create: items.map((item) => ({
-            dishId: item.dish.id,
-            name: item.dish.name,
-            price: item.unitPrice,
-            quantity: item.quantity,
-            notes: item.notes || null,
-            options: item.selectedOptions.map((option): Prisma.InputJsonObject => ({
-              id: option.id,
-              name: option.name,
-              price: option.price,
-            })),
+    const newOrder = await prisma.$transaction(async (transaction) => {
+      const order = await transaction.order.create({
+        data: {
+          trackingCode,
+          restaurantId: restaurant.id,
+          restaurantName: restaurant.name,
+          restaurantPhone: restaurant.phone,
+          type: input.type,
+          tableNumber: input.type === OrderType.DINE_IN ? String(input.tableNumber) : null,
+          subtotal,
+          deliveryFee,
+          total,
+          status: OrderStatus.NEW,
+          customerName: input.customerName,
+          customerPhone: input.customerPhone,
+          customerAddress: input.type === OrderType.DELIVERY ? input.customerAddress : null,
+          customerNotes: input.customerNotes || null,
+          paymentMethod: input.paymentMethod,
+          paymentStatus: PaymentStatus.PENDING,
+        },
+      });
+
+      await transaction.orderItem.createMany({
+        data: items.map((item) => ({
+          orderId: order.id,
+          dishId: item.dish.id,
+          name: item.dish.name,
+          price: item.unitPrice,
+          quantity: item.quantity,
+          notes: item.notes || null,
+          options: item.selectedOptions.map((option): Prisma.InputJsonObject => ({
+            id: option.id,
+            name: option.name,
+            price: option.price,
           })),
+        })),
+      });
+      await transaction.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          status: OrderStatus.NEW,
+          comment: 'Commande enregistrée',
         },
-        statusHistory: {
-          create: {
-            status: OrderStatus.NEW,
-            comment: 'Commande enregistrée',
-          },
-        },
-      },
+      });
+
+      return order;
     });
 
     const publicOrder = await findPublicTrackedOrder(newOrder.trackingCode);
