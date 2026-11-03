@@ -103,7 +103,7 @@ export async function GET(
     }
 
     const reviewAggregate = await prisma.review.aggregate({
-      where: { restaurantId: restaurant.id, isApproved: true },
+      where: { restaurantId: restaurant.id, isVisible: true },
       _avg: { rating: true },
       _count: { _all: true },
     });

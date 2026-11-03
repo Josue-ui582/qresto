@@ -7,6 +7,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import { RestaurantHero } from './RestaurantHero';
+import { RestaurantReviewsSection } from './RestaurantReviewsSection';
 import { RestaurantMenuTabs } from './RestaurantMenuTabs';
 import { RestaurantDishCard } from './RestaurantDishCard';
 import { useNavigation } from '@/context/NavigationContext';
@@ -258,6 +259,8 @@ export const RestaurantDetailPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <RestaurantReviewsSection slug={slug} />
 
       {/* 5. BARRE FLOTTANTE PANIER */}
       <AnimatePresence>
