@@ -74,13 +74,49 @@ export const ContactPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [website, setWebsite] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    showToast('Votre message a bien été envoyé ! Notre équipe au Bénin vous répondra sous 24h.', 'success');
-    setName('');
-    setEmail('');
-    setMessage('');
+    setIsSending(true);
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, contact: email, message, website }),
+      });
+      if (response.status === 204) {
+        setName('');
+        setEmail('');
+        setMessage('');
+        setWebsite('');
+        return;
+      }
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Impossible d’enregistrer votre message.');
+      }
+
+      showToast(
+        result.deliveryStatus === 'sent'
+          ? 'Votre message a été envoyé. Notre équipe vous répondra bientôt.'
+          : 'Votre message est enregistré. La livraison par e-mail reste à configurer.',
+        result.deliveryStatus === 'sent' ? 'success' : 'info'
+      );
+      setName('');
+      setEmail('');
+      setMessage('');
+      setWebsite('');
+    } catch (error: unknown) {
+      showToast(
+        error instanceof Error ? error.message : 'Impossible d’envoyer votre message.',
+        'error'
+      );
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -142,11 +178,26 @@ export const ContactPage: React.FC = () => {
               className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm"
             />
           </div>
+          <div
+            aria-hidden="true"
+            className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden"
+          >
+            <label htmlFor="contact-website">Ne pas remplir ce champ</label>
+            <input
+              id="contact-website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
+          </div>
           <button
             type="submit"
+            disabled={isSending}
             className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md"
           >
-            Envoyer mon message
+            {isSending ? 'Envoi en cours...' : 'Envoyer mon message'}
           </button>
         </form>
       </div>
