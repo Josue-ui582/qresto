@@ -14,6 +14,7 @@ import { OrderType, PaymentMethod, Restaurant } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { FaIcon } from '@/components/common/Icon';
 import { useNavigation } from '@/context/NavigationContext';
+import { normalizeWhatsappPhone } from '@/lib/orders/whatsapp-phone';
 
 export const CartPage: React.FC = () => {
   const { cart, cartRestaurantId, cartTotal, updateCartQuantity, removeFromCart, clearCart } = useCart();
@@ -35,6 +36,8 @@ export const CartPage: React.FC = () => {
   const [tableNumber, setTableNumber] = useState<string>(tableUrlParam ? String(tableUrlParam) : '');
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [phoneCallingCode, setPhoneCallingCode] = useState<string>('+229');
+  const [whatsappConsent, setWhatsappConsent] = useState<boolean>(false);
   const [customerAddress, setCustomerAddress] = useState<string>('');
   const [customerNotes, setCustomerNotes] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('MTN_MOMO');
@@ -86,8 +89,13 @@ export const CartPage: React.FC = () => {
       setFormError('Veuillez renseigner votre nom complet.');
       return;
     }
-    if (!customerPhone.trim() || customerPhone.length < 8) {
-      setFormError('Veuillez renseigner un numéro de téléphone valide.');
+    const customerWhatsapp = normalizeWhatsappPhone(customerPhone, phoneCallingCode);
+    if (!customerWhatsapp) {
+      setFormError('Veuillez renseigner un numéro WhatsApp valide au format international.');
+      return;
+    }
+    if (!whatsappConsent) {
+      setFormError('Votre consentement est requis pour recevoir les messages liés à la commande.');
       return;
     }
     if (orderType === 'DELIVERY' && !customerAddress.trim()) {
@@ -107,7 +115,9 @@ export const CartPage: React.FC = () => {
         type: orderType,
         tableNumber: orderType === 'DINE_IN' ? tableNumber : undefined,
         customerName,
-        customerPhone,
+        customerPhone: customerWhatsapp,
+        customerWhatsapp,
+        whatsappConsent,
         customerAddress: orderType === 'DELIVERY' ? customerAddress : undefined,
         customerNotes,
         paymentMethod,
@@ -147,6 +157,7 @@ export const CartPage: React.FC = () => {
           <CartItemsSummary
             cart={cart}
             restaurantName={restaurant?.name}
+            currency={restaurant?.currency || 'FCFA'}
             cartTotal={cartTotal}
             deliveryFee={deliveryFee}
             grandTotal={grandTotal}
@@ -179,6 +190,10 @@ export const CartPage: React.FC = () => {
               setCustomerName={setCustomerName}
               customerPhone={customerPhone}
               setCustomerPhone={setCustomerPhone}
+              phoneCallingCode={phoneCallingCode}
+              setPhoneCallingCode={setPhoneCallingCode}
+              whatsappConsent={whatsappConsent}
+              setWhatsappConsent={setWhatsappConsent}
               customerAddress={customerAddress}
               setCustomerAddress={setCustomerAddress}
               customerNotes={customerNotes}
@@ -203,7 +218,7 @@ export const CartPage: React.FC = () => {
               ) : (
                 <>
                   <FaIcon name="fa-solid fa-lock" />
-                  <span>Confirmer la commande ({grandTotal.toLocaleString()} FCFA)</span>
+                  <span>Confirmer la commande ({grandTotal.toLocaleString()} {restaurant?.currency || 'FCFA'})</span>
                 </>
               )}
             </button>

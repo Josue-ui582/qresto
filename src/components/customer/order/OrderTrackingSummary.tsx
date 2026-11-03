@@ -21,14 +21,14 @@ export const OrderTrackingSummary: React.FC<OrderTrackingSummaryProps> = ({ curr
               <span className="font-semibold text-stone-800">{item.name}</span>
             </div>
             <span className="font-bold text-stone-900">
-              {(item.price * item.quantity).toLocaleString()} FCFA
+              {(item.price * item.quantity).toLocaleString()} {currentOrder.currency}
             </span>
           </div>
         ))}
       </div>
       <div className="pt-2 border-t border-stone-100 flex justify-between text-base font-extrabold text-stone-900">
         <span>Total payé / à régler :</span>
-        <span className="text-amber-600">{currentOrder.total.toLocaleString()} FCFA</span>
+        <span className="text-amber-600">{currentOrder.total.toLocaleString()} {currentOrder.currency}</span>
       </div>
     </div>
   );

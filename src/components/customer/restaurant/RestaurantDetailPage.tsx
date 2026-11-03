@@ -14,6 +14,8 @@ import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import { Dish, Category, Restaurant } from '@/types';
 import { Dish3DViewer } from '@/components/3d/Dish3DViewer';
+import { whatsappLinkDigits } from '@/lib/orders/whatsapp-phone';
+import { resolveSelectedDishOptions } from '@/lib/orders/order-pricing';
 
 export const RestaurantDetailPage: React.FC = () => {
   const { viewParams } = useNavigation();
@@ -34,6 +36,7 @@ export const RestaurantDetailPage: React.FC = () => {
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>('all');
   const [active3DDish, setActive3DDish] = useState<Dish | null>(null);
+  const [selectedOptionsByDish, setSelectedOptionsByDish] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (!slug) return;
@@ -114,18 +117,29 @@ export const RestaurantDetailPage: React.FC = () => {
     }
   };
 
-  const handleShareWhatsApp = () => {
+  const handleContactRestaurant = () => {
     if (typeof window === 'undefined') return;
+    const phone = whatsappLinkDigits(restaurant?.phone);
+    if (!phone) {
+      showToast('Le restaurant ne dispose pas d’un numéro WhatsApp valide.', 'error');
+      return;
+    }
     const text = encodeURIComponent(
-      `Découvrez le menu de ${restaurant?.name || 'ce restaurant'} sur QResto : ${window.location.href}`
+      `Bonjour ${restaurant?.name || ''}, je vous contacte depuis QResto.`
     );
-    window.open(`https://wa.me/?text=${text}`, '_blank');
+    window.open(`https://wa.me/${phone}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
-  const handleAddToCart = (dish: Dish) => {
-    // Si le plat appartient à ce restaurant, on passe aussi l'ID du restaurant
-    addToCart(dish, 1, restaurant?.id);
-    showToast(`"${dish.name}" ajouté au panier !`, 'success');
+  const handleAddToCart = (
+    dish: Dish,
+    optionIds = selectedOptionsByDish[dish.id] ?? []
+  ): boolean => {
+    if (!resolveSelectedDishOptions(dish.optionGroups ?? [], optionIds)) {
+      showToast('Veuillez vérifier les options obligatoires de ce plat.', 'error');
+      return false;
+    }
+    addToCart(dish, 1, { restaurantId: restaurant?.id, optionIds });
+    return true;
   };
 
   if (isLoading) {
@@ -158,7 +172,7 @@ export const RestaurantDetailPage: React.FC = () => {
         restaurant={restaurant}
         onBack={() => router.push('/restaurants')}
         onShareMenu={handleShareMenu}
-        onShareWhatsApp={handleShareWhatsApp}
+        onContactRestaurant={handleContactRestaurant}
       />
 
       {/* 2. ALERTE TABLE SCANNE (DINE-IN) */}
@@ -207,9 +221,16 @@ export const RestaurantDetailPage: React.FC = () => {
               <RestaurantDishCard 
                 key={dish.id} 
                 dish={dish} 
+                currency={restaurant.currency}
+                selectedOptionIds={selectedOptionsByDish[dish.id] ?? []}
+                onOptionsChange={(dishId, optionIds) => {
+                  setSelectedOptionsByDish((current) => ({ ...current, [dishId]: optionIds }));
+                }}
                 index={idx}
                 onOpen3D={setActive3DDish}
-                onAddToCart={handleAddToCart}
+                onAddToCart={(selectedDish, optionIds) => {
+                  handleAddToCart(selectedDish, optionIds);
+                }}
               />
             ))}
           </div>
@@ -291,7 +312,7 @@ export const RestaurantDetailPage: React.FC = () => {
               <div className="flex items-center justify-between pt-2 border-t border-stone-800">
                 <div>
                   <span className="text-2xl font-black text-amber-400">
-                    {active3DDish.price.toLocaleString()} FCFA
+                    {active3DDish.price.toLocaleString()} {restaurant.currency}
                   </span>
                 </div>
                 <motion.button
@@ -299,8 +320,7 @@ export const RestaurantDetailPage: React.FC = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => {
-                    handleAddToCart(active3DDish);
-                    setActive3DDish(null);
+                    if (handleAddToCart(active3DDish)) setActive3DDish(null);
                   }}
                   className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-stone-950 font-black text-xs flex items-center gap-2 shadow-lg hover:shadow-amber-500/30 transition-all cursor-pointer"
                 >

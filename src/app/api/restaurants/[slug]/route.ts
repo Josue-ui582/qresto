@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { isRestaurantOpenNow } from '@/lib/restaurants/opening-hours';
 
 export async function GET(
   req: NextRequest,
@@ -8,18 +9,22 @@ export async function GET(
 ) {
   try {
     // 1. Déballer params avec await (Requis sur Next.js 15+)
-    const { slug } = await params;
-    const parsedSlug = z.string().trim().min(1).max(150).regex(/^[a-z0-9-]+$/i).safeParse(slug);
-    if (!parsedSlug.success) {
+    const { slug: identifier } = await params;
+    const parsedIdentifier = z.string().trim().min(1).max(150).safeParse(identifier);
+    if (!parsedIdentifier.success) {
       return NextResponse.json(
         { error: 'Identifiant de restaurant invalide.' },
         { status: 400 }
       );
     }
 
-    // 2. Recherche en BDD avec le slug récupéré
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { slug: parsedSlug.data },
+    const restaurant = await prisma.restaurant.findFirst({
+      where: {
+        OR: [
+          { slug: parsedIdentifier.data },
+          { id: parsedIdentifier.data },
+        ],
+      },
       select: {
         id: true,
         name: true,
@@ -66,6 +71,19 @@ export async function GET(
                 has3DModel: true,
                 model3DType: true,
                 createdAt: true,
+                optionGroups: {
+                  select: {
+                    id: true,
+                    name: true,
+                    isRequired: true,
+                    minSelection: true,
+                    maxSelection: true,
+                    options: {
+                      where: { available: true },
+                      select: { id: true, name: true, price: true, available: true },
+                    },
+                  },
+                },
               },
               where: { isAvailable: true },
             },
@@ -83,7 +101,19 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ restaurant }, { status: 200 });
+    const reviewAggregate = await prisma.review.aggregate({
+      where: { restaurantId: restaurant.id },
+      _avg: { rating: true },
+      _count: { _all: true },
+    });
+    return NextResponse.json({
+      restaurant: {
+        ...restaurant,
+        isOpen: isRestaurantOpenNow(restaurant.openingHours),
+        rating: reviewAggregate._avg.rating ?? 0,
+        reviewCount: reviewAggregate._count._all,
+      },
+    }, { status: 200 });
   } catch (error) {
     console.error('Erreur API /api/restaurants/[slug]:', error);
     return NextResponse.json(

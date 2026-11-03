@@ -32,6 +32,21 @@ export const RestaurantsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [onlyOpen, setOnlyOpen] = useState(false);
 
+  const cities = useMemo(
+    () => [...new Set(restaurants.map((restaurant) => restaurant.city.trim()).filter(Boolean))]
+      .sort((left, right) => left.localeCompare(right, 'fr')),
+    [restaurants]
+  );
+  const categories = useMemo(
+    () => [...new Set(
+      restaurants
+        .flatMap((restaurant) => [restaurant.category, restaurant.cuisineType])
+        .filter((category): category is string => Boolean(category?.trim()))
+        .map((category) => category.trim())
+    )].sort((left, right) => left.localeCompare(right, 'fr')),
+    [restaurants]
+  );
+
   // 1. Récupération des restaurants depuis la base de données
   useEffect(() => {
     const fetchRestaurants = async () => {
@@ -70,7 +85,10 @@ export const RestaurantsPage: React.FC = () => {
       const matchCity =
         selectedCity === 'all' || (r.city && r.city.toLowerCase() === selectedCity.toLowerCase());
       const matchCategory =
-        selectedCategory === 'all' || (r.category && r.category.includes(selectedCategory));
+        selectedCategory === 'all' ||
+        [r.category, r.cuisineType].some(
+          (category) => category?.toLocaleLowerCase() === selectedCategory.toLocaleLowerCase()
+        );
       const matchOpen = !onlyOpen || r.isOpen;
 
       return matchSearch && matchCity && matchCategory && matchOpen;
@@ -129,16 +147,14 @@ export const RestaurantsPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-1.5 p-1 bg-stone-100 rounded-2xl">
             {[
               { id: 'all', label: 'Toutes les villes' },
-              { id: 'cotonou', label: 'Cotonou' },
-              { id: 'porto-novo', label: 'Porto-Novo' },
-              { id: 'abomey-calavi', label: 'Abomey-Calavi' },
+              ...cities.map((city) => ({ id: `city:${city}`, label: city })),
             ].map((city) => (
               <button
                 key={city.id}
                 type="button"
-                onClick={() => setSelectedCity(city.id)}
+                onClick={() => setSelectedCity(city.id === 'all' ? 'all' : city.label)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  selectedCity === city.id
+                  (city.id === 'all' ? selectedCity === 'all' : selectedCity === city.label)
                     ? 'bg-white text-stone-950 shadow-xs'
                     : 'text-stone-600 hover:text-stone-950'
                 }`}
@@ -148,20 +164,32 @@ export const RestaurantsPage: React.FC = () => {
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setOnlyOpen(!onlyOpen)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold border flex items-center gap-2 transition-all cursor-pointer ${
-              onlyOpen
-                ? 'bg-accent text-white border-accent shadow-xs'
-                : 'bg-surface-alt border-soft text-text hover:bg-white'
-            }`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${onlyOpen ? 'bg-white' : 'bg-emerald-500'}`}
-            />
-            <span>Ouverts actuellement</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              aria-label="Filtrer par catégorie"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold border border-soft bg-surface-alt text-text"
+            >
+              <option value="all">Toutes les catégories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={() => setOnlyOpen(!onlyOpen)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold border flex items-center gap-2 transition-all cursor-pointer ${
+                onlyOpen
+                  ? 'bg-accent text-white border-accent shadow-xs'
+                  : 'bg-surface-alt border-soft text-text hover:bg-white'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${onlyOpen ? 'bg-white' : 'bg-emerald-500'}`} />
+              <span>Ouverts actuellement</span>
+            </button>
+          </div>
         </div>
       </motion.div>
 
@@ -226,11 +254,15 @@ export const RestaurantsPage: React.FC = () => {
                           <span className="text-xs font-semibold text-amber-800">
                             {resto.cuisineType || resto.category || 'Cuisine Africaine'}
                           </span>
-                          <div className="flex items-center gap-1 text-xs font-bold text-amber-600">
-                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                            <span>{resto.rating || '4.8'}</span>
-                            <span className="text-stone-400 font-normal">({resto.reviewCount || 0})</span>
-                          </div>
+                          {resto.reviewCount > 0 ? (
+                            <div className="flex items-center gap-1 text-xs font-bold text-amber-600">
+                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                              <span>{resto.rating.toFixed(1)}</span>
+                              <span className="text-stone-400 font-normal">({resto.reviewCount})</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs font-normal text-stone-500">Pas encore d’avis</span>
+                          )}
                         </div>
 
                         <h3 className="text-xl font-bold text-stone-950 mb-2 group-hover:text-amber-700 transition-colors">
@@ -249,7 +281,7 @@ export const RestaurantsPage: React.FC = () => {
                           <span>·</span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5 text-stone-400" />
-                            <span>{resto.openingHours || '11h - 23h'}</span>
+                            <span>{resto.openingHours || 'Horaires non renseignés'}</span>
                           </span>
                         </div>
                       </div>

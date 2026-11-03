@@ -298,6 +298,8 @@ model Order {
   status          OrderStatus   @default(NEW)
   customerName    String
   customerPhone   String
+  customerWhatsapp String?
+  whatsappConsent Boolean       @default(false)
   customerAddress String?
   customerNotes   String?
   couponCode      String?
@@ -486,4 +488,15 @@ model FAQItem {
 
   @@index([active, order])
   @@map("faq_items")
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  contact   String
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("contact_messages")
 }
