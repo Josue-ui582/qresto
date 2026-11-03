@@ -39,6 +39,7 @@ export interface Restaurant {
   email: string;
   logo: string;
   coverImage: string;
+  primaryColor?: string | null;
   openingHours: string;
   isOpen: boolean;
   currency: string; // "FCFA"

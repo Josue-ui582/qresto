@@ -16,6 +16,12 @@ import { Dish, Category, Restaurant } from '@/types';
 import { Dish3DViewer } from '@/components/3d/Dish3DViewer';
 import { whatsappLinkDigits } from '@/lib/orders/whatsapp-phone';
 import { resolveSelectedDishOptions } from '@/lib/orders/order-pricing';
+import { getAccessibleForeground } from '@/lib/branding/color-contrast';
+
+type RestaurantBrandStyle = React.CSSProperties & {
+  '--restaurant-primary-color': string;
+  '--restaurant-primary-foreground': string;
+};
 
 export const RestaurantDetailPage: React.FC = () => {
   const { viewParams } = useNavigation();
@@ -165,8 +171,16 @@ export const RestaurantDetailPage: React.FC = () => {
     );
   }
 
+  const brandStyle: RestaurantBrandStyle | undefined = restaurant.primaryColor
+    ? {
+        '--restaurant-primary-color': restaurant.primaryColor,
+        '--restaurant-primary-foreground':
+          getAccessibleForeground(restaurant.primaryColor) || '#ffffff',
+      }
+    : undefined;
+
   return (
-    <div className="min-h-screen bg-[#fbf9f5] pb-28">
+    <div className="restaurant-menu-brand min-h-screen bg-[#fbf9f5] pb-28" style={brandStyle}>
       {/* 1. HERO */}
       <RestaurantHero 
         restaurant={restaurant}

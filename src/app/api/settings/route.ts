@@ -3,6 +3,12 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { handleDatabaseError, parseJson } from '@/lib/api/validation';
 import { authorizeRequest } from '@/lib/auth/session';
+import { getAccessibleForeground } from '@/lib/branding/color-contrast';
+
+const imageUrlSchema = z.union([
+  z.string().url().max(2048).refine((value) => /^https?:\/\//i.test(value)),
+  z.literal(''),
+]);
 
 const openingHoursSchema = z.union([
   z.string().max(5000),
@@ -24,12 +30,29 @@ const updateSettingsSchema = z.object({
   enableSoundAlerts: z.boolean().optional(),
   notificationEmail: z.union([z.string().email(), z.literal('')]).optional(),
   notificationPhone: z.string().trim().max(40).optional(),
+  logo: imageUrlSchema.optional(),
+  coverImage: imageUrlSchema.optional(),
+  primaryColor: z.union([
+    z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    z.literal(''),
+    z.null(),
+  ]).optional(),
   serviceFeePercent: z.number().min(0).max(100).optional(),
   wifiName: z.string().trim().max(100).optional(),
   wifiPassword: z.string().max(200).optional(),
   openingHours: openingHoursSchema.optional(),
 }).refine((value) => Object.keys(value).some((key) => key !== 'restaurantId'), {
   message: 'Au moins un paramètre doit être fourni.',
+}).superRefine((value, context) => {
+  if (typeof value.primaryColor === 'string' &&
+    value.primaryColor !== '' &&
+    !getAccessibleForeground(value.primaryColor)) {
+    context.addIssue({
+      code: 'custom',
+      path: ['primaryColor'],
+      message: 'Cette couleur ne permet pas un contraste de texte accessible.',
+    });
+  }
 });
 
 const defaultOpeningHours = {
@@ -59,6 +82,9 @@ export async function GET(request: NextRequest) {
         currency: true,
         description: true,
         openingHours: true,
+        logo: true,
+        coverImage: true,
+        primaryColor: true,
       },
     });
     if (!restaurant) {
@@ -82,7 +108,18 @@ export async function GET(request: NextRequest) {
         openingHours: restaurant.openingHours || JSON.stringify(defaultOpeningHours),
       },
     });
-    return NextResponse.json({ success: true, settings }, { status: 200 });
+    return NextResponse.json(
+      {
+        success: true,
+        settings: {
+          ...settings,
+          logo: restaurant.logo || '',
+          coverImage: restaurant.coverImage || '',
+          primaryColor: restaurant.primaryColor || '',
+        },
+      },
+      { status: 200 }
+    );
   } catch (error: unknown) {
     return handleDatabaseError(error, 'Erreur lors de la récupération des paramètres.');
   }
@@ -95,9 +132,9 @@ export async function PUT(request: NextRequest) {
   if (auth.response) return auth.response;
 
   try {
-    const { openingHours, ...input } = updateSettingsSchema
-      .omit({ restaurantId: true })
-      .parse(parsed.data);
+    const settingsInput = { ...parsed.data };
+    delete settingsInput.restaurantId;
+    const { openingHours, logo, coverImage, primaryColor, ...input } = settingsInput;
     const serializedOpeningHours = openingHours === undefined
       ? undefined
       : typeof openingHours === 'string'
@@ -121,15 +158,31 @@ export async function PUT(request: NextRequest) {
           ...(input.address !== undefined && { address: input.address }),
           ...(input.currency !== undefined && { currency: input.currency }),
           ...(input.description !== undefined && { description: input.description }),
+          ...(logo !== undefined && { logo: logo || null }),
+          ...(coverImage !== undefined && { coverImage: coverImage || null }),
+          ...(primaryColor !== undefined && { primaryColor: primaryColor || null }),
           ...(updatedFields.openingHours !== undefined && {
             openingHours: updatedFields.openingHours,
           }),
         },
       }),
     ]);
+    const restaurantBrand = await prisma.restaurant.findUnique({
+      where: { id: auth.session.restaurantId },
+      select: { logo: true, coverImage: true, primaryColor: true },
+    });
 
     return NextResponse.json(
-      { success: true, message: 'Paramètres mis à jour avec succès.', settings },
+      {
+        success: true,
+        message: 'Paramètres mis à jour avec succès.',
+        settings: {
+          ...settings,
+          logo: restaurantBrand?.logo || '',
+          coverImage: restaurantBrand?.coverImage || '',
+          primaryColor: restaurantBrand?.primaryColor || '',
+        },
+      },
       { status: 200 }
     );
   } catch (error: unknown) {

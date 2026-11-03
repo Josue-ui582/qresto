@@ -35,6 +35,7 @@ export async function GET(
         phone: true,
         logo: true,
         coverImage: true,
+        primaryColor: true,
         openingHours: true,
         isOpen: true,
         currency: true,

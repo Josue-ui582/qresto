@@ -116,6 +116,7 @@ model Restaurant {
   subscription Subscription?
   logo         String?
   coverImage   String?
+  primaryColor String?
   openingHours String?
   isOpen       Boolean  @default(true)
   currency     String   @default("FCFA")
