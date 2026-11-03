@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { StaffRole } from 'generated/prisma/enums';
+import { Prisma } from 'generated/prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { handleDatabaseError, parseJson, parseQueryParam } from '@/lib/api/validation';
 import { authorizeRequest } from '@/lib/auth/session';
+import { createPlanLimitMessage, getPlanResourceUsage, isResourceLimitReached } from '@/lib/subscription/service';
 
 const staffRoleSchema = z.nativeEnum(StaffRole);
 
@@ -52,17 +54,33 @@ export async function POST(request: NextRequest) {
   if (auth.response) return auth.response;
 
   try {
-    const member = await prisma.teamMember.create({
-      data: {
-        name: parsed.data.name,
-        email: parsed.data.email.toLowerCase(),
-        phone: parsed.data.phone || null,
-        role: parsed.data.role || StaffRole.WAITER,
-        pinCode: parsed.data.pinCode || null,
-        restaurantId: auth.session.restaurantId,
-      },
-    });
-    return NextResponse.json({ success: true, member }, { status: 201 });
+    const result = await prisma.$transaction(async (tx) => {
+      const planLimit = await getPlanResourceUsage(tx, auth.session.restaurantId, 'members');
+      const limit = planLimit.limit;
+      if (isResourceLimitReached(limit, planLimit.usage)) {
+        return { limitReached: { limit, planName: planLimit.planName } };
+      }
+
+      const member = await tx.teamMember.create({
+        data: {
+          name: parsed.data.name,
+          email: parsed.data.email.toLowerCase(),
+          phone: parsed.data.phone || null,
+          role: parsed.data.role || StaffRole.WAITER,
+          pinCode: parsed.data.pinCode || null,
+          restaurantId: auth.session.restaurantId,
+        },
+      });
+      return { member };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    if ('limitReached' in result && result.limitReached) {
+      const { limit, planName } = result.limitReached;
+      return NextResponse.json(
+        { error: createPlanLimitMessage(planName, 'members', limit) },
+        { status: 403 }
+      );
+    }
+    return NextResponse.json({ success: true, member: result.member }, { status: 201 });
   } catch (error: unknown) {
     return handleDatabaseError(error, 'Impossible d’ajouter ce membre.');
   }
@@ -76,22 +94,49 @@ export async function PUT(request: NextRequest) {
 
   try {
     const { id, isActive, ...fields } = parsed.data;
-    const result = await prisma.teamMember.updateMany({
-      where: { id, restaurantId: auth.session.restaurantId },
-      data: {
-        ...fields,
-        ...(isActive !== undefined && { active: isActive }),
-        ...(fields.email && { email: fields.email.toLowerCase() }),
-        ...(fields.phone !== undefined && { phone: fields.phone || null }),
-        ...(fields.pinCode !== undefined && { pinCode: fields.pinCode || null }),
-      },
-    });
-    if (!result.count) {
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.teamMember.findFirst({
+        where: { id, restaurantId: auth.session.restaurantId },
+        select: { active: true },
+      });
+      if (!existing) return { missing: true as const };
+
+      if (isActive === true && !existing.active) {
+        const planLimit = await getPlanResourceUsage(tx, auth.session.restaurantId, 'members');
+        const limit = planLimit.limit;
+        if (isResourceLimitReached(limit, planLimit.usage)) {
+          return { limitReached: { limit, planName: planLimit.planName } };
+        }
+      }
+
+      await tx.teamMember.updateMany({
+        where: { id, restaurantId: auth.session.restaurantId },
+        data: {
+          ...fields,
+          ...(isActive !== undefined && { active: isActive }),
+          ...(fields.email && { email: fields.email.toLowerCase() }),
+          ...(fields.phone !== undefined && { phone: fields.phone || null }),
+          ...(fields.pinCode !== undefined && { pinCode: fields.pinCode || null }),
+        },
+      });
+      return {
+        member: await tx.teamMember.findFirst({
+          where: { id, restaurantId: auth.session.restaurantId },
+        }),
+      };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+    if ('missing' in result) {
       return NextResponse.json({ error: 'Membre introuvable.' }, { status: 404 });
     }
-    const member = await prisma.teamMember.findFirst({
-      where: { id, restaurantId: auth.session.restaurantId },
-    });
+    if ('limitReached' in result && result.limitReached) {
+      const { limit, planName } = result.limitReached;
+      return NextResponse.json(
+        { error: createPlanLimitMessage(planName, 'members', limit) },
+        { status: 403 }
+      );
+    }
+    const member = result.member;
     return NextResponse.json({
       success: true,
       member: member && { ...member, isActive: member.active },

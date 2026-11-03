@@ -20,6 +20,9 @@ import { QrCodesTab } from './qr-codes/QrCodesTab';
 import { SettingsTab } from './settings/SettingsTab';
 import { SubscriptionTab } from './subscription/SubscriptionTab';
 import { TablesTab } from './tables/TablesTab';
+import { CouponsTab } from './coupons/CouponsTab';
+import { ReviewsTab } from './reviews/ReviewsTab';
+import { InventoryTab } from './inventory/InventoryTab';
 
 export const RestaurantDashboard: React.FC = () => {
   const { currentUser, currentRestaurant, isLoading, logout } = useAuth();
@@ -38,6 +41,7 @@ export const RestaurantDashboard: React.FC = () => {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [notificationRefreshToken, setNotificationRefreshToken] = useState(0);
 
   useEffect(() => {
     if (!currentRestaurant?.id) return;
@@ -62,8 +66,45 @@ export const RestaurantDashboard: React.FC = () => {
 
     void fetchOrders(true);
 
-    const interval = setInterval(() => void fetchOrders(), 10000);
-    return () => clearInterval(interval);
+    const eventSource = new EventSource(
+      `/api/events/restaurants/${encodeURIComponent(currentRestaurant.id)}`
+    );
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+    const stopFallback = () => {
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      fallbackInterval = null;
+    };
+    const startFallback = () => {
+      if (!fallbackInterval) {
+        fallbackInterval = setInterval(() => {
+          void fetchOrders();
+          setNotificationRefreshToken((token) => token + 1);
+        }, 10000);
+      }
+    };
+
+    eventSource.onopen = stopFallback;
+    eventSource.onerror = startFallback;
+    eventSource.onmessage = (event) => {
+      try {
+        const payload: { type?: string } = JSON.parse(event.data);
+        if (payload.type?.startsWith('order.')) void fetchOrders();
+        if (
+          payload.type?.startsWith('order.') ||
+          payload.type === 'review.created' ||
+          payload.type?.startsWith('notification.')
+        ) {
+          setNotificationRefreshToken((token) => token + 1);
+        }
+      } catch (error: unknown) {
+        console.error('Événement temps réel invalide reçu pour le dashboard.', error);
+      }
+    };
+
+    return () => {
+      eventSource.close();
+      stopFallback();
+    };
   }, [currentRestaurant?.id, showToast]);
 
   useEffect(() => {
@@ -72,8 +113,8 @@ export const RestaurantDashboard: React.FC = () => {
     let isCurrent = true;
     const fetchRestaurantData = async () => {
       try {
-        const shouldLoadMenu = ['categories', 'dishes', 'analytics'].includes(dashboardTab);
-        const shouldLoadTables = ['tables', 'qrcodes', 'analytics'].includes(dashboardTab);
+        const shouldLoadMenu = ['categories', 'dishes'].includes(dashboardTab);
+        const shouldLoadTables = ['tables', 'qrcodes'].includes(dashboardTab);
 
         if (shouldLoadMenu) {
           const [dishesResponse, categoriesResponse] = await Promise.all([
@@ -134,9 +175,9 @@ export const RestaurantDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
-        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-medium text-stone-600">Chargement de votre espace...</p>
+      <div className="min-h-screen bg-ink-50 flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-medium text-ink-600">Chargement de votre espace...</p>
       </div>
     );
   }
@@ -159,16 +200,19 @@ export const RestaurantDashboard: React.FC = () => {
   ).length;
 
   const navItems = [
-    { id: 'overview', label: 'Dashboard', icon: 'fa-solid fa-table-cells-large' },
-    { id: 'orders', label: 'Commandes', icon: 'fa-solid fa-receipt', badge: pendingOrdersCount },
-    { id: 'categories', label: 'Catégories', icon: 'fa-solid fa-tags' },
-    { id: 'dishes', label: 'Plats', icon: 'fa-solid fa-utensils' },
-    { id: 'tables', label: 'Tables', icon: 'fa-solid fa-border-all' },
-    { id: 'qrcodes', label: 'QR Codes', icon: 'fa-solid fa-qrcode' },
-    { id: 'analytics', label: 'Analytics', icon: 'fa-solid fa-chart-simple' },
-    { id: 'team', label: 'Équipe', icon: 'fa-solid fa-user-group' },
-    { id: 'subscription', label: 'Abonnement', icon: 'fa-solid fa-credit-card' },
-    { id: 'settings', label: 'Paramètres', icon: 'fa-solid fa-gear' },
+    { id: 'overview', label: 'Dashboard', icon: 'table-cells-large' },
+    { id: 'orders', label: 'Commandes', icon: 'receipt', badge: pendingOrdersCount },
+    { id: 'categories', label: 'Catégories', icon: 'tags' },
+    { id: 'dishes', label: 'Plats', icon: 'utensils' },
+    { id: 'tables', label: 'Tables', icon: 'border-all' },
+    { id: 'qrcodes', label: 'QR Codes', icon: 'qrcode' },
+    { id: 'analytics', label: 'Analytics', icon: 'chart-simple' },
+    { id: 'team', label: 'Équipe', icon: 'user-group' },
+    { id: 'coupons', label: 'Promotions', icon: 'ticket' },
+    { id: 'reviews', label: 'Avis clients', icon: 'star' },
+    { id: 'inventory', label: 'Stock', icon: 'boxes-stacked' },
+    { id: 'subscription', label: 'Abonnement', icon: 'credit-card' },
+    { id: 'settings', label: 'Paramètres', icon: 'gear' },
   ];
 
   const advanceOrderStatus = async (orderId: string, nextStatus: OrderStatus) => {
@@ -194,8 +238,7 @@ export const RestaurantDashboard: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-white flex flex-col md:flex-row text-stone-900"
-      style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+      className="min-h-screen bg-paper-white flex flex-col md:flex-row text-ink-900"
     >
       <DashboardSidebar
         collapsed={sidebarCollapsed}
@@ -209,7 +252,7 @@ export const RestaurantDashboard: React.FC = () => {
         onNavigateHome={() => router.push('/')}
       />
 
-      <div className="flex-1 flex flex-col min-w-0 bg-stone-50/50">
+      <div className="flex-1 flex flex-col min-w-0 bg-ink-50/50">
         <DashboardTopbar
           topSearch={topSearch}
           setTopSearch={setTopSearch}
@@ -220,8 +263,8 @@ export const RestaurantDashboard: React.FC = () => {
             setRestaurantDropdownOpen(false);
             router.push(`/restaurant/${currentRestaurant.slug}`);
           }}
-          pendingOrdersCount={pendingOrdersCount}
-          onNotificationClick={() => setDashboardTab('orders')}
+          restaurantId={restaurantId}
+          notificationRefreshToken={notificationRefreshToken}
         />
 
         <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
@@ -271,33 +314,8 @@ export const RestaurantDashboard: React.FC = () => {
 
           {dashboardTab === 'analytics' && (
             <AnalyticsTab
-              stats={{
-                totalRevenue,
-                totalOrders: totalOrdersCount,
-                averageOrderValue,
-                activeTablesCount: tables.length,
-                ordersByStatus: [
-                  { status: 'Nouveau', count: orders.filter((o) => o.status === 'NEW').length },
-                  { status: 'Confirmé', count: orders.filter((o) => o.status === 'CONFIRMED').length },
-                  { status: 'En préparation', count: orders.filter((o) => o.status === 'PREPARING').length },
-                  { status: 'Prêt', count: orders.filter((o) => o.status === 'READY').length },
-                  { status: 'Annulé', count: orders.filter((o) => o.status === 'CANCELLED').length },
-                ],
-                topItems: dishes.slice(0, 5).map((dish) => {
-                  const totalQty = orders.reduce((acc, order) => {
-                    const item = order.items?.find((i) => i.dishId === dish.id);
-                    return acc + (item?.quantity || 0);
-                  }, 0);
-
-                  return {
-                    id: dish.id,
-                    name: dish.name,
-                    category: dish.categoryId || 'Général',
-                    quantity: totalQty,
-                    revenue: totalQty * (dish.price || 0),
-                  };
-                }),
-              }}
+              restaurantId={restaurantId}
+              currencySymbol={currentRestaurant.currency}
             />
           )}
 
@@ -305,10 +323,21 @@ export const RestaurantDashboard: React.FC = () => {
             <TeamTab restaurantId={restaurantId} />
           )}
 
+          {dashboardTab === 'coupons' && (
+            <CouponsTab restaurantId={restaurantId} currency={currentRestaurant.currency || 'FCFA'} />
+          )}
+
+          {dashboardTab === 'reviews' && (
+            <ReviewsTab restaurantId={restaurantId} />
+          )}
+
+          {dashboardTab === 'inventory' && (
+            <InventoryTab restaurantId={restaurantId} />
+          )}
+
           {dashboardTab === 'subscription' && (
             <SubscriptionTab
               restaurantId={restaurantId}
-              currencySymbol={currentRestaurant.currency}
             />
           )}
 

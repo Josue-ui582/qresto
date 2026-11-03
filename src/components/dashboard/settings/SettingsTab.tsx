@@ -117,6 +117,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     address: '',
     currency: 'FCFA',
     description: '',
+    logo: '',
+    coverImage: '',
+    primaryColor: '',
     enableQrOrders: true,
     enableSoundAlerts: true,
     notificationEmail: '',
@@ -149,6 +152,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       address: data.address || '',
       currency: data.currency || 'FCFA',
       description: data.description || '',
+      logo: data.logo || '',
+      coverImage: data.coverImage || '',
+      primaryColor: data.primaryColor || '',
       enableQrOrders: data.enableQrOrders ?? true,
       enableSoundAlerts: data.enableSoundAlerts ?? true,
       notificationEmail: data.notificationEmail || '',
@@ -296,12 +302,12 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
         <div className="lg:col-span-9">
           {isLoading ? (
-            <div className="py-20 flex flex-col items-center justify-center text-stone-400 bg-white rounded-3xl border border-stone-200/80">
-              <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-3" />
+            <div className="py-20 flex flex-col items-center justify-center text-ink-400 bg-paper-white rounded-3xl border border-ink-200/80">
+              <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-3" />
               <span className="text-xs font-semibold">Chargement des paramètres...</span>
             </div>
           ) : (
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs space-y-6">
+            <div className="bg-paper-white rounded-3xl p-6 sm:p-8 border border-ink-200/80 shadow-xs space-y-6">
               {activeTab === 'general' && (
                 <GeneralSection formData={formData} onChange={handleChange} />
               )}

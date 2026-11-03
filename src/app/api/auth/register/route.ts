@@ -6,6 +6,12 @@ import { slugify } from '@/utils';
 import { z } from 'zod';
 import { getJwtSecret } from '@/lib/auth/jwt';
 import { parseJson } from '@/lib/api/validation';
+import { validateImageUrl } from '@/lib/uploads/image-validation';
+
+const imageUrlSchema = z.string().max(2048).refine(
+  (value) => value === '' || validateImageUrl(value),
+  { message: 'URL image invalide. Les data URLs ne sont pas acceptées ; téléversez plutôt le fichier.' }
+);
 
 const registerSchema = z.object({
   owner: z.object({
@@ -20,8 +26,8 @@ const registerSchema = z.object({
     city: z.string().trim().max(100).optional(),
     category: z.string().trim().max(100).optional(),
     description: z.string().trim().max(2000).optional(),
-    logo: z.string().max(2048).optional(),
-    coverImage: z.string().max(2048).optional(),
+    logo: imageUrlSchema.optional(),
+    coverImage: imageUrlSchema.optional(),
   }),
 });
 
@@ -90,6 +96,21 @@ export async function POST(req: Request) {
           phone: owner.phone,
           email,
           ownerId: newUser.id,
+        },
+      });
+
+      const trialStart = new Date();
+      const trialEnd = new Date(trialStart);
+      trialEnd.setDate(trialEnd.getDate() + 14);
+      await tx.subscription.create({
+        data: {
+          restaurantId: newRestaurant.id,
+          planId: 'PRO',
+          status: 'TRIAL',
+          billingCycle: 'MONTHLY',
+          startDate: trialStart,
+          endDate: trialEnd,
+          autoRenew: false,
         },
       });
 

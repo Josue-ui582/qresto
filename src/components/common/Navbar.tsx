@@ -43,7 +43,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-stone-200/80 bg-white/95 backdrop-blur-xl transition-all duration-300">
+    <header className="sticky top-0 z-50 w-full border-b border-ink-200/80 bg-paper-white/95 backdrop-blur-xl transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-3">
           {/* Brand Logo with animated emblem */}
@@ -55,10 +55,10 @@ export const Navbar: React.FC = () => {
             >
             
             <div className="flex flex-col text-left">
-              <span className="text-xl sm:text-2xl font-black tracking-tight text-stone-950 leading-none">
-                Q<span className="text-amber-600">Resto</span>
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-ink-950 leading-none">
+                Q<span className="text-brand-600">Resto</span>
               </span>
-              {/* <span className="text-[10px] uppercase font-bold tracking-widest text-amber-700/80">
+              {/* <span className="text-[0.625rem] uppercase font-bold tracking-widest text-brand-700/80">
                 Africa · Digital
               </span> */}
             </div>
@@ -68,7 +68,7 @@ export const Navbar: React.FC = () => {
           {/* Central Search Bar with micro-interaction */}
           <div className="hidden md:flex flex-1 max-w-md mx-6">
             <form action="/restaurants" method="get" className="relative w-full group">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-amber-600 transition-colors">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-400 group-focus-within:text-brand-600 transition-colors">
                 <Search className="w-4 h-4" />
               </div>
               <input
@@ -77,7 +77,7 @@ export const Navbar: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Rechercher un plat (Amiwo, Poulet...), un restaurant..."
-                className="w-full pl-10 pr-4 py-2 bg-stone-100/80 hover:bg-stone-100 focus:bg-white text-xs sm:text-sm text-stone-900 rounded-full border border-stone-200/60 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all outline-hidden placeholder:text-stone-400 font-medium"
+                className="w-full pl-10 pr-4 py-2 bg-ink-100/80 hover:bg-ink-100 focus:bg-paper-white text-xs sm:text-sm text-ink-900 rounded-full border border-ink-200/60 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all outline-hidden placeholder:text-ink-400 font-medium"
               />
             </form>
           </div>
@@ -88,11 +88,11 @@ export const Navbar: React.FC = () => {
               href="/restaurants"
               className={`hidden sm:flex items-center gap-1.5 text-xs sm:text-sm font-semibold transition-all px-3 py-1.5 rounded-full ${
                 currentView === 'restaurants'
-                  ? 'bg-amber-100/70 text-amber-800'
-                  : 'text-stone-700 hover:text-stone-950 hover:bg-stone-100'
+                  ? 'bg-brand-100/70 text-brand-800'
+                  : 'text-ink-700 hover:text-ink-950 hover:bg-ink-100'
               }`}
             >
-              <Compass className="w-3.5 h-3.5 text-amber-600" />
+              <Compass className="w-3.5 h-3.5 text-brand-600" />
               <span>Restaurants</span>
             </Link>
 
@@ -100,22 +100,22 @@ export const Navbar: React.FC = () => {
               href="/order-tracking"
               className={`hidden md:flex items-center gap-1.5 text-xs sm:text-sm font-semibold transition-all px-3 py-1.5 rounded-full ${
                 currentView === 'order-tracking'
-                  ? 'bg-amber-100/70 text-amber-800'
-                  : 'text-stone-700 hover:text-stone-950 hover:bg-stone-100'
+                  ? 'bg-brand-100/70 text-brand-800'
+                  : 'text-ink-700 hover:text-ink-950 hover:bg-ink-100'
               }`}
             >
-              <Clock className="w-3.5 h-3.5 text-stone-500" />
+              <Clock className="w-3.5 h-3.5 text-ink-500" />
               <span>Suivre commande</span>
             </Link>
 
             {/* Cart Icon with bouncing counter */}
-            <Link href="/cart" className="relative p-2.5 rounded-full bg-stone-100/90 hover:bg-stone-200/90 text-stone-800 hover:text-stone-950 transition-colors cursor-pointer" title="Mon panier">
-              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-stone-800" />
+            <Link href="/cart" className="relative p-2.5 rounded-full bg-ink-100/90 hover:bg-ink-200/90 text-ink-800 hover:text-ink-950 transition-colors cursor-pointer" title="Mon panier">
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-ink-800" />
               {cartCount > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 bg-linear-to-r from-amber-600 to-orange-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md shadow-amber-600/30"
+                  className="absolute -top-1 -right-1 bg-linear-to-r from-brand-600 to-highlight-500 text-paper-white text-[0.625rem] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md shadow-brand-600/30"
                 >
                   {cartCount}
                 </motion.span>
@@ -130,15 +130,15 @@ export const Navbar: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-stone-900 text-white text-xs font-bold shadow-xs hover:bg-stone-800 transition-all cursor-pointer"
+                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-ink-900 text-paper-white text-xs font-bold shadow-xs hover:bg-ink-800 transition-all cursor-pointer"
                 >
-                  <div className="w-6 h-6 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center text-xs font-black">
+                  <div className="w-6 h-6 rounded-full bg-brand-500 text-ink-950 flex items-center justify-center text-xs font-black">
                     {currentUser.firstName?.[0] || 'R'}
                   </div>
                   <span className="hidden sm:inline max-w-30 truncate font-medium">
                     {currentRestaurant?.name || currentUser.firstName}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-ink-400" />
                 </motion.button>
 
                 <AnimatePresence>
@@ -148,40 +148,40 @@ export const Navbar: React.FC = () => {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.96 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-2xl border border-stone-200/90 py-2 z-50"
+                      className="absolute right-0 mt-2 w-60 bg-paper-white rounded-2xl shadow-2xl border border-ink-200/90 py-2 z-50"
                     >
-                      <div className="px-4 py-2.5 border-b border-stone-100">
-                        <p className="text-xs font-bold text-stone-900 truncate">
+                      <div className="px-4 py-2.5 border-b border-ink-100">
+                        <p className="text-xs font-bold text-ink-900 truncate">
                           {currentUser.firstName} {currentUser.lastName}
                         </p>
-                        <p className="text-[11px] text-stone-400 truncate">{currentUser.email}</p>
+                        <p className="text-[0.6875rem] text-ink-400 truncate">{currentUser.email}</p>
                       </div>
                       {currentRestaurant && (
                         <Link
                           href="/dashboard"
                           onClick={() => setUserDropdownOpen(false)}
-                          className="w-full text-left px-4 py-2.5 text-xs font-semibold text-stone-800 hover:bg-amber-50 hover:text-amber-800 flex items-center gap-2.5 transition-colors"
+                          className="w-full text-left px-4 py-2.5 text-xs font-semibold text-ink-800 hover:bg-brand-50 hover:text-brand-800 flex items-center gap-2.5 transition-colors"
                         >
-                          <LayoutDashboard className="w-4 h-4 text-amber-600" />
+                          <LayoutDashboard className="w-4 h-4 text-brand-600" />
                           <span>Mon Dashboard Restaurant</span>
                         </Link>
                       )}
                       <Link
                         href="/order-tracking"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 flex items-center gap-2.5 transition-colors"
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-ink-800 hover:bg-ink-50 flex items-center gap-2.5 transition-colors"
                       >
-                        <Clock className="w-4 h-4 text-stone-500" />
+                        <Clock className="w-4 h-4 text-ink-500" />
                         <span>Mes Commandes</span>
                       </Link>
-                      <div className="border-t border-stone-100 my-1" />
+                      <div className="border-t border-ink-100 my-1" />
                       <button
                         type="button"
                         onClick={() => {
                           setUserDropdownOpen(false);
                           logout();
                         }}
-                        className="w-full text-left px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors"
+                        className="w-full text-left px-4 py-2 text-xs font-semibold text-negative-600 hover:bg-negative-50 flex items-center gap-2.5 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
                         <span>Déconnexion</span>
@@ -192,11 +192,11 @@ export const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/login" className="hidden sm:inline-block px-3 py-1.5 text-xs font-semibold text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-full transition-colors">
+                <Link href="/login" className="hidden sm:inline-block px-3 py-1.5 text-xs font-semibold text-ink-700 hover:text-ink-950 hover:bg-ink-100 rounded-full transition-colors">
                   Connexion
                 </Link>
-                <Link href="/register-restaurant" className="inline-flex items-center gap-2 rounded-full bg-stone-950 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-stone-800 sm:px-4">
-                  <Store className="w-3.5 h-3.5 text-amber-400" />
+                <Link href="/register-restaurant" className="inline-flex items-center gap-2 rounded-full bg-ink-950 px-3.5 py-2 text-xs font-semibold text-paper-white transition-colors hover:bg-ink-800 sm:px-4">
+                  <Store className="w-3.5 h-3.5 text-brand-400" />
                   <span>Inscrire mon resto</span>
                 </Link>
               </div>
@@ -208,7 +208,7 @@ export const Navbar: React.FC = () => {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-stone-700 hover:text-stone-950 focus:outline-hidden"
+              className="md:hidden p-2 text-ink-700 hover:text-ink-950 focus:outline-hidden"
               aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
               aria-expanded={mobileMenuOpen}
             >
@@ -225,10 +225,10 @@ export const Navbar: React.FC = () => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="md:hidden border-t border-stone-200 bg-white/95 backdrop-blur-lg px-4 pt-3 pb-6 flex flex-col gap-3 overflow-hidden"
+            className="md:hidden border-t border-ink-200 bg-paper-white/95 backdrop-blur-lg px-4 pt-3 pb-6 flex flex-col gap-3 overflow-hidden"
           >
             <form onSubmit={handleSearchSubmit} className="relative w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-400">
                 <Search className="w-3.5 h-3.5" />
               </div>
               <input
@@ -237,28 +237,28 @@ export const Navbar: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Rechercher un plat, un restaurant..."
-                className="w-full pl-9 pr-3 py-2 bg-stone-100 text-xs text-stone-900 rounded-full border border-stone-200 outline-hidden font-medium"
+                className="w-full pl-9 pr-3 py-2 bg-ink-100 text-xs text-ink-900 rounded-full border border-ink-200 outline-hidden font-medium"
               />
             </form>
-            <Link href="/restaurants" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2">
-              <Compass className="w-4 h-4 text-amber-600" />
+            <Link href="/restaurants" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-ink-800 flex items-center gap-2">
+              <Compass className="w-4 h-4 text-brand-600" />
               <span>Explorer les restaurants</span>
             </Link>
-            <Link href="/order-tracking" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-stone-500" />
+            <Link href="/order-tracking" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-ink-800 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-ink-500" />
               <span>Suivre une commande</span>
             </Link>
 
-            <Link href="/cart" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2">
-              <ShoppingBag className="w-4 h-4 text-stone-500" />
+            <Link href="/cart" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-ink-800 flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4 text-ink-500" />
               <span>Mon panier{cartCount > 0 ? ` (${cartCount})` : ''}</span>
             </Link>
 
             {currentUser && (
-              <div className="pt-2 border-t border-stone-100 flex flex-col gap-2">
+              <div className="pt-2 border-t border-ink-100 flex flex-col gap-2">
                 {currentRestaurant && (
-                  <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-stone-800 flex items-center gap-2">
-                    <LayoutDashboard className="w-4 h-4 text-amber-600" />
+                  <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-left py-2 font-semibold text-sm text-ink-800 flex items-center gap-2">
+                    <LayoutDashboard className="w-4 h-4 text-brand-600" />
                     <span>Mon Dashboard Restaurant</span>
                   </Link>
                 )}
@@ -268,7 +268,7 @@ export const Navbar: React.FC = () => {
                     setMobileMenuOpen(false);
                     logout();
                   }}
-                  className="text-left py-2 font-semibold text-sm text-red-600 flex items-center gap-2"
+                  className="text-left py-2 font-semibold text-sm text-negative-600 flex items-center gap-2"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Déconnexion</span>
@@ -277,12 +277,12 @@ export const Navbar: React.FC = () => {
             )}
 
             {!currentUser && (
-              <div className="pt-2 border-t border-stone-100 flex flex-col gap-2">
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="w-full py-2.5 rounded-xl border border-stone-200 text-stone-800 font-bold text-xs text-center">
+              <div className="pt-2 border-t border-ink-100 flex flex-col gap-2">
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="w-full py-2.5 rounded-xl border border-ink-200 text-ink-800 font-bold text-xs text-center">
                   Connexion gérant
                 </Link>
-                <Link href="/register-restaurant" onClick={() => setMobileMenuOpen(false)} className="w-full rounded-full bg-stone-950 py-2.5 text-center text-xs font-bold text-white">
-                  Digitaliser mon restaurant gratuitement
+                <Link href="/register-restaurant" onClick={() => setMobileMenuOpen(false)} className="w-full rounded-full bg-ink-950 py-2.5 text-center text-xs font-bold text-paper-white">
+                  Démarrer l’essai de 14 jours
                 </Link>
               </div>
             )}

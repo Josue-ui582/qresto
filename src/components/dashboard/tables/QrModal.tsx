@@ -31,31 +31,31 @@ export const QrModal: React.FC<QrModalProps> = ({
   return (
     <AnimatePresence>
       {table && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/70 backdrop-blur-xs">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-3xl max-w-sm w-full p-6 text-center border border-stone-200 shadow-2xl relative"
+            className="bg-paper-white rounded-3xl max-w-sm w-full p-6 text-center border border-ink-200 shadow-2xl relative"
           >
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors cursor-pointer"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-ink-100 hover:bg-ink-200 text-ink-500 flex items-center justify-center transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-stone-950 font-black text-lg mx-auto flex items-center justify-center mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-brand-500 text-ink-950 font-black text-lg mx-auto flex items-center justify-center mb-3">
               Q
             </div>
-            <h4 className="text-base font-extrabold text-stone-950 leading-tight">
+            <h4 className="text-base font-extrabold text-ink-950 leading-tight">
               {table.restaurant?.name || restaurantName}
             </h4>
-            <p className="text-[11px] text-stone-500 mt-0.5">
+            <p className="text-[0.6875rem] text-ink-500 mt-0.5">
               Scannez pour commander sans attente
             </p>
 
-            <div className="my-5 p-4 bg-stone-50 rounded-2xl border-2 border-dashed border-stone-200 inline-block shadow-inner">
+            <div className="my-5 p-4 bg-ink-50 rounded-2xl border-2 border-dashed border-ink-200 inline-block shadow-inner">
               <QRCodeImage
                 value={targetUrl}
                 alt={`QR Table ${table.number}`}
@@ -63,30 +63,30 @@ export const QrModal: React.FC<QrModalProps> = ({
               />
             </div>
 
-            <div className="inline-block px-4 py-1.5 rounded-full bg-stone-900 text-white font-black text-xs uppercase tracking-wider mb-2">
+            <div className="inline-block px-4 py-1.5 rounded-full bg-ink-900 text-paper-white font-black text-xs uppercase tracking-wider mb-2">
               Table #{table.number} {table.name ? `· ${table.name}` : ''}
             </div>
 
-            <div className="text-[10px] text-stone-400 font-medium mb-6">
+            <div className="text-[0.625rem] text-ink-400 font-medium mb-6">
               Compatible iPhone & Android · 100% sans application
             </div>
 
-            <div className="flex items-center justify-center gap-2 pt-2 border-t border-stone-100">
+            <div className="flex items-center justify-center gap-2 pt-2 border-t border-ink-100">
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-ink-900 hover:bg-ink-800 text-paper-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Printer className="w-4 h-4 text-amber-400" />
+                <Printer className="w-4 h-4 text-brand-400" />
                 <span>Imprimer</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onDownloadQr(table)}
-                className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-ink-100 hover:bg-ink-200 text-ink-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Download className="w-4 h-4 text-stone-600" />
+                <Download className="w-4 h-4 text-ink-600" />
                 <span>Image PNG</span>
               </button>
             </div>

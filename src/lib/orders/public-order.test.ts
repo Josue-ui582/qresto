@@ -19,8 +19,12 @@ describe('findPublicTrackedOrder', () => {
     mockFindUnique.mockResolvedValue({
       trackingCode: 'QR-123456789ABC',
       restaurantName: 'Restaurant A',
+      restaurantPhone: '+22997001122',
+      restaurant: { currency: 'EUR' },
+      customerName: 'Client',
       status: 'PREPARING',
       total: 2_500,
+      review: null,
       items: [{ name: 'Plat', price: 2_500, quantity: 1 }],
       statusHistory: [{
         status: 'PREPARING',
@@ -36,8 +40,12 @@ describe('findPublicTrackedOrder', () => {
       select: {
         trackingCode: true,
         restaurantName: true,
+        restaurantPhone: true,
+        restaurant: { select: { currency: true } },
+        customerName: true,
         status: true,
         total: true,
+        review: { select: { id: true } },
         items: { select: { name: true, price: true, quantity: true } },
         statusHistory: {
           select: { status: true, timestamp: true, comment: true },
@@ -48,7 +56,11 @@ describe('findPublicTrackedOrder', () => {
     expect(trackedOrder).toEqual({
       trackingCode: 'QR-123456789ABC',
       restaurantName: 'Restaurant A',
+      restaurantPhone: '+22997001122',
+      customerName: 'Client',
+      currency: 'EUR',
       status: 'PREPARING',
+      hasReview: false,
       total: 2_500,
       items: [{ name: 'Plat', price: 2_500, quantity: 1 }],
       statusHistory: [{

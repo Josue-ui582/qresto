@@ -32,7 +32,7 @@ La proposition de valeur est de relier le menu numérique et la prise de command
 | Couche | Technologies et constats |
 |---|---|
 | Application web | Next.js 16 (App Router), React 19, TypeScript. Routes et pages dans `src/app/`. |
-| Interface | Tailwind CSS 4 via `@tailwindcss/postcss`, CSS global et variables de thème dans `src/app/globals.css` et `src/app/design-system.css`. Icônes `lucide-react` et Font Awesome chargé via CDN. Animations avec `motion`/`motion/react` et `framer-motion` importés selon les composants. |
+| Interface | Tailwind CSS 4 via `@tailwindcss/postcss`, tokens CSS et thème `@theme` dans `src/app/design-system.css`, importés par `src/app/globals.css`. Icônes `lucide-react`; animations `motion/react`; police Plus Jakarta Sans via `next/font`. |
 | Serveur / API | Route handlers Next.js dans `src/app/api/`. Authentification par cookie JWT signé avec `jose`; mots de passe hachés avec `bcryptjs`. |
 | Données | PostgreSQL via Prisma 6. Schéma dans `prisma/schema.prisma`, migrations dans `prisma/migrations/`, client généré vers `generated/prisma`. Accès partagé par `src/lib/prisma.ts`. |
 | État client | Contextes React dans `src/context/`; seul le panier temporaire reste dans `localStorage`, sans compte client. Les données métier sont chargées depuis l’API/Prisma. |
@@ -59,7 +59,7 @@ flowchart LR
   Next --> Prisma --> PG
 ```
 
-Les mises à jour de commandes sont actuellement rafraîchies par polling côté navigateur (toutes les 5 secondes côté suivi client et 10 secondes côté dashboard), et non par WebSocket ou SSE.
+Le suivi client et le dashboard reçoivent les changements par SSE, respectivement sur un canal de code de suivi public et un canal restaurant authentifié. EventSource tente de se reconnecter automatiquement; chaque client active son polling de secours (5 s pour le suivi, 10 s pour le dashboard) tant que le flux est indisponible. Le bus de diffusion actuel est local au processus : la livraison entre instances, les connexions persistantes et le buffering dépendent de l’hébergement et restent **à confirmer**.
 
 ### Rôle des dossiers principaux
 
@@ -67,7 +67,7 @@ Les mises à jour de commandes sont actuellement rafraîchies par polling côté
 |---|---|
 | `src/app/` | Pages Next.js, layout global, styles globaux et routes API. |
 | `src/app/api/auth/` | Inscription, connexion, déconnexion et vérification de session. |
-| `src/app/api/` (autres routes) | Endpoints restaurants, commandes, catégories, plats, tables, QR, équipe, paramètres, abonnements, analytics et recommandations. |
+| `src/app/api/` (autres routes) | Endpoints restaurants, commandes, événements SSE, notifications, avis, catégories, plats, tables, QR, équipe, paramètres, abonnements, analytics et recommandations. |
 | `src/components/pages/LandingPage/` | Sections de la vitrine marketing. |
 | `src/components/customer/` | Annuaire, fiche/menu restaurant, panier et suivi de commande. |
 | `src/components/dashboard/` | Shell et onglets de gestion du restaurant. |
@@ -92,7 +92,15 @@ Le modèle de données est défini dans `prisma/schema.prisma`.
 - `Coupon` et `Notification` appartiennent à un restaurant.
 - `Testimonial` et `FAQItem` sont des entités sans relation obligatoire à un restaurant, chargées depuis PostgreSQL et initialisées par `prisma/seed.ts`.
 
-**À noter :** le schéma contient des entités de stock implicite/évolutions possibles (options de plats, avis, coupons, notifications), mais leur présence dans le schéma ne signifie pas que leur interface ou leur cycle de vie fonctionnel sont implémentés.
+**À noter :** les options de plats, notifications, coupons, avis vérifiés et suivi de stock ont un cycle fonctionnel dans l’application.
+
+Les coupons sont administrés dans le dashboard (CRUD réservé aux propriétaires/gestionnaires), prévisualisés via une API publique limitée en débit, puis revérifiés et consommés atomiquement avec la commande. Les dates, seuils minimum, plafond d’utilisations et montants sont validés côté serveur. Les remises s’appliquent au sous-total des plats, pas aux frais de livraison.
+
+Les avis sont déposés sans compte au moyen du code de suivi d’une commande livrée, un seul avis par commande. Ils sont visibles dès l’enregistrement et le restaurant peut les masquer ou les réafficher depuis le dashboard. Les avis historiques conservent leur visibilité issue de `isApproved`; ceux qui ne sont pas liés à une commande restent identifiés comme historiques dans le dashboard. Les notes et nombres d’avis publics agrègent uniquement les avis visibles.
+
+Le stock est optionnel par plat : tant qu’aucune quantité n’est configurée, le plat reste en mode non suivi. Pour les plats suivis, la commande décrémente les quantités et crée un mouvement dans la même transaction; une rupture désactive le plat et les seuils bas déclenchent une notification au dashboard. Le réapprovisionnement n’active pas automatiquement un plat précédemment désactivé : le restaurant le rend disponible depuis la gestion du menu après réapprovisionnement.
+
+La fiche des paramètres gère le logo, la couverture et la couleur principale. La couleur est stockée sur `Restaurant`, validée en hexadécimal et associée automatiquement à un premier plan noir ou blanc garantissant un contraste de texte d’au moins 4,5:1. L’application au menu passe par des variables CSS et ne modifie pas le thème lorsque la couleur personnalisée est vide. Les images de plats et de restaurant peuvent être téléversées via `/api/uploads`; le fournisseur local stocke hors de `public/`, tandis que Cloudinary est disponible par configuration. La persistance disque en production et le choix final du fournisseur cloud sont **à confirmer**.
 
 ## 3. Fonctionnalités existantes
 
@@ -103,13 +111,13 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 | Parcours | État | Ce qui est effectivement présent |
 |---|---:|---|
 | Accueil marketing (`/`) | 🟡 | Sections hero, étapes, plats, simulateur QR, restaurants, prix, témoignages, FAQ et CTA. Témoignages, FAQ, plats de vitrine et restaurants mis en avant sont chargés depuis les API/DB; certaines statistiques et promesses restent des textes fixes non reliés à une mesure visible. |
-| Annuaire (`/restaurants`) | ✅ | Charge `/api/restaurants`, recherche texte, filtres par villes prédéfinies et filtre « ouverts ». Affiche chargement, erreur, résultats et état vide. Le filtre de catégorie existe dans l’état mais ses choix sont à vérifier dans l’interface. |
-| Menu restaurant (`/restaurant/[slug]`) | ✅ | Charge le restaurant par slug via `/api/restaurants/[slug]`, affiche catégories/plats disponibles, filtre par catégorie, lien partageable, ajout au panier et modal de visualisation 3D si le plat le permet. Le paramètre `?table=` est transmis vers le panier. |
-| Panier et formulaire (`/cart`) | 🟡 | Panier local, modification/suppression des quantités, choix sur place/retrait/livraison, coordonnées, adresse ou table, mode de paiement et création de commande. L’intégration des données restaurant dans la page comporte une incohérence d’identifiant décrite en section 4. |
+| Annuaire (`/restaurants`) | ✅ | Charge `/api/restaurants`, recherche texte, filtres par villes et catégories/cuisines dérivées des établissements présents, et filtre « ouverts ». |
+| Menu restaurant (`/restaurant/[slug]`) | ✅ | Charge le restaurant par slug ou ID via `/api/restaurants/[slug]`, affiche les plats et options disponibles, filtre par catégorie, ajoute au panier et ouvre la visualisation 3D. Le paramètre `?table=` est transmis au panier. Le statut d’ouverture suit les horaires et les avis utilisent les agrégats réels. |
+| Panier et formulaire (`/cart`) | ✅ / 🟡 | Panier local mono-restaurant avec confirmation avant remplacement, options de plats et prix recalculés côté serveur. Le formulaire ne demande aucun compte, exige nom, WhatsApp E.164 et consentement, et adapte table/adresse au mode. Le règlement reste manuel/en attente. |
 | Paiement | 🟡 | Les choix `CASH_ON_DELIVERY`, `MTN_MOMO`, `MOOV_MONEY` et `CARD` existent. Le serveur persiste le moyen et crée la commande en `PENDING`; aucune passerelle, confirmation de paiement ou webhook n’est visible. |
-| Suivi (`/order-tracking`) | ✅ / 🟡 | Recherche par code, timeline et historique, actualisation manuelle et polling client. Le statut `CANCELLED` a un message dédié. Le polling ne met à jour l’état affiché qu’en cas de changement de statut. |
-| Contact et pages légales | 🟡 | Pages CGU, confidentialité et contact présentes. Le formulaire contact affiche un succès et vide ses champs sans appel API visible. Les informations de tarifs dans les CGU ne concordent pas avec le catalogue d’abonnements de l’API. |
-| Accès client sans compte | ✅ | Aucun compte client n’est exigé ; le téléphone indiqué à la commande est validé comme numéro WhatsApp/contact requis. L’envoi automatique WhatsApp du code de suivi n’est pas implémenté. |
+| Suivi (`/order-tracking`) | ✅ | Recherche publique sans compte, message neutre si aucun code ne correspond, code copiable, lien direct, timeline et historique. SSE actualise statut et historique; polling 5 s en secours si le flux échoue. |
+| Contact et pages légales | 🟡 | Le formulaire Contact persiste les demandes et applique honeypot/limitation de débit. L’interface `EmailService` existe, mais le fournisseur n’est pas configuré (**à confirmer**). Les tarifs des CGU restent à aligner sur l’API. |
+| Accès client sans compte | ✅ | Menu, panier, création et suivi sont publics. Le client voit toujours son code sur la page de suivi et ne dépend pas de WhatsApp pour le récupérer. L’envoi automatique WhatsApp reste à brancher dans une étape séparée. |
 
 ### Dashboard
 
@@ -118,13 +126,15 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 | Établissement / Paramètres généraux | ✅ | Chargement des informations via `/api/settings`, champs nom/téléphone/adresse/devise/description préremplis à partir des paramètres ou des données du restaurant. La sauvegarde met également à jour le profil restaurant. |
 | Horaires | ✅ | Édition des jours actifs et heures d’ouverture/fermeture, validation de format et sauvegarde JSON synchronisée aux paramètres et au restaurant. |
 | Enregistrer / rafraîchir les paramètres | ✅ | Le bouton Enregistrer est désactivé si le formulaire n’a pas changé ; actualisation via `fetchSettings`; notifications de succès/erreur présentes. |
-| Abonnement | 🟡 | Onglet visible, chargement du plan, catalogue, factures et action de changement de plan. L’API crée/actualise l’abonnement et une facture, mais aucun paiement réel n’est intégré. |
+| Abonnement | 🟡 | Catalogue partagé, affichage de l’usage, essai de 14 jours, changement sans paiement et annulation. Les plans expirés/annulés ou en attente de règlement passent en lecture seule. Aucun encaissement ni renouvellement automatique n’est intégré. |
 | Équipe | 🟡 | Liste, recherche, filtres par rôle, ajout, édition, activation/désactivation et suppression via `/api/team`. Les opérations sont limitées au restaurant de la session. La création d’un `TeamMember` ne crée toutefois pas de compte `User`; la connexion réelle des nouveaux membres reste à confirmer/implémenter. |
-| Plats | ✅ / 🟡 | Liste, recherche, catégorie, disponibilité, ajout/édition/suppression via API. Le formulaire exige une image/URL ; la gestion de chargement réel d’un fichier n’est pas confirmée. |
+| Plats | ✅ | Liste, recherche, catégorie, disponibilité, ajout/édition/suppression via API. Le formulaire téléverse les fichiers image, permet l’aperçu d’URL et affiche un fallback si l’image ne se charge pas. |
 | Catégories | ✅ | CRUD par API, catégories triées et suppression empêchée si des plats y sont encore associés. |
-| Commandes | ✅ / 🟡 | Tableau Kanban, détail, progression de statut et rafraîchissement périodique. Le tableau utilise une grille responsive à quatre colonnes à partir du breakpoint `lg` (sept statuts, donc répartis sur plusieurs lignes). Les appels d’actualisation et changements d’état ne présentent pas partout un état d’erreur visible dans l’interface. |
+| Commandes | ✅ | Tableau Kanban et détail actualisés par SSE avec polling 10 s en secours. L’API limite les transitions et journalise chaque transition avec une notification en transaction. |
 | Tables et QR codes | ✅ | Gestion des tables et QR générés localement depuis le slug et le numéro réel de table. Le dashboard permet taille/couleurs, logo optionnel, téléchargement PNG et impression. |
-| Analytics | 🟡 | L’endpoint `/api/analytics` utilise les champs du modèle Prisma actuel et filtre par restaurant de session. Les chiffres doivent encore être validés en environnement connecté. |
+| Analytics | ✅ / 🟡 | Chiffre d’affaires et panier moyen hors commandes annulées, volume, tables, plats, modes de service, statuts et heures de pointe agrégés en base. Filtres jour/semaine/mois/personnalisé, fuseau par défaut `Africa/Porto-Novo`, export CSV. Validation sur PostgreSQL réel encore nécessaire. |
+| Avis | ✅ | Avis liés à une commande livrée via code de suivi, liste paginée, filtres, répartition des notes, agrégats, masquage/réaffichage et mise à jour des notifications. |
+| Notifications | ✅ | Centre lu/non lu alimenté par `Notification`; nouvelles commandes, transitions de statut et nouveaux avis sont enregistrés. Le badge non lu pulse à l’arrivée d’une notification. |
 | Accès dashboard | ✅ / 🟡 | Le middleware vérifie le JWT et permet les rôles propriétaire et staff; chaque endpoint d’administration vérifie aussi la session, le rôle et l’isolation restaurant. Le mécanisme n’octroie pas de compte à un `TeamMember` créé depuis l’interface, ce qui limite l’usage effectif des rôles staff. |
 
 ### API et données
@@ -132,14 +142,18 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 | Groupe d’API | État | Couverture observée |
 |---|---:|---|
 | `/api/auth/*` | ✅ | `POST` login/register/logout et `GET` `/me`; mots de passe bcrypt, cookie `auth_token` HttpOnly et `JWT_SECRET` obligatoire, sans valeur de repli. |
-| `/api/restaurants`, `/api/restaurants/[slug]`, `/api/restaurants/featured`, `/api/restaurant/me` | ✅ / 🟡 | Annuaire, fiche/menu par slug, restaurants mis en avant et route de rechargement du restaurant propriétaire connecté. Les réponses publiques sélectionnent les champs nécessaires; l’aperçu « à la une » expose aussi les numéros de table pour le simulateur. |
+| `/api/restaurants`, `/api/restaurants/[slug]`, `/api/restaurants/featured`, `/api/restaurant/me` | ✅ / 🟡 | Annuaire et fiche/menu publics, recherche par slug ou ID, horaires calculés et agrégats d’avis. La route `/api/restaurant/me` reste réservée au propriétaire connecté. |
 | `/api/faq`, `/api/testimonials`, `/api/dishes/showcase` | ✅ | Lectures publiques du contenu actif de landing et des plats à la une depuis PostgreSQL. |
-| `/api/orders`, `/api/orders/[trackingCode]` | ✅ / 🟡 | Création publique avec téléphone obligatoire, prix recalculés depuis les plats disponibles du restaurant, code de suivi aléatoire, lecture publique limitée au DTO client et mises à jour de statut protégées/scopées au restaurant. Codes historiques `QR-####` et nouveaux codes `QR-` + 12 caractères hexadécimaux sont acceptés. Limitation de débit locale au processus. |
-| `/api/dishes`, `/api/categories`, `/api/tables`, `/api/team`, `/api/settings` | ✅ / 🟡 | Endpoints d’administration authentifiés, validés par Zod et filtrés avec le restaurant de session. Les permissions dépendent du rôle staff codé côté serveur; les comptes staff et l’usage du champ libre `TeamMember.permissions` ne sont pas raccordés/confirmés. `/api/dishes/showcase` est une lecture publique dédiée à la vitrine. |
-| `/api/subscription` | 🟡 | Lecture/initialisation d’essai, changement de plan et création de facture; réservé au propriétaire selon la matrice de rôles. Pas de prestataire de paiement visible. |
+| `/api/orders`, `/api/orders/[trackingCode]` | ✅ / 🟡 | Création publique : plats/options/disponibilité et prix sont rechargés/validés côté serveur; table active vérifiée pour le sur-place; WhatsApp E.164 et consentement requis; commande, lignes et historique sont transactionnels. La création est suspendue si l’abonnement du restaurant ne permet plus les modifications. Code de 8 caractères aléatoires sans `0/O/1/I`; formats historiques acceptés. Le notifier est isolé après commit. Lecture publique limitée au DTO; transitions de statut authentifiées et tenant-scoped. |
+| `/api/analytics` | ✅ / 🟡 | Agrégats Prisma/PostgreSQL sur `Order.total`, `OrderItem.dishId` et `Dish`, avec périodes calendaires locales, distribution par statut/mode, top ventes, tables et heures de pointe. L’API est restaurant-scoped et accepte un fuseau IANA; le défaut actuel est `Africa/Porto-Novo`. |
+| `/api/events/restaurants/[restaurantId]`, `/api/events/orders/[trackingCode]` | ✅ / 🟡 | Flux SSE restaurant authentifié et flux de suivi public par code. Le bus est local au processus et nécessite un hébergement compatible avec des connexions persistantes; la diffusion multi-instance est **à confirmer**. |
+| `/api/notifications` | ✅ | Lecture tenant-scoped des 50 dernières notifications et compteur non lu; PATCH lu/non lu limité au restaurant de session. |
+| `/api/reviews` et `/api/restaurants/[slug]/reviews` | ✅ | Création publique limitée par IP et liée à une commande livrée; unicité par commande, nettoyage HTML et mise à jour atomique des agrégats/notifications. Lecture publique limitée aux avis visibles, lecture client par code et administration paginée tenant-scoped avec modération. Aucun numéro WhatsApp n’est sélectionné ni exposé par les réponses d’avis. |
+| `/api/contact` | ✅ / 🟡 | Persiste les demandes dans `ContactMessage`, applique rate limit et honeypot. L’envoi e-mail dépend du fournisseur qui reste à confirmer; l’état retourné ne prétend pas qu’un e-mail a été délivré. |
+| `/api/dishes`, `/api/categories`, `/api/tables`, `/api/team`, `/api/settings` | ✅ / 🟡 | Endpoints d’administration authentifiés, validés par Zod et filtrés avec le restaurant de session. Les créations de plats, tables et membres respectent les limites du plan dans des transactions sérialisables; la réactivation d’un membre est aussi contrôlée. Les modifications métier sont refusées lorsque l’abonnement est expiré, annulé ou en attente de règlement. `/api/dishes/showcase` est une lecture publique dédiée à la vitrine. |
+| `/api/subscription` | 🟡 | Lecture/initialisation d’essai, changement sans paiement et annulation; réservé au propriétaire selon la matrice de rôles. N’émet pas de facture payée sans encaissement. |
 | `/api/qr-codes` | ✅ | Lecture des tables protégée par rôle; renvoie des URLs menu/table et des SVG générés localement. |
 | `/api/recommendations` | 🟡 | Sélectionne dans PostgreSQL les plats disponibles populaires/spécialités; `mood` est validé et renvoyé mais ne personnalise pas encore le classement. |
-| `/api/analytics` | 🟡 | Requête alignée sur le schéma Prisma actuel et filtrée par le restaurant de session; les analytics et données dashboard doivent encore être vérifiés en environnement connecté. |
 
 ## 4. Travail réalisé jusqu’à présent
 
@@ -153,7 +167,7 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 | Horaires modifiables | **Oui.** `OpeningHoursSection` gère l’activation par jour et les deux champs horaires ; `SettingsTab` valide puis enregistre. |
 | Section Abonnement visible | **Oui.** Elle est déclarée dans les items de navigation du dashboard et rend `SubscriptionTab`. Le paiement de l’abonnement n’est toutefois pas intégré. |
 | Ajout d’un membre avec le bon ID de restaurant | **Oui.** La création vérifie `restaurantId` puis l’inclut dans le payload POST de `TeamTab`. |
-| Formulaire de plat | **Oui.** Création/édition avec nom, prix, catégorie, image et disponibilité, puis appel API. Le formulaire bloque la soumission sans image/URL. |
+| Formulaire de plat | **Oui.** Création/édition avec nom, prix, catégorie, image et disponibilité, puis appel API. Le formulaire bloque la soumission sans image/URL et téléverse les fichiers via l’API dédiée. |
 | Étapes/colonnes de commande en quatre par ligne | **Oui pour le Kanban dashboard.** `OrdersTab` utilise `grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4`. Le suivi client a, lui, six étapes et une grille de six colonnes à partir de `md`. |
 
 ### Résumé de ce qui est construit
@@ -164,35 +178,45 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 - Une vitrine marketing constituée de sections modulaires, des images de démonstration et un simulateur de QR.
 - Les témoignages, FAQ, plats à la une et restaurants mis en avant sont servis depuis PostgreSQL; le seed versionné fournit les premiers témoignages et FAQ.
 - Le stockage navigateur de données métier et ses constantes fictives de restaurants/plats ont été supprimés. Le panier reste un cache temporaire `localStorage`, revalidé côté serveur à la création de commande.
+- Le panier est mono-restaurant (confirmation avant remplacement), conserve les options choisies et le formulaire public exige WhatsApp E.164 avec consentement. Les prix/options sont revalidés côté serveur et commande/lignes/historique sont créés atomiquement.
+- Le code de suivi est généré côté serveur, visible et copiable sans dépendre de WhatsApp. Le contact client est stocké via `ContactMessage`; son abstraction `EmailService` existe, mais le fournisseur reste **à confirmer**.
+- Le `OrderNotifier` est appelé après validation de la transaction; son implémentation actuelle journalise uniquement et ses erreurs n’annulent pas la commande. Le calcul d’ouverture utilise `Africa/Porto-Novo`; rendre le fuseau paramétrable sera nécessaire si l’offre s’étend à d’autres pays (**à confirmer**).
+- Les analytics n’utilisent plus de champs inexistants ni de calculs par le composant : Prisma/PostgreSQL agrège les commandes, les plats, les modes et les heures, avec périodes locales et export CSV. Le défaut de fuseau est `Africa/Porto-Novo`; une préférence par restaurant est **à confirmer**.
+- Le dashboard et le suivi client sont branchés aux flux SSE avec reconnexion EventSource et polling de secours. Le bus en mémoire est mono-processus; confirmer la compatibilité des connexions persistantes et prévoir un pub/sub partagé pour plusieurs instances (**à confirmer**).
+- Les notifications de nouvelle commande, transition de statut et nouvel avis sont persistées et listées dans le dashboard avec état lu/non lu et badge animé. Les avis sont associés à une commande livrée, uniques par commande, publiés immédiatement, modérables, et leurs agrégats sont recalculés dans la transaction.
+- Les avis clients peuvent être déposés sans compte sur le suivi; un avis existant apparaît en lecture seule. La fiche du restaurant affiche les cinq avis publics les plus récents, la note et le nombre issus des avis visibles. L’API publique n’expose aucun numéro WhatsApp d’un client.
+- L’upload d’images valide le contenu réel et la taille, utilise un nom aléatoire et offre un fournisseur local hors de `public/`; Cloudinary est disponible comme fournisseur configurable. La persistance des fichiers locaux en production et le choix final du fournisseur cloud sont **à confirmer**.
+- Les chargements dashboard des plats, catégories et tables affichent une erreur avec action de reprise. Les formulaires voisins présentent les détails Zod avec le champ concerné; les actions d’équipe vérifient aussi les réponses HTTP et affichent les erreurs de statut.
+- Les horaires et avis de la fiche viennent de données réelles; la devise provient des paramètres. Les migrations récentes pour les avis sont `20261104170000_complete_customer_reviews` et `20261104171000_preserve_legacy_review_visibility`; elles rendent le nom client facultatif, ajoutent l’état de visibilité, conservent les validations historiques et les index associés. Les environnements doivent les appliquer avec `yarn db:migrate`.
+- Le catalogue de plans est centralisé dans `src/lib/subscription/catalog.ts` et partagé par l’API, le dashboard, la landing et les CGU. Les tarifs repris de l’ancienne API (Starter 15 000/144 000 FCFA, Pro 35 000/336 000 FCFA, Enterprise 75 000/720 000 FCFA par mois/an) sont **à confirmer**. Starter est limité à 30 plats, 10 tables actives et 3 membres actifs; Pro et Enterprise sont illimités sur ces ressources.
+- Les nouvelles inscriptions reçoivent un essai Pro de 14 jours. Changer de formule active la période choisie sans paiement, facture payée ni renouvellement automatique; l’annulation prend effet immédiatement. À expiration, annulation ou état `PAST_DUE`, les lectures restent accessibles mais les modifications métier et la création de commandes publiques sont refusées jusqu’au changement de formule. Les compteurs de tables et membres portent uniquement sur les éléments actifs.
+- Les nouvelles factures et entrées d’historique ont un statut par défaut `PENDING`. Les anciens enregistrements `PAID` ne sont pas une preuve d’encaissement et s’affichent « À vérifier »; leur historique doit être rapproché manuellement avant une éventuelle intégration de paiement.
+- Les offres Enterprise n’ont actuellement aucune capacité active différente de Pro; le prix et la différenciation commerciale sont **à confirmer**. Le champ historique `Restaurant.subscriptionPlan` et l’enum `SubscriptionPlan` contiennent encore les anciens identifiants et ne sont pas utilisés par le cycle courant `Subscription.planId`; leur migration est à confirmer avant réutilisation.
 - `AuthContext.reloadRestaurantData()` utilise `GET /api/restaurant/me`, qui renvoie le restaurant du propriétaire authentifié.
 - Les QR tiers ont été remplacés par `src/lib/qr-code.ts` et la dépendance `qrcode`; les exports incluent SVG local, PNG, impression et options de taille, couleurs et logo. Le lien embarque le slug et le numéro réel de table.
-- Une base de styles avec palette claire, couleurs chaudes et composants utilitaires, mais appliquée de façon inégale sur le front public.
+- Les tokens CSS/Tailwind 4 sont centralisés dans `src/app/design-system.css` et documentés dans `docs/DESIGN_TOKENS.md`. Les utilitaires de palette ont été remplacés par des clés sémantiques, les tailles CSS codées en pixels par des `rem`, et les animations/icônes/polices ont été unifiées sans refonte de mise en page.
 
 ### Socle qualité et sécurité ajouté
 
 - `next.config.mjs` ne masque plus les erreurs de TypeScript/ESLint; `tsconfig.json` active `strict: true`. Le script `lint` lance ESLint CLI et `test` lance Vitest. `yarn.lock` est le lockfile de référence; `bun.lock` a été supprimé.
-- ESLint 9 et `eslint-config-next` sont alignés sur Next 16.3.6. `yarn lint` s’exécute sans erreur bloquante; des avertissements de base subsistent (apostrophes JSX, effets React, `<img>` et variables/imports inutilisés). Aucun `any` explicite ne reste dans `src/`.
+- ESLint 9 et `eslint-config-next` sont alignés sur Next 16.3.6. `yarn lint` inclut `design-tokens/no-hardcoded-css-values` pour détecter les couleurs hex et les tailles en pixels dans le style JSX; des avertissements de base subsistent (apostrophes JSX, effets React, `<img>` et variables/imports inutilisés). Aucun `any` explicite ne reste dans `src/`.
 - `src/lib/auth/jwt.ts`, `src/lib/auth/session.ts` et `src/lib/auth/permissions.ts` centralisent la vérification du cookie, le rechargement du compte depuis la base et la matrice des rôles. `JWT_SECRET` n’a pas de valeur de repli. Le middleware accepte le propriétaire et le staff; les handlers appliquent ensuite leur permission.
 - Le propriétaire dispose des permissions d’administration; `MANAGER` gère menu, commandes, tables, QR et analytics; `CHEF` gère menu et commandes; `WAITER` gère commandes, lecture tables et QR; `CASHIER` gère commandes et analytics; `DELIVERY` gère les commandes. La matrice est dans `src/lib/auth/permissions.ts`.
 - Les endpoints admin des plats, catégories, tables, équipe, paramètres, abonnement, QR, analytics et commandes utilisent l’ID restaurant issu de la session pour filtrer les requêtes. Les entrées correspondantes sont validées par Zod; les réponses distinguent validation, authentification, autorisation et ressource absente.
-- La création publique de commande exige un numéro de téléphone/WhatsApp, recharge les plats/prix/disponibilités dans Prisma et calcule le montant serveur. Le suivi public ne renvoie que code, nom public du restaurant, statut, lignes (nom/prix/quantité), total et historique; les coordonnées client ne sont pas incluses. Les codes historiques `QR-####` et les nouveaux `QR-` + 12 caractères hexadécimaux sont acceptés.
-- `src/lib/rate-limit.ts` limite la création de commandes (10 requêtes / 10 min / IP) et le suivi (180 / 15 min / IP). La mémoire est locale au processus; les quotas ne sont pas partagés entre instances. La confiance envers `x-real-ip`/`x-forwarded-for` dépend du proxy de déploiement (**à confirmer**).
-- Vitest couvre le limiteur, la génération/URL/options des QR et l’isolation des commandes. Les tests API mockent Prisma et vérifient le filtre tenant ainsi que l’absence d’update quand une commande étrangère n’est pas trouvée; ils ne remplacent pas des tests d’intégration PostgreSQL.
+- La création de commande valide les options et calcule le total depuis la base; le DTO de suivi exclut les coordonnées client, mais fournit le téléphone public du restaurant et sa devise. Les codes historiques restent acceptés avec les nouveaux codes `QR-` + 8 caractères sans caractères ambigus.
+- `src/lib/rate-limit.ts` limite la création de commandes (10 requêtes / 10 min / IP), le suivi (180 / 15 min / IP), le contact (5 / heure / IP) et les avis (3 / heure / IP). La mémoire est locale au processus; les quotas ne sont pas partagés entre instances. La confiance envers les en-têtes IP et l’hébergement SSE sont **à confirmer**.
+- Vitest couvre le limiteur, QR, E.164, horaires, calcul des prix/options, analytics (agrégats et plages horaires), export CSV, code de suivi, transitions, notifications, revue, cycle de vie SSE et règles de limites/états d’abonnement. Les tests Prisma sont mockés; une validation sur PostgreSQL réel reste nécessaire.
 - `/api/dishes/showcase` fournit les données publiques de la vitrine sans rendre publique la route d’administration `/api/dishes`. Des frontières Suspense autour des composants utilisant `useSearchParams` permettent aussi au build Next de terminer.
 
 ### Dette technique, incohérences et bugs à traiter
 
-1. **Comportement panier / restaurant — incohérence de signature.** Dans `RestaurantDetailPage`, `addToCart(dish, 1, restaurant?.id)` transmet l’ID du restaurant comme troisième argument, alors que `CartContext.addToCart` attend un texte de notes à cette position. L’appel persiste donc potentiellement l’ID comme note de plat ; de plus, le contexte affiche déjà un toast, puis la page en affiche un second.
-2. **Chargement restaurant depuis le panier.** `CartPage` appelle `/api/restaurants/${targetRestaurantId}` avec l’ID de restaurant, alors que `src/app/api/restaurants/[slug]/route.ts` recherche exclusivement par `slug`. Les données de livraison/affichage peuvent ne pas se charger. La commande est néanmoins envoyée avec l’ID conservé dans le contexte.
-3. **Authentification staff incomplète.** `POST /api/team` crée un `TeamMember`, mais ne crée ni ne lie un `User`; un membre créé n’a donc pas nécessairement de compte de connexion. Le processus d’invitation/activation est à confirmer.
-4. **Permissions personnalisées non raccordées.** Le modèle `TeamMember.permissions` existe, mais l’API applique la matrice fixe issue de `TeamMember.role`. L’usage souhaité des permissions personnalisées est à confirmer.
-5. **État ouvert/avis par défaut dans la fiche restaurant.** Vérifier que les valeurs d’ouverture et d’avis affichées correspondent aux données réellement renseignées, notamment les valeurs nulles et zéro.
-6. **Paiement et tarifs non alignés.** Le catalogue de `/api/subscription` propose Starter à 15 000 FCFA/mois et Pro à 35 000 FCFA/mois, tandis que `StaticPages.tsx` mentionne des tarifs de 5 000 et 8 000 FCFA. À clarifier. Les moyens de paiement client ne font pas de transaction.
-7. **Contenus de seed et promesses marketing.** Les témoignages et FAQ du seed sont des contenus d’exemple; les affirmations et chiffres de la landing ne sont pas tous liés à des mesures ou fonctionnalités vérifiables.
-8. **Formulaire contact sans envoi réel.** `ContactPage` produit une confirmation locale mais ne contacte aucun service.
-9. **Avertissements ESLint résiduels.** Le lint passe mais signale encore des apostrophes JSX, appels d’état dans des effets, éléments `<img>` et imports/variables inutilisés. À traiter progressivement sans désactiver les contrôles TypeScript.
-10. **Convention middleware Next.js.** Le build actuel passe mais affiche un avertissement indiquant que la convention `middleware` est dépréciée au profit de `proxy`; migration ultérieure à planifier en suivant la version Next installée.
-11. **Accès public aux tables de l’aperçu.** `/api/restaurants/featured` inclut les numéros de table nécessaires au simulateur. Confirmer que cette exposition est acceptable; ces numéros ne suffisent pas à accéder aux données privées, mais peuvent alimenter les liens publics de commande.
+1. **Authentification staff incomplète.** `POST /api/team` crée un `TeamMember`, mais ne crée ni ne lie un `User`; un membre créé n’a donc pas nécessairement de compte de connexion. Le processus d’invitation/activation est à confirmer.
+2. **Permissions personnalisées non raccordées.** Le modèle `TeamMember.permissions` existe, mais l’API applique la matrice fixe issue de `TeamMember.role`. L’usage souhaité des permissions personnalisées est à confirmer.
+3. **Paiement et tarifs à confirmer.** Le catalogue partagé reprend les anciens tarifs API, mais aucun prestataire ni encaissement d’abonnement n’est intégré. Les prix Enterprise et sa différenciation par rapport à Pro sont à confirmer. Les identifiants de l’enum historique `SubscriptionPlan` et du champ `Restaurant.subscriptionPlan` restent obsolètes et ne pilotent pas l’API d’abonnement actuelle.
+4. **Contenus de seed et métriques marketing.** Les témoignages et FAQ du seed sont des contenus d’exemple; les statistiques fixes du hero ne sont pas liées à des mesures réelles.
+5. **Avertissements ESLint résiduels.** Le lint passe mais signale encore des apostrophes JSX, appels d’état dans des effets, éléments `<img>` et imports/variables inutilisés. À traiter progressivement sans désactiver les contrôles TypeScript.
+6. **Convention middleware Next.js.** Le build actuel passe mais affiche un avertissement indiquant que la convention `middleware` est dépréciée au profit de `proxy`; migration ultérieure à planifier en suivant la version Next installée.
+7. **Accès public aux tables de l’aperçu.** `/api/restaurants/featured` inclut les numéros de table nécessaires au simulateur. Confirmer que cette exposition est acceptable; ces numéros ne suffisent pas à accéder aux données privées, mais peuvent alimenter les liens publics de commande.
 
 ## 5. Audit du design actuel (front-end public)
 
@@ -200,24 +224,24 @@ Cet audit est statique : il se fonde sur les composants et CSS du dépôt, pas s
 
 ### Styles, composants et cohérence
 
-- La base existe déjà : fond ivoire, surfaces claires, terre cuite et vert (`src/app/design-system.css`), règles globales et animations dans `src/app/globals.css`.
-- La police définie est **Plus Jakarta Sans**, chargée par URL Google Fonts ; l’import Font Awesome est aussi externe. La section hero de `HeroSection.tsx` parle de « Playfair Display », mais aucune police de ce nom n’est chargée dans les styles consultés.
-- Les composants emploient beaucoup de classes Tailwind `stone-*`, `amber-*` et `orange-*` directement, en parallèle des tokens. La palette du système et les couleurs écrites dans les pages ne forment donc pas une source de vérité unique.
+- La base visuelle ivoire, terre cuite et verte est conservée. Les propriétés partagées (couleurs, typographie, espacements, rayons, ombres, z-index, animations, largeurs, breakpoints et tailles tactiles) sont exposées par les tokens de `src/app/design-system.css` et le thème Tailwind 4.
+- La police **Plus Jakarta Sans** est chargée avec `next/font`; les styles d’impression réutilisent la feuille de style locale. Il n’y a plus d’import Google Fonts CSS ou de CDN Font Awesome.
+- Les classes de palette utilisent des noms sémantiques (`ink-*`, `brand-*`, `positive-*`, `negative-*`, `info-*`, etc.) qui conservent les valeurs Tailwind antérieures. Les tailles en pixels ont été converties en rem; `1px` reste réservé aux bordures fines et les breakpoints sont définis en rem.
 - Les cartes à grands rayons, ombres, dégradés, badges, animations et effets hover sont récurrents. Cela donne une direction chaleureuse, mais l’empilement peut concurrencer le contenu et les photos de plats.
-- L’interface utilise à la fois Lucide et Font Awesome. Les classes de présentation, libellés, devises et règles de fallback sont parfois codés au niveau des pages plutôt que centralisés.
-- Il existe une base responsive (grilles et breakpoints Tailwind), mais aucun test visuel/mobile ou rapport d’accessibilité n’est fourni.
+- Les icônes sont rendues par Lucide et les animations par `motion/react`. Les palettes d’états de commande et les couleurs de feedback disposent de clés dédiées.
+- La page d’accueil de production a été inspectée dans le navigateur après migration, y compris le calcul de Plus Jakarta Sans et des tokens CSS. La capture de référence avant changement n’étant pas disponible, la comparaison visuelle avant/après et les tests multi-navigateurs restent à effectuer. Aucun rapport d’accessibilité complet n’est fourni.
 
 ### Problèmes concrets par page
 
 | Page / composant | Constats à partir du code |
 |---|---|
-| Accueil (`src/components/pages/LandingPage/`) | Longue page marketing à nombreuses sections, animations en entrée, maquette de téléphone et textes/indicateurs fixes. Les statistiques du hero (« +32 % », « 1.5s ») ne sont pas reliées à des données visibles. Les promesses d’encaissement instantané Mobile Money ne sont pas soutenues par un flux de paiement dans l’API. Le style annoncé « Playfair » ne correspond pas à la police chargée. |
-| Annuaire (`RestaurantsPage.tsx`) | Cartes à image, note, ville et statut ; la recherche et les filtres sont dans une grande carte de contrôle. Les options de ville sont prédéfinies (Cotonou, Porto-Novo, Abomey-Calavi), ce qui ne suit pas automatiquement les données disponibles. Le filtre de catégorie est présent dans l’état, mais son rendu effectif est à vérifier. |
-| Menu (`RestaurantDetailPage.tsx`, `RestaurantHero.tsx`, `RestaurantDishCard.tsx`) | En-tête photo haut (hauteur responsive jusqu’à `md:h-96`), navigation de catégories sticky, grille d’une colonne mobile puis deux/trois colonnes, bouton panier flottant. Informations contradictoires ou trompeuses possibles : disponibilité affichée ouverte en dur, avis de repli, devise toujours FCFA dans certaines zones. Le champ recherche dans les plats n’est pas visible dans cette page. |
+| Accueil (`src/components/pages/LandingPage/`) | Longue page marketing à nombreuses sections, animations en entrée, maquette de téléphone et textes/indicateurs fixes. Les statistiques du hero (« +32 % », « 1.5s ») ne sont pas reliées à des données visibles. Les paiements Mobile Money automatiques ne sont pas présentés comme une fonction active. Le style annoncé « Playfair » ne correspond pas à la police chargée. |
+| Annuaire (`RestaurantsPage.tsx`) | Cartes à image, note, ville et statut ; la recherche et les filtres sont dans une grande carte de contrôle. Villes et catégories sont dérivées des établissements chargés. |
+| Menu (`RestaurantDetailPage.tsx`, `RestaurantHero.tsx`, `RestaurantDishCard.tsx`) | En-tête photo haut (hauteur responsive jusqu’à `md:h-96`), navigation de catégories sticky, grille d’une colonne mobile puis deux/trois colonnes, bouton panier flottant. Statut ouvert, agrégats d’avis et devise sont désormais issus des données restaurant. Le champ recherche dans les plats n’est pas visible dans cette page. |
 | Carte de plat | Photos d’une hauteur imposée, description limitée à deux lignes, allergènes tronqués, action Ajouter de petite taille visuelle sur écran étroit. Le bouton 3D et les badges ajoutent encore des éléments à l’image. Les images utilisent `<img>` et `next.config.mjs` désactive l’optimisation Next Image. |
 | Panier (`CartPage.tsx`) | Structure responsive à deux colonnes sur desktop et une sur mobile, résumé et formulaire réunis sur le même écran. Les champs d’adresse/table, mode, coordonnées, notes et paiement forment un formulaire dense. Le panier local et la sauvegarde des données après actualisation ne sont pas accompagnés d’un état de synchronisation serveur. |
-| Suivi (`OrderTrackingPage.tsx`, `OrderTrackingTimeline.tsx`) | Timeline à six états, six colonnes dès `md`, empilée sur mobile ; lisibilité des libellés et progression à éprouver sur téléphone. Pas de mise à jour push ; polling. Les états de commande sont communiqués principalement par couleur/texte et certains emojis. |
-| Contact et pages légales (`StaticPages.tsx`) | Visuels sobres, mais le formulaire Contact est une confirmation factice. Le texte des CGU a des tarifs différents du catalogue d’abonnement. |
+| Suivi (`OrderTrackingPage.tsx`, `OrderTrackingTimeline.tsx`) | Timeline à six états, six colonnes dès `md`, empilée sur mobile ; lisibilité des libellés et progression à éprouver sur téléphone. Le statut et l’historique arrivent par SSE avec polling de secours. |
+| Contact et pages légales (`StaticPages.tsx`) | Visuels sobres ; le formulaire contact persiste maintenant les demandes, mais le service e-mail reste non configuré. Les CGU réutilisent le catalogue partagé et précisent que les tarifs sont à confirmer et le paiement d’abonnement non intégré. |
 
 ### À conserver / à refaire
 
@@ -247,7 +271,7 @@ Ces valeurs sont une proposition, pas des valeurs déjà toutes codées :
 | Ombres | Une ombre diffuse légère, réservée aux éléments élevés | Réduire les ombres superposées et les bordures décoratives. |
 | Typographie | Sans-serif lisible pour les UI ; éventuellement une serif éditoriale limitée aux grands titres | Une seule hiérarchie de tailles/poids ; héberger les fontes retenues ou prévoir des fallbacks. |
 
-Centraliser ces tokens dans `src/app/design-system.css`, puis remplacer progressivement les couleurs et rayons ad hoc. Respecter les contrastes, `prefers-reduced-motion` et les tailles tactiles (cible d’au moins 44 × 44 px pour les actions principales).
+La centralisation initiale est réalisée dans `src/app/design-system.css`; consulter `docs/DESIGN_TOKENS.md` pour les noms et règles d’usage. Une refonte future pourra faire évoluer les valeurs en conservant les mêmes clés. Respecter les contrastes, `prefers-reduced-motion` et les tailles tactiles (cible d’au moins 2.75rem pour les actions principales).
 
 ### Composants à créer ou refondre
 
@@ -297,13 +321,13 @@ Les priorités ci-dessous sont des propositions. La complexité et l’impact so
 |---|---|---|---|---|
 | Haute | Paiement réel Mobile Money (MTN/Moov) puis carte si nécessaire | Réduire le paiement manuel et permettre de confirmer la transaction au restaurateur et au client. | Élevée | Ajouter l’intégration d’un prestataire, références de transaction, callbacks/webhooks idempotents, statuts paiement et gestion d’échec/remboursement ; conserver les commandes comme source de vérité. |
 | Haute | Création et activation des comptes d’équipe | Permettre aux membres déjà enregistrés via `TeamMember` de se connecter avec leur rôle réel. | Moyenne | Définir un flux d’invitation/activation, lier `TeamMember.userId`, sécuriser la création d’identifiants et garantir la cohérence entre `User.restaurantId` et l’adhésion active. |
-| Haute | Notifications de commande réellement temps réel | Réduire l’attente et les refreshs pour cuisine et clients ; le polling 5/10 s existe déjà comme solution provisoire. | Moyenne à élevée | Ajouter SSE ou un service temps réel et un canal isolé par restaurant/commande ; mécanisme de fallback polling à prévoir. |
-| Moyenne | Personnalisation de marque par restaurant | Rendre les menus plus reconnaissables : logo, couverture, couleurs, éventuellement police et présentation. | Moyenne | Ajouter un thème validé au modèle restaurant/settings et l’appliquer avec variables CSS sur les pages menu ; conserver une palette accessible. |
-| Moyenne | Analytics fiables et rapports exportables | Aider le restaurateur à suivre ventes, commandes, plats populaires et périodes. | Moyenne | Valider les agrégats actuels sur PostgreSQL, clarifier timezone/périodes, puis ajouter pagination/export ; agréger côté DB plutôt que dans le composant. |
-| Moyenne | Promotions / coupons | Permettre des campagnes simples avec dates, seuil minimum et remise ; `Coupon` existe déjà dans Prisma. | Moyenne | Ajouter CRUD et validation serveur, calcul du prix, application atomique de la remise et règles d’expiration ; écran dashboard et affichage menu. |
+| Haute | Diffusion SSE multi-instance | Assurer les événements lorsque plusieurs instances ou un hébergement serverless sont utilisés. | Moyenne | Choisir un pub/sub partagé et vérifier les limites de connexions persistantes et de buffering de l’hébergement (**à confirmer**). |
+| Moyenne | Personnalisation de marque par restaurant | Logo, couverture par URL, couleur principale accessible et variables CSS sur le menu actifs. | Moyenne | Confirmer si un fournisseur d’upload d’images est nécessaire; pour l’instant, logo et couverture acceptent uniquement des URLs HTTPS/HTTP (**à confirmer**). |
+| Moyenne | Fuseau horaire paramétrable | Aligner les périodes analytics et horaires sur le fuseau propre à chaque restaurant. | Faible à moyenne | Ajouter et valider un champ IANA dans les paramètres restaurant; actuellement `Africa/Porto-Novo` est le défaut (**à confirmer**). |
+| Moyenne | Promotions / coupons | Permettre des campagnes simples avec dates, seuil minimum et remise ; CRUD, dashboard, validation et consommation atomique actifs. | Moyenne | Étendre les tests d’intégration de commande et confirmer les règles commerciales de cumul/annulation des coupons. |
+| Basse | Avis clients vérifiés après commande | Dépôt sans compte via code de suivi d’une commande livrée, modération et agrégats publics approuvés actifs. | Moyenne | Ajouter davantage de tests d’intégration des routes et confirmer si les avis historiques doivent être archivés ou supprimés. |
 | Moyenne | Multilingue FR/EN (puis langues locales selon besoin) | Servir les touristes et clients aux préférences linguistiques différentes. | Élevée | Introduire des messages localisés, préférence de langue et traductions de contenu restaurant ; modifier routes, formulaire, menu et dashboard. Choix des langues locales à confirmer avec les utilisateurs. |
-| Moyenne | Gestion du stock / disponibilité | Éviter de vendre un plat ou ingrédient épuisé et aider l’équipe à réapprovisionner. | Élevée | Modèle d’inventaire/mouvements, seuils et décrémentation cohérente avec la commande ; le `isAvailable` du plat ne constitue pas un stock. |
-| Basse | Avis clients vérifiés après commande | Augmenter la confiance avec des retours liés à une expérience réelle ; `Review` existe mais n’est pas relié à une commande. | Moyenne | Lier l’avis à une commande terminée, ajouter API/modération et alimenter rating/reviewCount avec des agrégats réels. |
+| Moyenne | Gestion du stock / disponibilité | Quantités et seuils par plat, historique des mouvements, décrémentation transactionnelle, désactivation à zéro et alertes dashboard actifs. | Moyenne | Confirmer le besoin de suivi des ingrédients et la gestion du stock lors de l’annulation ou de l’édition de commandes. |
 | Basse | Modèles de signalétique QR imprimables | Faciliter l’identité visuelle sur les tables et la pose des codes en série. | Faible à moyenne | Ajouter des modèles PDF/SVG avec nom du restaurant et numéro de table; la génération locale, les couleurs, le logo, le PNG et l’impression navigateur existent déjà. |
 | Basse | PWA et consultation hors ligne | Améliorer la réouverture du menu avec un réseau instable. | Moyenne à élevée | Manifest, service worker, stratégie cache versionnée des menus/images ; les commandes restent en ligne et ne doivent pas être confirmées hors connexion. |
 
@@ -316,19 +340,18 @@ Les priorités ci-dessous sont des propositions. La complexité et l’impact so
 3. **Définir le cycle de vie des comptes staff** avant d’exposer l’accès dashboard à de nouveaux membres.
 4. **Remplacer ou compléter le rate limiter en mémoire** par une solution partagée si plusieurs instances sont déployées; confirmer l’en-tête IP de confiance du proxy.
 5. **Tester en navigateur les exports QR** (PNG, logo, couleurs, impression) et les liens de table sur les écrans réels.
-6. **Corriger les incohérences existantes du parcours** (signature `addToCart`, identifiant restaurant/slug dans `CartPage`, statuts ouverts et avis de repli) sans mêler ces corrections à une refonte visuelle.
 
 **Dépendances :** valider les rôles et le cycle des comptes staff avant les tests d’autorisation de bout en bout; choisir le stockage partagé avant de prétendre appliquer des quotas globaux. La refonte du front public est reportée à une phase produit distincte et ne doit pas être mélangée à la présente mission.
 
 ### Moyen terme — fiabilité produit et outils restaurateur
 
 1. Implémenter paiements Mobile Money dans un ordre compatible avec le prestataire retenu; ajouter webhooks et tests de répétition/échec.
-2. Remplacer le polling par notifications temps réel si l’exploitation justifie le coût opérationnel.
-3. Aligner catalogue, tarifs, factures et textes légaux; décider si abonnement et commande client partagent un prestataire de paiement.
+2. Déployer un pub/sub partagé si les SSE doivent desservir plusieurs instances; conserver le polling de secours.
+3. Confirmer les tarifs et la différenciation Enterprise; intégrer un prestataire de paiement avant d’activer encaissement, factures payées ou renouvellement automatique.
 4. Ajouter des tests d’intégration pour authentification/autorisation, CRUD, isolation multi-tenant et calculs financiers.
 5. Reprendre ensuite le redesign public mobile-first décrit en section 6, sans modifier les contrats de sécurité validés.
 
-**Dépendances :** les paiements dépendent du recalcul de prix serveur et d’une gestion sûre des statuts; le temps réel dépend d’un modèle fiable de statut/historique et d’une autorisation par tenant; les tests d’intégration dépendent d’une configuration PostgreSQL dédiée.
+**Dépendances :** les paiements dépendent du recalcul de prix serveur et d’une gestion sûre des statuts; le SSE multi-instance dépend d’un pub/sub partagé et d’un hébergement adapté; les tests d’intégration dépendent d’une configuration PostgreSQL dédiée.
 
 ### Long terme — différenciation et expansion
 
@@ -336,7 +359,7 @@ Les priorités ci-dessous sont des propositions. La complexité et l’impact so
 2. Ajouter promotions/coupons et avis vérifiés, après définition de règles de fraude/modération.
 3. Développer l’inventaire lorsque la gestion opérationnelle et les unités/recettes sont spécifiées.
 4. Ajouter PWA/cache offline pour la consultation, uniquement avec une stratégie de fraîcheur et sans masquer l’échec d’envoi d’une commande.
-5. Évaluer multi-sites et intégrations POS/exports ; les offres Enterprise visibles dans l’API ne démontrent pas à elles seules l’existence de ces intégrations.
+5. Valider le périmètre et le prix Enterprise avant d’y ajouter des fonctions multi-sites, POS ou exports.
 
 ## 9. Guide pour reprendre le projet
 
@@ -366,7 +389,7 @@ Le serveur Next de développement écoute sur le port 3000 (`0.0.0.0`). Commande
 | Migration Prisma locale | `yarn db:migrate` | Exécute `prisma migrate dev`; nécessite PostgreSQL et un schéma/migrations cohérents. |
 | Synchronisation schéma | `yarn db:push` | `prisma db push`, sans créer de migration versionnée. |
 | Interface Prisma Studio | `yarn db:studio` | Nécessite une connexion DB. |
-| Tests | `yarn test` | Vitest; couvre actuellement le rate limiter et deux scénarios d’isolation d’API avec Prisma mocké. |
+| Tests | `yarn test` | Vitest; couvre notamment commandes, analytics/périodes/CSV, notifications, avis, SSE et plusieurs routes Prisma mockées. |
 
 ### Variables d’environnement
 
@@ -391,7 +414,7 @@ Ces trois noms sont les entrées déclarées dans `.env.example`; leurs valeurs 
 - Garder les statuts partagés cohérents entre enums Prisma, `src/types/index.ts`, Kanban dashboard et timeline de suivi.
 - Les helpers d’authentification/permissions sont sous `src/lib/auth/`; les erreurs Zod/Prisma sont traitées dans `src/lib/api/validation.ts`, et le rate limit est dans `src/lib/rate-limit.ts`.
 - Les quotas de rate limit ne sont pas distribués; avant le déploiement multi-instance, choisir une solution partagée et confirmer que le proxy écrase les en-têtes IP entrants.
-- Les routes de suivi acceptent les codes historiques `QR-####` et les nouveaux codes hexadécimaux de 12 caractères. Seul le panier est stocké localement; il reste un cache non fiable, et le serveur revalide le catalogue et les prix lors de la commande.
+- Les routes de suivi acceptent les codes historiques `QR-####` et les nouveaux codes `QR-` + 8 caractères sans caractères ambigus. Seul le panier est stocké localement; il reste un cache non fiable, et le serveur revalide le catalogue et les prix lors de la commande.
 - Ne pas supposer que la création d’un `TeamMember` crée aussi un compte de connexion; cette relation doit être implémentée/confirmée avant de donner l’accès dashboard à un nouveau membre.
 - Éviter d’éditer `generated/prisma/` à la main. Modifier `prisma/schema.prisma`, créer une migration avec la procédure choisie, puis régénérer le client.
 - Les paramètres d’ouverture historiques peuvent être un texte libre ou un JSON par jour ; `SettingsTab` contient une logique de conversion et peut refuser les formats inconnus.

@@ -19,7 +19,7 @@ const NAV_ITEMS: { id: SettingsSection; label: string; icon: React.FC<{ classNam
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTabChange }) => {
   return (
-    <div className="lg:col-span-3 bg-white p-3 rounded-3xl border border-stone-200/80 shadow-xs space-y-1">
+    <div className="lg:col-span-3 bg-paper-white p-3 rounded-3xl border border-ink-200/80 shadow-xs space-y-1">
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;
@@ -29,11 +29,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTabChange }
             onClick={() => onTabChange(item.id)}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
               isActive
-                ? 'bg-stone-950 text-amber-400 shadow-sm'
-                : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+                ? 'bg-ink-950 text-brand-400 shadow-sm'
+                : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900'
             }`}
           >
-            <Icon className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-stone-400'}`} />
+            <Icon className={`w-4 h-4 ${isActive ? 'text-brand-400' : 'text-ink-400'}`} />
             <span>{item.label}</span>
           </button>
         );

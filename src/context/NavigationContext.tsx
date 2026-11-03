@@ -7,7 +7,7 @@ import { useAuth } from './AuthContext';
 export type DashboardTab =
   | 'overview' | 'orders' | 'menu' | 'categories' | 'dishes'
   | 'tables' | 'qrcodes' | 'restaurant' | 'analytics' | 'team'
-  | 'subscription' | 'settings';
+  | 'subscription' | 'settings' | 'coupons' | 'reviews' | 'inventory';
 
 export type AppView =
   | 'landing' | 'restaurants' | 'restaurant-detail' | 'dish-detail'

@@ -18,6 +18,9 @@ export interface RestaurantSettingsData {
   address: string;
   currency: string;
   description: string;
+  logo: string;
+  coverImage: string;
+  primaryColor: string;
   enableQrOrders: boolean;
   enableSoundAlerts: boolean;
   notificationEmail: string;

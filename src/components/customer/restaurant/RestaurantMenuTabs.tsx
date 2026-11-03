@@ -15,15 +15,15 @@ export const RestaurantMenuTabs: React.FC<RestaurantMenuTabsProps> = ({
   setActiveCategoryId,
 }) => {
   return (
-    <div className="sticky top-16 md:top-20 z-30 bg-[#fbf9f5]/95 backdrop-blur-md border-b border-stone-200/80 py-3.5 px-4 shadow-xs">
+    <div className="sticky top-16 md:top-20 z-30 bg-surface-warm/95 backdrop-blur-md border-b border-ink-200/80 py-3.5 px-4 shadow-xs">
       <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
         <button
           type="button"
           onClick={() => setActiveCategoryId('all')}
           className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
             activeCategoryId === 'all'
-              ? 'bg-stone-950 text-white shadow-xs'
-              : 'bg-white hover:bg-stone-100 text-stone-700 border border-stone-200/70'
+              ? 'bg-ink-950 text-paper-white shadow-xs'
+              : 'bg-paper-white hover:bg-ink-100 text-ink-700 border border-ink-200/70'
           }`}
         >
           Tous les plats ({dishes.length})
@@ -38,12 +38,12 @@ export const RestaurantMenuTabs: React.FC<RestaurantMenuTabsProps> = ({
               onClick={() => setActiveCategoryId(cat.id)}
               className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeCategoryId === cat.id
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-white hover:bg-stone-100 text-stone-700 border border-stone-200/70'
+                  ? 'restaurant-primary-button bg-brand-600 text-paper-white shadow-xs'
+                  : 'bg-paper-white hover:bg-ink-100 text-ink-700 border border-ink-200/70'
               }`}
             >
               <span>{cat.name}</span>
-              <span className="text-[10px] opacity-75 font-normal">({count})</span>
+              <span className="text-[0.625rem] opacity-75 font-normal">({count})</span>
             </button>
           );
         })}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   UtensilsCrossed,
@@ -22,6 +22,8 @@ import { DishSearchBar } from './DishSearchBar';
 import { DishCard } from './DishCard';
 import { DishFormModal } from './DishFormModal';
 import { DeleteDishModal } from './DeleteDishModal';
+import { getApiErrorMessage, isApiSuccess } from '@/lib/api/client-error';
+import { DishSubmissionError, submitDish } from '@/lib/dishes/client';
 
 export const DishesTab: React.FC<DishesTabProps> = ({
   restaurantId,
@@ -32,6 +34,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
   const [dishesList, setDishesList] = useState<DishData[]>(initialDishes);
   const [categoriesList, setCategoriesList] = useState<CategoryOption[]>(initialCategories);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
 
@@ -48,6 +51,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
   });
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Suppression
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -61,35 +65,42 @@ export const DishesTab: React.FC<DishesTabProps> = ({
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      const dishesUrl = restaurantId ? `/api/dishes?restaurantId=${restaurantId}` : '/api/dishes';
+      const dishesUrl = restaurantId
+        ? `/api/dishes?restaurantId=${encodeURIComponent(restaurantId)}`
+        : '/api/dishes';
       const resDishes = await fetch(dishesUrl);
-      const dataDishes = await resDishes.json();
-      if (dataDishes.success) {
-        setDishesList(dataDishes.dishes || []);
+      const dataDishes: { success?: boolean; dishes?: DishData[]; error?: string } = await resDishes.json();
+      if (!resDishes.ok || !dataDishes.success || !dataDishes.dishes) {
+        throw new Error(dataDishes.error || 'Impossible de récupérer les plats.');
       }
+      setDishesList(dataDishes.dishes);
 
       if (initialCategories.length === 0) {
-        const catUrl = restaurantId ? `/api/categories?restaurantId=${restaurantId}` : '/api/categories';
+        const catUrl = restaurantId
+          ? `/api/categories?restaurantId=${encodeURIComponent(restaurantId)}`
+          : '/api/categories';
         const resCat = await fetch(catUrl);
-        const dataCat = await resCat.json();
-        if (dataCat.success) {
-          setCategoriesList(dataCat.categories || []);
+        const dataCat: { success?: boolean; categories?: CategoryOption[]; error?: string } = await resCat.json();
+        if (!resCat.ok || !dataCat.success || !dataCat.categories) {
+          throw new Error(dataCat.error || 'Impossible de récupérer les catégories.');
         }
+        setCategoriesList(dataCat.categories);
       }
-    } catch (err) {
-      console.error('Erreur chargement plats:', err);
+      setLoadError(null);
+    } catch (err: unknown) {
+      setLoadError(err instanceof Error ? err.message : 'Erreur lors du chargement des plats.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [initialCategories.length, restaurantId]);
 
   useEffect(() => {
-    fetchData();
-  }, [restaurantId]);
+    void fetchData();
+  }, [fetchData]);
 
   const filteredDishes = useMemo(() => {
     return dishesList.filter((dish) => {
@@ -126,21 +137,24 @@ export const DishesTab: React.FC<DishesTabProps> = ({
         body: JSON.stringify({ id: dish.id, isAvailable: newStatus }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
+      const data: unknown = await res.json();
+      if (!res.ok || !isApiSuccess(data)) {
         // Rollback
         setDishesList((prev) =>
           prev.map((d) => (d.id === dish.id ? { ...d, isAvailable: dish.isAvailable } : d))
         );
-        showNotice('error', 'Échec du changement de disponibilité.');
+        showNotice('error', getApiErrorMessage(data, 'Échec du changement de disponibilité.'));
       } else {
         showNotice(
           'success',
           `Plat ${newStatus ? 'rendu disponible' : 'marqué comme indisponible'}.`
         );
       }
-    } catch (err) {
-      console.error('Erreur bascule disponibilité:', err);
+    } catch (err: unknown) {
+      setDishesList((prev) =>
+        prev.map((item) => (item.id === dish.id ? { ...item, isAvailable: dish.isAvailable } : item))
+      );
+      showNotice('error', err instanceof Error ? err.message : 'Échec du changement de disponibilité.');
     }
   };
 
@@ -155,6 +169,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
       isAvailable: true,
     });
     setFormError(null);
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
@@ -169,6 +184,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
       isAvailable: dish.isAvailable,
     });
     setFormError(null);
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
@@ -177,48 +193,47 @@ export const DishesTab: React.FC<DishesTabProps> = ({
 
     if (!formData.name.trim()) {
       setFormError('Le nom du plat est obligatoire.');
+      setFieldErrors({ name: 'Le nom du plat est obligatoire.' });
       return;
     }
     if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) < 0) {
       setFormError('Veuillez saisir un prix valide.');
+      setFieldErrors({ price: 'Veuillez saisir un prix valide.' });
       return;
     }
     if (!formData.categoryId) {
       setFormError('Veuillez sélectionner une catégorie.');
+      setFieldErrors({ categoryId: 'Veuillez sélectionner une catégorie.' });
       return;
     }
     if (!formData.imageUrl || !formData.imageUrl.trim()) {
-      setFormError('L\'image du plat est obligatoire (fichier ou URL).');
+      setFormError('L’image du plat est obligatoire (fichier ou URL).');
+      setFieldErrors({ imageUrl: 'Une URL valide ou une image téléversée est requise.' });
       return;
     }
 
     try {
       setIsSubmitting(true);
       setFormError(null);
+      setFieldErrors({});
 
-      const method = editingDish ? 'PUT' : 'POST';
       const payload = editingDish
         ? { id: editingDish.id, ...formData, price: Number(formData.price) }
         : { ...formData, price: Number(formData.price), restaurantId: restaurantId || '' };
 
-      const res = await fetch('/api/dishes', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de la sauvegarde.');
-      }
+      await submitDish(payload, editingDish?.id);
 
       showNotice('success', editingDish ? 'Plat mis à jour !' : 'Nouveau plat ajouté au menu !');
       setIsModalOpen(false);
       fetchData();
       if (onRefreshNeeded) onRefreshNeeded();
     } catch (err: unknown) {
-      setFormError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.');
+      if (err instanceof DishSubmissionError) {
+        setFieldErrors(err.fieldErrors);
+        setFormError(Object.keys(err.fieldErrors).length ? null : err.message);
+      } else {
+        setFormError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -231,10 +246,10 @@ export const DishesTab: React.FC<DishesTabProps> = ({
         method: 'DELETE',
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de la suppression.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Erreur lors de la suppression.'));
       }
 
       showNotice('success', 'Plat supprimé du menu.');
@@ -258,27 +273,36 @@ export const DishesTab: React.FC<DishesTabProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className={`p-4 rounded-2xl flex items-center justify-between border text-xs sm:text-sm font-bold shadow-lg ${actionNotice.type === 'success'
-              ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-              : 'bg-rose-50 text-rose-900 border-rose-200'
+              ? 'bg-positive-50 text-positive-900 border-positive-200'
+              : 'bg-alert-50 text-alert-900 border-alert-200'
               }`}
           >
             <div className="flex items-center gap-2">
               {actionNotice.type === 'success' ? (
-                <Check className="w-5 h-5 text-emerald-600" />
+                <Check className="w-5 h-5 text-positive-600" />
               ) : (
-                <AlertTriangle className="w-5 h-5 text-rose-600" />
+                <AlertTriangle className="w-5 h-5 text-alert-600" />
               )}
               <span>{actionNotice.msg}</span>
             </div>
             <button
               onClick={() => setActionNotice(null)}
-              className="text-stone-400 hover:text-stone-700 p-1 cursor-pointer"
+              className="text-ink-400 hover:text-ink-700 p-1 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {loadError && (
+        <div role="alert" className="rounded-2xl border border-negative-200 bg-negative-50 p-5 text-sm text-negative-800">
+          <p>{loadError}</p>
+          <button type="button" onClick={() => void fetchData()} className="mt-3 font-bold underline">
+            Réessayer
+          </button>
+        </div>
+      )}
 
       <DishesHeader stats={stats} onOpenCreateModal={handleOpenCreateModal} />
 
@@ -294,8 +318,8 @@ export const DishesTab: React.FC<DishesTabProps> = ({
 
       {/* Grille des Plats */}
       {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center text-stone-400 bg-white rounded-3xl border border-stone-200/80">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-3" />
+        <div className="py-20 flex flex-col items-center justify-center text-ink-400 bg-paper-white rounded-3xl border border-ink-200/80">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-3" />
           <span className="text-xs font-semibold">Chargement du menu...</span>
         </div>
       ) : filteredDishes.length > 0 ? (
@@ -311,16 +335,16 @@ export const DishesTab: React.FC<DishesTabProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-3xl p-12 text-center border border-stone-200/80 max-w-lg mx-auto my-8">
-          <div className="w-14 h-14 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-4">
+        <div className="bg-paper-white rounded-3xl p-12 text-center border border-ink-200/80 max-w-lg mx-auto my-8">
+          <div className="w-14 h-14 rounded-full bg-brand-500/10 text-brand-600 flex items-center justify-center mx-auto mb-4">
             <UtensilsCrossed className="w-7 h-7" />
           </div>
-          <h3 className="text-lg font-bold text-stone-900">
+          <h3 className="text-lg font-bold text-ink-900">
             {searchQuery || selectedCategoryFilter !== 'all'
               ? 'Aucun plat correspondant'
               : 'Votre menu est encore vide'}
           </h3>
-          <p className="text-xs text-stone-500 mt-1 mb-6 leading-relaxed font-normal">
+          <p className="text-xs text-ink-500 mt-1 mb-6 leading-relaxed font-normal">
             {searchQuery || selectedCategoryFilter !== 'all'
               ? 'Ajustez vos filtres de recherche pour afficher vos plats.'
               : 'Commencez par ajouter les spécialités de votre restaurant pour régaler vos clients.'}
@@ -328,7 +352,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
 
           <button
             onClick={handleOpenCreateModal}
-            className="px-5 py-3 rounded-2xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-xs inline-flex items-center gap-2 shadow-md transition-all cursor-pointer"
+            className="px-5 py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-ink-950 font-bold text-xs inline-flex items-center gap-2 shadow-md transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Ajouter mon premier plat</span>
@@ -338,6 +362,7 @@ export const DishesTab: React.FC<DishesTabProps> = ({
 
       {/* Modales */}
       <DishFormModal
+        key={`${isModalOpen ? 'open' : 'closed'}-${editingDish?.id ?? 'new'}`}
         isOpen={isModalOpen}
         editingDish={editingDish}
         formData={formData}
@@ -347,6 +372,12 @@ export const DishesTab: React.FC<DishesTabProps> = ({
         onClose={() => setIsModalOpen(false)}
         isSubmitting={isSubmitting}
         formError={formError}
+        fieldErrors={fieldErrors}
+        onClearFieldError={(field) => setFieldErrors((current) => {
+          const next = { ...current };
+          delete next[field];
+          return next;
+        })}
       />
 
       <DeleteDishModal

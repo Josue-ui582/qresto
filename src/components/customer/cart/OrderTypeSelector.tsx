@@ -1,4 +1,4 @@
-import { FaIcon } from '@/components/common/Icon';
+import { Icon } from '@/components/common/Icon';
 import { OrderType } from '@/types';
 import React from 'react';
 
@@ -9,9 +9,9 @@ interface OrderTypeOption {
 }
 
 const ORDER_TYPES: OrderTypeOption[] = [
-  { id: 'DINE_IN', label: 'Sur place (Table)', icon: 'fa-solid fa-utensils' },
-  { id: 'DELIVERY', label: 'Livraison', icon: 'fa-solid fa-motorcycle' },
-  { id: 'PICKUP', label: 'À emporter', icon: 'fa-solid fa-bag-shopping' },
+  { id: 'DINE_IN', label: 'Sur place (Table)', icon: 'utensils' },
+  { id: 'DELIVERY', label: 'Livraison', icon: 'motorcycle' },
+  { id: 'PICKUP', label: 'À emporter', icon: 'bag-shopping' },
 ];
 
 interface OrderTypeSelectorProps {
@@ -29,7 +29,7 @@ export const OrderTypeSelector: React.FC<OrderTypeSelectorProps> = ({
 }) => (
   <div className="space-y-4">
     <div>
-      <label className="form-label" style={{ marginBottom: '0.75rem' }}>
+      <label className="form-label form-label-spaced">
         1. Mode de consommation
       </label>
       <div className="grid grid-cols-3 gap-2.5">
@@ -41,12 +41,12 @@ export const OrderTypeSelector: React.FC<OrderTypeSelectorProps> = ({
             className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
               orderType === mode.id
                 ? 'border-brand bg-primary-soft text-brand font-bold shadow-sm'
-                : 'border-soft hover:border-stone-300 text-muted bg-surface-alt'
+                : 'border-soft hover:border-ink-300 text-muted bg-surface-alt'
             }`}
           >
-            <FaIcon
+            <Icon
               name={mode.icon}
-              className={`text-base ${orderType === mode.id ? 'text-amber-600' : 'text-stone-400'}`}
+              className={`text-base ${orderType === mode.id ? 'text-brand-600' : 'text-ink-400'}`}
             />
             <span className="text-xs">{mode.label}</span>
           </button>
@@ -65,7 +65,7 @@ export const OrderTypeSelector: React.FC<OrderTypeSelectorProps> = ({
           placeholder="Ex: 4, Table VIP, Pergola 2..."
           value={tableNumber}
           onChange={(e) => setTableNumber(e.target.value)}
-          className="input-field bg-white"
+          className="input-field bg-paper-white"
         />
       </div>
     )}

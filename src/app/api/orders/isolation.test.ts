@@ -3,11 +3,14 @@ import { NextRequest } from 'next/server';
 
 const { mockPrisma, mockAuthorizeRequest } = vi.hoisted(() => ({
   mockPrisma: {
+    $transaction: vi.fn(),
     order: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
-      update: vi.fn(),
+      updateMany: vi.fn(),
+      findUnique: vi.fn(),
     },
+    orderStatusHistory: { create: vi.fn() },
   },
   mockAuthorizeRequest: vi.fn(),
 }));
@@ -37,6 +40,9 @@ describe('order API tenant isolation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuthorizeRequest.mockResolvedValue({ session: restaurantSession });
+    mockPrisma.$transaction.mockImplementation(
+      (callback: (transaction: typeof mockPrisma) => Promise<unknown>) => callback(mockPrisma)
+    );
   });
 
   it('only queries orders belonging to the authenticated restaurant', async () => {
@@ -83,6 +89,6 @@ describe('order API tenant isolation', () => {
         }),
       })
     );
-    expect(mockPrisma.order.update).not.toHaveBeenCalled();
+    expect(mockPrisma.order.updateMany).not.toHaveBeenCalled();
   });
 });

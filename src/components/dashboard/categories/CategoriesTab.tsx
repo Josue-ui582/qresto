@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, UtensilsCrossed, FolderPlus, Check, AlertTriangle, X } from 'lucide-react';
 import { CategoryData, CategoryFormData, CategoriesTabProps, ActionNoticeState } from './types';
@@ -9,6 +9,7 @@ import { CategorySearchBar } from './CategorySearchBar';
 import { CategoryCard } from './CategoryCard';
 import { CategoryFormModal } from './CategoryFormModal';
 import { DeleteCategoryModal } from './DeleteCategoryModal';
+import { getApiErrorMessage, isApiSuccess } from '@/lib/api/client-error';
 
 export const CategoriesTab: React.FC<CategoriesTabProps> = ({
   restaurantId,
@@ -17,6 +18,7 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
 }) => {
   const [categoriesList, setCategoriesList] = useState<CategoryData[]>(initialCategories);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // États du Formulaire
@@ -35,27 +37,29 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [actionNotice, setActionNotice] = useState<ActionNoticeState | null>(null);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setIsLoading(true);
       const url = restaurantId
-        ? `/api/categories?restaurantId=${restaurantId}`
+        ? `/api/categories?restaurantId=${encodeURIComponent(restaurantId)}`
         : '/api/categories';
       const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setCategoriesList(data.categories || []);
+      const data: { success?: boolean; categories?: CategoryData[]; error?: string } = await res.json();
+      if (!res.ok || !data.success || !data.categories) {
+        throw new Error(data.error || 'Impossible de récupérer les catégories.');
       }
-    } catch (err) {
-      console.error('Erreur chargement catégories:', err);
+      setCategoriesList(data.categories);
+      setLoadError(null);
+    } catch (err: unknown) {
+      setLoadError(err instanceof Error ? err.message : 'Erreur lors du chargement des catégories.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [restaurantId]);
 
   useEffect(() => {
-    fetchCategories();
-  }, [restaurantId]);
+    void fetchCategories();
+  }, [fetchCategories]);
 
   const showNotice = (type: 'success' | 'error', msg: string) => {
     setActionNotice({ type, msg });
@@ -119,10 +123,10 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Une erreur est survenue.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Une erreur est survenue.'));
       }
 
       showNotice(
@@ -146,10 +150,10 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
         method: 'DELETE',
       });
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de la suppression.');
+      if (!res.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data, 'Erreur lors de la suppression.'));
       }
 
       showNotice('success', 'Catégorie supprimée avec succès.');
@@ -176,21 +180,21 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className={`p-4 rounded-2xl flex items-center justify-between border text-xs sm:text-sm font-bold shadow-lg ${actionNotice.type === 'success'
-                ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                : 'bg-rose-50 text-rose-900 border-rose-200'
+                ? 'bg-positive-50 text-positive-900 border-positive-200'
+                : 'bg-alert-50 text-alert-900 border-alert-200'
               }`}
           >
             <div className="flex items-center gap-2">
               {actionNotice.type === 'success' ? (
-                <Check className="w-5 h-5 text-emerald-600" />
+                <Check className="w-5 h-5 text-positive-600" />
               ) : (
-                <AlertTriangle className="w-5 h-5 text-rose-600" />
+                <AlertTriangle className="w-5 h-5 text-alert-600" />
               )}
               <span>{actionNotice.msg}</span>
             </div>
             <button
               onClick={() => setActionNotice(null)}
-              className="text-stone-400 hover:text-stone-700 p-1"
+              className="text-ink-400 hover:text-ink-700 p-1"
             >
               <X className="w-4 h-4" />
             </button>
@@ -212,9 +216,16 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
       />
 
       {/* Grille des Catégories */}
-      {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center text-stone-400 bg-white rounded-3xl border border-stone-200/80">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-3" />
+      {loadError ? (
+        <div role="alert" className="rounded-2xl border border-negative-200 bg-negative-50 p-5 text-sm text-negative-800">
+          <p>{loadError}</p>
+          <button type="button" onClick={() => void fetchCategories()} className="mt-3 font-bold underline">
+            Réessayer
+          </button>
+        </div>
+      ) : isLoading ? (
+        <div className="py-20 flex flex-col items-center justify-center text-ink-400 bg-paper-white rounded-3xl border border-ink-200/80">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-3" />
           <span className="text-xs font-semibold">Chargement des catégories depuis la BDD...</span>
         </div>
       ) : filteredCategories.length > 0 ? (
@@ -229,14 +240,14 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-3xl p-12 text-center border border-stone-200/80 max-w-lg mx-auto my-8">
-          <div className="w-14 h-14 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-4">
+        <div className="bg-paper-white rounded-3xl p-12 text-center border border-ink-200/80 max-w-lg mx-auto my-8">
+          <div className="w-14 h-14 rounded-full bg-brand-500/10 text-brand-600 flex items-center justify-center mx-auto mb-4">
             <UtensilsCrossed className="w-7 h-7" />
           </div>
-          <h3 className="text-lg font-bold text-stone-900">
+          <h3 className="text-lg font-bold text-ink-900">
             {searchQuery ? 'Aucun résultat trouvé' : 'Aucune catégorie disponible'}
           </h3>
-          <p className="text-xs text-stone-500 mt-1 mb-6 leading-relaxed font-normal">
+          <p className="text-xs text-ink-500 mt-1 mb-6 leading-relaxed font-normal">
             {searchQuery
               ? `Aucune catégorie ne correspond à "${searchQuery}". Essayez d'autres mots-clés.`
               : 'Commencez par ajouter votre première catégorie (ex: Entrées, Plats principaux, Boissons) pour structurer votre menu.'}
@@ -245,7 +256,7 @@ export const CategoriesTab: React.FC<CategoriesTabProps> = ({
           {!searchQuery && (
             <button
               onClick={handleOpenCreateModal}
-              className="px-5 py-3 rounded-2xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-xs inline-flex items-center gap-2 shadow-md transition-all cursor-pointer"
+              className="px-5 py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-ink-950 font-bold text-xs inline-flex items-center gap-2 shadow-md transition-all cursor-pointer"
             >
               <FolderPlus className="w-4 h-4" />
               <span>Créer ma première catégorie</span>

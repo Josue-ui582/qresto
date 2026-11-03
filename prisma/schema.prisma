@@ -49,6 +49,12 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum InventoryMovementType {
+  RESTOCK
+  ADJUSTMENT
+  ORDER
+}
+
 enum PaymentMethod {
   CASH_ON_DELIVERY
   MTN_MOMO
@@ -110,6 +116,7 @@ model Restaurant {
   subscription Subscription?
   logo         String?
   coverImage   String?
+  primaryColor String?
   openingHours String?
   isOpen       Boolean  @default(true)
   currency     String   @default("FCFA")
@@ -232,10 +239,13 @@ model Dish {
   isSpecialty        Boolean           @default(false)
   has3DModel         Boolean           @default(false)
   model3DType        Model3DType?
+  stockQuantity     Int?
+  lowStockThreshold Int?
   createdAt          DateTime          @default(now())
 
   optionGroups DishOptionGroup[]
   reviews      Review[]
+  inventoryMovements InventoryMovement[]
 
   @@unique([restaurantId, slug])
   @@index([restaurantId])
@@ -295,9 +305,12 @@ model Order {
   subtotal        Int
   deliveryFee     Int           @default(0)
   total           Int
+  couponDiscount  Int           @default(0)
   status          OrderStatus   @default(NEW)
   customerName    String
   customerPhone   String
+  customerWhatsapp String?
+  whatsappConsent Boolean       @default(false)
   customerAddress String?
   customerNotes   String?
   couponCode      String?
@@ -308,6 +321,8 @@ model Order {
 
   items         OrderItem[]
   statusHistory OrderStatusHistory[]
+  review        Review?
+  inventoryMovements InventoryMovement[]
 
   @@index([restaurantId])
   @@map("orders")
@@ -329,6 +344,21 @@ model OrderItem {
   @@map("order_items")
 }
 
+model InventoryMovement {
+  id             String                @id @default(cuid())
+  dishId         String
+  dish           Dish                  @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  orderId        String?
+  order          Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  quantityChange Int
+  type           InventoryMovementType
+  createdAt      DateTime              @default(now())
+
+  @@index([dishId, createdAt])
+  @@index([orderId])
+  @@map("inventory_movements")
+}
+
 model OrderStatusHistory {
   id        String      @id @default(cuid())
   orderId   String
@@ -347,14 +377,20 @@ model Review {
   id           String     @id @default(cuid())
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderId      String?    @unique
+  order        Order?     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   dishId       String?
   dish         Dish?      @relation(fields: [dishId], references: [id], onDelete: Cascade)
-  customerName String
+  customerName String?
   rating       Int        @default(5)
   comment      String?
+  isApproved   Boolean    @default(false)
+  isVisible    Boolean    @default(true)
   createdAt    DateTime   @default(now())
 
-  @@index([restaurantId])
+  @@index([restaurantId, isApproved])
+  @@index([restaurantId, createdAt])
+  @@index([restaurantId, isVisible, createdAt])
   @@map("reviews")
 }
 
@@ -367,7 +403,10 @@ model Coupon {
   discount     Int        // Montant ou pourcentage
   isPercentage Boolean    @default(false)
   minOrder     Int        @default(0)
+  startsAt     DateTime?
   expiresAt    DateTime?
+  maxUses      Int?
+  usageCount   Int        @default(0)
   active       Boolean    @default(true)
   createdAt    DateTime   @default(now())
 
@@ -383,7 +422,7 @@ model SubscriptionHistory {
   restaurant   Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   plan         SubscriptionPlan
   amount       Int
-  status       String           @default("PAID") // PAID, PENDING, FAILED
+  status       String           @default("PENDING") // PAID, PENDING, FAILED
   paymentRef   String?
   startDate    DateTime         @default(now())
   endDate      DateTime
@@ -416,7 +455,7 @@ model Subscription {
   billingCycle BillingCycle       @default(MONTHLY)
   startDate    DateTime           @default(now())
   endDate      DateTime
-  autoRenew    Boolean            @default(true)
+  autoRenew    Boolean            @default(false)
 
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
@@ -433,7 +472,7 @@ model Invoice {
 
   amount         Int
   currency       String       @default("FCFA")
-  status         String       @default("PAID")
+  status         String       @default("PENDING")
   description    String
 
   createdAt      DateTime     @default(now())
@@ -486,4 +525,15 @@ model FAQItem {
 
   @@index([active, order])
   @@map("faq_items")
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  contact   String
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("contact_messages")
 }

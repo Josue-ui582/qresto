@@ -1,3 +1,5 @@
+import type { PlanId } from '@/lib/subscription/catalog';
+
 export type UserRole = 'SUPER_ADMIN' | 'RESTAURANT_OWNER' | 'RESTAURANT_STAFF' | 'DELIVERY_PARTNER';
 
 export interface User {
@@ -12,7 +14,7 @@ export interface User {
   createdAt: string;
 }
 
-export type SubscriptionPlan = 'FREE' | 'STARTER_5000' | 'PRO_8000';
+export type SubscriptionPlan = PlanId;
 
 export interface RestaurantSettings {
   soundNotifications: boolean;
@@ -37,6 +39,7 @@ export interface Restaurant {
   email: string;
   logo: string;
   coverImage: string;
+  primaryColor?: string | null;
   openingHours: string;
   isOpen: boolean;
   currency: string; // "FCFA"
@@ -80,7 +83,22 @@ export interface Dish {
   isSpecialty?: boolean;
   has3DModel?: boolean;
   model3DType?: 'poulet_braise' | 'poisson_grille' | 'igname_pile' | 'burger' | 'alloco' | 'cocktail';
+  optionGroups?: DishOptionGroup[];
   createdAt: string;
+}
+
+export interface DishOptionGroup {
+  id: string;
+  name: string;
+  isRequired: boolean;
+  minSelection: number;
+  maxSelection: number;
+  options: Array<{
+    id: string;
+    name: string;
+    price: number;
+    available: boolean;
+  }>;
 }
 
 export interface RestaurantTable {
@@ -146,7 +164,11 @@ export interface Order {
 export interface TrackedOrder {
   trackingCode: string;
   restaurantName: string;
+  customerName?: string;
+  restaurantPhone?: string | null;
+  currency: string;
   status: OrderStatus;
+  hasReview: boolean;
   items: Array<Pick<OrderItem, 'name' | 'price' | 'quantity'>>;
   total: number;
   statusHistory: Array<{

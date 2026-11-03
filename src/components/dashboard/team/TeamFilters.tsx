@@ -25,15 +25,15 @@ export const TeamFilters: React.FC<TeamFiltersProps> = ({
   onRoleFilterChange,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-stone-200/80">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-paper-white p-4 rounded-2xl border border-ink-200/80">
       <div className="relative flex-1 w-full">
-        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Rechercher par nom, email ou téléphone..."
-          className="w-full pl-10 pr-4 py-2 bg-stone-50 text-stone-900 placeholder-stone-400 rounded-xl border border-stone-200 text-xs sm:text-sm font-medium focus:outline-none focus:border-amber-500 focus:bg-white transition-all"
+          className="w-full pl-10 pr-4 py-2 bg-ink-50 text-ink-900 placeholder-ink-400 rounded-xl border border-ink-200 text-xs sm:text-sm font-medium focus:outline-none focus:border-brand-500 focus:bg-paper-white transition-all"
         />
       </div>
 
@@ -44,8 +44,8 @@ export const TeamFilters: React.FC<TeamFiltersProps> = ({
             onClick={() => onRoleFilterChange(item.id)}
             className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
               roleFilter === item.id
-                ? 'bg-stone-900 text-white'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                ? 'bg-ink-900 text-paper-white'
+                : 'bg-ink-100 text-ink-600 hover:bg-ink-200'
             }`}
           >
             {item.label}

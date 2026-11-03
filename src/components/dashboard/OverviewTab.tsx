@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FaIcon } from '../common/Icon';
+import { Icon } from '../common/Icon';
 import { Order } from '@/types';
 
 export interface OverviewTabProps {
@@ -121,8 +121,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <p className="text-xs font-medium text-muted">Chiffre d'affaires</p>
             <h3 className="text-2xl font-black text-text mt-1">{totalRevenue.toLocaleString()} F</h3>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg shrink-0">
-            <FaIcon name="fa-solid fa-wallet" />
+          <div className="w-11 h-11 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg shrink-0">
+            <Icon name="wallet" />
           </div>
         </div>
 
@@ -131,8 +131,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <p className="text-xs font-medium text-muted">Commandes</p>
             <h3 className="text-2xl font-black text-text mt-1">{totalOrdersCount}</h3>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg shrink-0">
-            <FaIcon name="fa-solid fa-bag-shopping" />
+          <div className="w-11 h-11 rounded-2xl bg-info-50 text-info-600 flex items-center justify-center text-lg shrink-0">
+            <Icon name="bag-shopping" />
           </div>
         </div>
 
@@ -141,8 +141,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <p className="text-xs font-medium text-muted">Panier moyen</p>
             <h3 className="text-2xl font-black text-text mt-1">{averageOrderValue.toLocaleString()} F</h3>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0">
-            <FaIcon name="fa-solid fa-arrow-trend-up" />
+          <div className="w-11 h-11 rounded-2xl bg-positive-50 text-positive-600 flex items-center justify-center text-lg shrink-0">
+            <Icon name="arrow-trend-up" />
           </div>
         </div>
 
@@ -151,8 +151,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <p className="text-xs font-medium text-muted">Clients</p>
             <h3 className="text-2xl font-black text-text mt-1">{totalClientsCount}</h3>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center text-lg shrink-0">
-            <FaIcon name="fa-solid fa-users" />
+          <div className="w-11 h-11 rounded-2xl bg-violet-accent-50 text-violet-accent-600 flex items-center justify-center text-lg shrink-0">
+            <Icon name="users" />
           </div>
         </div>
       </div>
@@ -166,13 +166,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               <h3 className="text-sm font-bold text-text">Ventes sur 7 jours</h3>
               <p className="text-xs text-muted">Chiffre d'affaires récent</p>
             </div>
-            <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">
+            <span className="text-xs font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded-lg">
               {last7DaysData.reduce((acc, d) => acc + d.revenue, 0).toLocaleString()} F
             </span>
           </div>
 
           <div className="relative h-56 w-full flex items-end">
-            <div className="h-full flex flex-col justify-between text-[11px] text-stone-400 pr-3 pb-6">
+            <div className="h-full flex flex-col justify-between text-[0.6875rem] text-ink-400 pr-3 pb-6">
               <span>{max7DaysRev.toLocaleString()} F</span>
               <span>{Math.round(max7DaysRev * 0.75).toLocaleString()} F</span>
               <span>{Math.round(max7DaysRev * 0.5).toLocaleString()} F</span>
@@ -181,11 +181,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
 
             <div className="flex-1 h-full relative flex flex-col justify-between">
-              <div className="w-full border-b border-stone-100 h-0" />
-              <div className="w-full border-b border-stone-100 h-0" />
-              <div className="w-full border-b border-stone-100 h-0" />
-              <div className="w-full border-b border-stone-100 h-0" />
-              <div className="w-full border-b border-stone-200 h-0" />
+              <div className="w-full border-b border-ink-100 h-0" />
+              <div className="w-full border-b border-ink-100 h-0" />
+              <div className="w-full border-b border-ink-100 h-0" />
+              <div className="w-full border-b border-ink-100 h-0" />
+              <div className="w-full border-b border-ink-200 h-0" />
 
               <svg
                 className="absolute inset-0 w-full h-full pb-6 overflow-visible pointer-events-none"
@@ -194,8 +194,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               >
                 <defs>
                   <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor="var(--color-brand-500)" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="var(--color-brand-500)" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
 
@@ -207,14 +207,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 <path
                   d={svgPathD}
                   fill="none"
-                  stroke="#f59e0b"
+                  stroke="var(--color-brand-500)"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   className="transition-all duration-700"
                 />
               </svg>
 
-              <div className="flex justify-between text-[11px] text-stone-500 pt-2 border-t border-transparent font-medium">
+              <div className="flex justify-between text-[0.6875rem] text-ink-500 pt-2 border-t border-transparent font-medium">
                 {last7DaysData.map((d, i) => (
                   <span key={i}>{d.label}</span>
                 ))}
@@ -234,29 +234,29 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
           <div className="relative h-56 w-full flex items-end">
             <div className="flex-1 h-full flex flex-col justify-between">
-              <div className="w-full border-b border-stone-100 h-0" />
-              <div className="w-full border-b border-stone-100 h-0" />
-              <div className="w-full border-b border-stone-100 h-0" />
-              <div className="w-full border-b border-stone-100 h-0" />
-              <div className="w-full border-b border-stone-200 h-0" />
+              <div className="w-full border-b border-ink-100 h-0" />
+              <div className="w-full border-b border-ink-100 h-0" />
+              <div className="w-full border-b border-ink-100 h-0" />
+              <div className="w-full border-b border-ink-100 h-0" />
+              <div className="w-full border-b border-ink-200 h-0" />
 
               <div className="absolute inset-0 pb-6 flex items-end justify-between gap-1">
                 {hourlyData.map((b, idx) => (
                   <div key={idx} className="flex-1 flex flex-col items-center group relative h-full justify-end">
                     {/* Tooltip au survol */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-7 bg-stone-900 text-white text-[10px] py-0.5 px-1.5 rounded pointer-events-none whitespace-nowrap z-10">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-7 bg-ink-900 text-paper-white text-[0.625rem] py-0.5 px-1.5 rounded pointer-events-none whitespace-nowrap z-10">
                       {b.count} cmd
                     </div>
 
                     <div
                       style={{ height: `${Math.max(b.percent, 4)}%` }}
-                      className="w-full max-w-3.5 bg-amber-400/80 group-hover:bg-amber-500 rounded-t-sm transition-all duration-500"
+                      className="w-full max-w-3.5 bg-brand-400/80 group-hover:bg-brand-500 rounded-t-sm transition-all duration-500"
                     />
                   </div>
                 ))}
               </div>
 
-              <div className="flex justify-between text-[10px] text-stone-400 pt-2 font-medium">
+              <div className="flex justify-between text-[0.625rem] text-ink-400 pt-2 font-medium">
                 {hourlyData.map((b) => (
                   <span key={b.hour}>{b.hour}</span>
                 ))}

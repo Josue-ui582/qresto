@@ -7,10 +7,13 @@ import React, { useState, useEffect } from 'react';
 import { OrderTrackingSearch } from './OrderTrackingSearch';
 import { OrderTrackingTimeline } from './OrderTrackingTimeline';
 import { OrderTrackingSummary } from './OrderTrackingSummary';
-import { FaIcon } from '@/components/common/Icon';
+import { OrderReviewForm } from './OrderReviewForm';
+import { Icon } from '@/components/common/Icon';
+import { useSearchParams } from 'next/navigation';
 
 export const OrderTrackingPage: React.FC = () => {
   const { viewParams } = useNavigation();
+  const searchParams = useSearchParams();
   const {
     trackingCodeInput,
     searchTrackedOrder,
@@ -18,54 +21,93 @@ export const OrderTrackingPage: React.FC = () => {
     refreshTrackedOrder,
   } = useOrder();
 
+  const requestedTrackingCode =
+    searchParams.get('code') ||
+    searchParams.get('trackingCode') ||
+    (viewParams.trackingCode as string) ||
+    trackingCodeInput ||
+    '';
   const [searchInput, setSearchInput] = useState<string>(
-    (viewParams.trackingCode as string) || trackingCodeInput || ''
+    requestedTrackingCode
   );
   const [currentOrder, setCurrentOrder] = useState<TrackedOrder | null>(trackedOrder);
-  const [autoRefresh] = useState<boolean>(true);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
-  // 1. Recherche initiale (si un code est dans l'URL ou le contexte)
   useEffect(() => {
-    const code = (viewParams.trackingCode as string) || trackingCodeInput;
-    if (code && !currentOrder) {
-      // searchTrackedOrder interroge maintenant l'API (PostgreSQL)
-      searchTrackedOrder(code).then((found) => {
-        if (found) setCurrentOrder(found);
+    if (requestedTrackingCode) setSearchInput(requestedTrackingCode);
+  }, [requestedTrackingCode]);
+
+  useEffect(() => {
+    if (requestedTrackingCode) {
+      searchTrackedOrder(requestedTrackingCode).then((found) => {
+        if (found) {
+          setCurrentOrder(found);
+          setSearchError(null);
+        } else {
+          setSearchError('Aucune commande ne correspond à ce code. Vérifiez-le puis réessayez.');
+        }
       });
     }
-  }, [viewParams.trackingCode, trackingCodeInput]);
+  }, [requestedTrackingCode, searchTrackedOrder]);
 
-  // 2. Polling : Actualisation silencieuse en arrière-plan toutes les 5 secondes
   useEffect(() => {
-    if (!currentOrder || !autoRefresh) return;
-    
-    const interval = setInterval(async () => {
+    const trackingCode = currentOrder?.trackingCode;
+    if (!trackingCode) return;
+
+    let active = true;
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+    const refreshOrder = async () => {
       try {
-        const res = await fetch(`/api/orders?trackingCode=${currentOrder.trackingCode}`);
+        const res = await fetch(`/api/orders?trackingCode=${encodeURIComponent(trackingCode)}`);
         if (res.ok) {
           const result = await res.json();
-          // Si le statut a changé en cuisine, on met à jour l'affichage
-          if (result.data && result.data.status !== currentOrder.status) {
-            setCurrentOrder(result.data);
-          }
+          if (active && result.data) setCurrentOrder(result.data);
         }
       } catch (err) {
-        console.error('Erreur lors du rafraîchissement silencieux', err);
+        console.error('Erreur lors du rafraîchissement du suivi de commande.', err);
       }
-    }, 5000);
+    };
+    const stopFallback = () => {
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      fallbackInterval = null;
+    };
+    const startFallback = () => {
+      if (!fallbackInterval) fallbackInterval = setInterval(() => void refreshOrder(), 5000);
+    };
 
-    return () => clearInterval(interval);
-  }, [currentOrder, autoRefresh]);
+    const eventSource = new EventSource(
+      `/api/events/orders/${encodeURIComponent(trackingCode)}`
+    );
+    eventSource.onopen = stopFallback;
+    eventSource.onerror = startFallback;
+    eventSource.onmessage = (event) => {
+      try {
+        const payload: { type?: string } = JSON.parse(event.data);
+        if (payload.type?.startsWith('order.')) void refreshOrder();
+      } catch (error: unknown) {
+        console.error('Événement temps réel invalide reçu pour le suivi.', error);
+      }
+    };
 
-  // 3. Recherche manuelle
+    return () => {
+      active = false;
+      eventSource.close();
+      stopFallback();
+    };
+  }, [currentOrder?.trackingCode]);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchInput.trim()) return;
     const found = await searchTrackedOrder(searchInput);
-    if (found) setCurrentOrder(found);
+    if (found) {
+      setCurrentOrder(found);
+      setSearchError(null);
+    } else {
+      setSearchError('Aucune commande ne correspond à ce code. Vérifiez-le puis réessayez.');
+    }
   };
 
-  // 4. Bouton de rafraîchissement manuel
   const handleManualRefresh = async () => {
     if (!currentOrder) return;
     await refreshTrackedOrder();
@@ -74,12 +116,17 @@ export const OrderTrackingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-ink-50 py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
       <OrderTrackingSearch 
         searchInput={searchInput}
         setSearchInput={setSearchInput}
         handleSearch={handleSearch}
       />
+      {searchError && (
+        <p role="status" className="mb-6 text-center text-sm text-ink-600">
+          {searchError}
+        </p>
+      )}
 
       {currentOrder ? (
         <div className="space-y-6">
@@ -90,11 +137,19 @@ export const OrderTrackingPage: React.FC = () => {
           <OrderTrackingSummary 
             currentOrder={currentOrder} 
           />
+          {currentOrder.status === 'DELIVERED' && (
+            <OrderReviewForm
+              key={currentOrder.trackingCode}
+              trackingCode={currentOrder.trackingCode}
+              customerName={currentOrder.customerName}
+              onSubmitted={() => setCurrentOrder((order) => order ? { ...order, hasReview: true } : order)}
+            />
+          )}
         </div>
       ) : (
-        <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-stone-300 p-8">
-          <FaIcon name="fa-solid fa-receipt" className="text-3xl text-stone-300 mb-2" />
-          <p className="text-stone-500 text-sm">Entrez votre code ci-dessus pour afficher votre commande.</p>
+        <div className="text-center py-12 bg-paper-white rounded-3xl border border-dashed border-ink-300 p-8">
+          <Icon name="receipt" className="text-3xl text-ink-300 mb-2" />
+          <p className="text-ink-500 text-sm">Entrez votre code ci-dessus pour afficher votre commande.</p>
         </div>
       )}
     </div>

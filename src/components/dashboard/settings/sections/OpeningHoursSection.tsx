@@ -21,9 +21,9 @@ const DAY_LABELS: Record<string, string> = {
 export const OpeningHoursSection: React.FC<OpeningHoursSectionProps> = ({ openingHours, onChange }) => {
   return (
     <div className="space-y-6">
-      <div className="border-b border-stone-100 pb-4">
-        <h3 className="text-lg font-bold text-stone-950">Horaires d'Ouverture</h3>
-        <p className="text-xs text-stone-500">
+      <div className="border-b border-ink-100 pb-4">
+        <h3 className="text-lg font-bold text-ink-950">Horaires d'Ouverture</h3>
+        <p className="text-xs text-ink-500">
           Définissez les créneaux pendant lesquels les clients peuvent commander sur place.
         </p>
       </div>
@@ -36,7 +36,7 @@ export const OpeningHoursSection: React.FC<OpeningHoursSectionProps> = ({ openin
             <div
               key={dayKey}
               className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                daySchedule.active ? 'bg-stone-50/50 border-stone-200' : 'bg-stone-100/40 border-stone-100 opacity-60'
+                daySchedule.active ? 'bg-ink-50/50 border-ink-200' : 'bg-ink-100/40 border-ink-100 opacity-60'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -44,9 +44,9 @@ export const OpeningHoursSection: React.FC<OpeningHoursSectionProps> = ({ openin
                   type="checkbox"
                   checked={daySchedule.active}
                   onChange={(e) => onChange(dayKey, 'active', e.target.checked)}
-                  className="w-4 h-4 rounded-md accent-amber-500 cursor-pointer"
+                  className="w-4 h-4 rounded-md accent-brand-500 cursor-pointer"
                 />
-                <span className="text-xs font-bold text-stone-900 min-w-22.5">{DAY_LABELS[dayKey]}</span>
+                <span className="text-xs font-bold text-ink-900 min-w-22.5">{DAY_LABELS[dayKey]}</span>
               </div>
 
               <div className="flex items-center gap-2 self-start sm:self-auto">
@@ -56,16 +56,16 @@ export const OpeningHoursSection: React.FC<OpeningHoursSectionProps> = ({ openin
                   disabled={!daySchedule.active}
                   aria-label={`${DAY_LABELS[dayKey]} - heure d’ouverture`}
                   onChange={(e) => onChange(dayKey, 'open', e.target.value)}
-                  className="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-900 focus:outline-hidden disabled:cursor-not-allowed disabled:bg-stone-100"
+                  className="px-3 py-1.5 bg-paper-white border border-ink-200 rounded-xl text-xs font-bold text-ink-900 focus:outline-hidden disabled:cursor-not-allowed disabled:bg-ink-100"
                 />
-                <span className="text-xs text-stone-400 font-bold">à</span>
+                <span className="text-xs text-ink-400 font-bold">à</span>
                 <input
                   type="time"
                   value={daySchedule.close}
                   disabled={!daySchedule.active}
                   aria-label={`${DAY_LABELS[dayKey]} - heure de fermeture`}
                   onChange={(e) => onChange(dayKey, 'close', e.target.value)}
-                  className="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-900 focus:outline-hidden disabled:cursor-not-allowed disabled:bg-stone-100"
+                  className="px-3 py-1.5 bg-paper-white border border-ink-200 rounded-xl text-xs font-bold text-ink-900 focus:outline-hidden disabled:cursor-not-allowed disabled:bg-ink-100"
                 />
               </div>
             </div>

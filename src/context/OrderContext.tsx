@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useState, ReactNode } from 'react';
 import { Order, OrderType, PaymentMethod, OrderStatus, TrackedOrder } from '../types';
 import { useToast } from './ToastContext';
 import { useCart } from './CartContext';
@@ -10,8 +10,11 @@ interface OrderData {
   tableNumber?: string | number;
   customerName: string;
   customerPhone: string;
+  customerWhatsapp: string;
+  whatsappConsent: boolean;
   customerAddress?: string;
   customerNotes?: string;
+  couponCode?: string;
   paymentMethod: PaymentMethod;
 }
 
@@ -44,6 +47,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       dishId: item.dish.id,
       quantity: item.quantity,
       notes: item.notes,
+      optionIds: item.optionIds,
     }));
 
     const response = await fetch('/api/orders', {
@@ -53,6 +57,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         restaurantId: cartRestaurantId,
         items,
         ...orderData,
+        customerPhone: orderData.customerWhatsapp,
       }),
     });
 
@@ -73,7 +78,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   // 2. Recherche d'une commande par code de suivi via API
-  const searchTrackedOrder = async (code: string): Promise<TrackedOrder | null> => {
+  const searchTrackedOrder = useCallback(async (code: string): Promise<TrackedOrder | null> => {
     if (!code.trim()) return null;
 
     try {
@@ -81,7 +86,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const result = await response.json();
 
       if (!response.ok || !result.data) {
-        showToast('Aucune commande trouvée.', 'error');
+        showToast('Code invalide ou commande introuvable.', 'info');
         return null;
       }
 
@@ -94,7 +99,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       showToast('Impossible de récupérer la commande.', 'error');
       return null;
     }
-  };
+  }, [showToast]);
 
   // 3. Rafraîchir le suivi de la commande active
   const refreshTrackedOrder = async (): Promise<void> => {

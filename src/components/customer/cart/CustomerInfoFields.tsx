@@ -1,4 +1,5 @@
 import { OrderType } from '@/types';
+import { WHATSAPP_PHONE_COUNTRIES } from '@/lib/orders/whatsapp-phone';
 import React from 'react';
 
 interface CustomerInfoFieldsProps {
@@ -7,6 +8,10 @@ interface CustomerInfoFieldsProps {
   setCustomerName: (val: string) => void;
   customerPhone: string;
   setCustomerPhone: (val: string) => void;
+  phoneCallingCode: string;
+  setPhoneCallingCode: (val: string) => void;
+  whatsappConsent: boolean;
+  setWhatsappConsent: (val: boolean) => void;
   customerAddress: string;
   setCustomerAddress: (val: string) => void;
   customerNotes: string;
@@ -19,6 +24,10 @@ export const CustomerInfoFields: React.FC<CustomerInfoFieldsProps> = ({
   setCustomerName,
   customerPhone,
   setCustomerPhone,
+  phoneCallingCode,
+  setPhoneCallingCode,
+  whatsappConsent,
+  setWhatsappConsent,
   customerAddress,
   setCustomerAddress,
   customerNotes,
@@ -44,16 +53,34 @@ export const CustomerInfoFields: React.FC<CustomerInfoFieldsProps> = ({
 
       <div>
         <label className="form-label">
-          Téléphone béninois *
+          Numéro WhatsApp *
         </label>
-        <input
-          type="tel"
-          required
-          placeholder="Ex: +229 97 00 11 22"
-          value={customerPhone}
-          onChange={(e) => setCustomerPhone(e.target.value)}
-          className="input-field"
-        />
+        <div className="flex gap-2">
+          <select
+            aria-label="Pays du numéro WhatsApp"
+            value={phoneCallingCode}
+            onChange={(e) => setPhoneCallingCode(e.target.value)}
+            className="input-field w-auto shrink-0"
+          >
+            {WHATSAPP_PHONE_COUNTRIES.map(({ name, callingCode }) => (
+              <option key={callingCode} value={callingCode}>
+                {name} ({callingCode})
+              </option>
+            ))}
+          </select>
+          <input
+            type="tel"
+            required
+            autoComplete="tel"
+            placeholder="Ex: 97 00 11 22"
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
+            className="input-field min-w-0"
+          />
+        </div>
+        <p className="mt-1 text-[0.6875rem] text-ink-500">
+          Votre code de suivi sera envoyé sur ce numéro WhatsApp.
+        </p>
       </div>
     </div>
 
@@ -85,5 +112,16 @@ export const CustomerInfoFields: React.FC<CustomerInfoFieldsProps> = ({
         className="input-field"
       />
     </div>
+
+    <label className="flex items-start gap-2 text-xs text-ink-600">
+      <input
+        type="checkbox"
+        required
+        checked={whatsappConsent}
+        onChange={(e) => setWhatsappConsent(e.target.checked)}
+        className="mt-0.5"
+      />
+      <span>J’accepte de recevoir sur WhatsApp les messages liés à cette commande.</span>
+    </label>
   </div>
 );

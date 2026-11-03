@@ -12,8 +12,9 @@ import { PaymentMethodSelector } from './PaymentMethodSelector';
 import { useOrder } from '@/context/OrderContext';
 import { OrderType, PaymentMethod, Restaurant } from '@/types';
 import { useCart } from '@/context/CartContext';
-import { FaIcon } from '@/components/common/Icon';
+import { Icon } from '@/components/common/Icon';
 import { useNavigation } from '@/context/NavigationContext';
+import { normalizeWhatsappPhone } from '@/lib/orders/whatsapp-phone';
 
 export const CartPage: React.FC = () => {
   const { cart, cartRestaurantId, cartTotal, updateCartQuantity, removeFromCart, clearCart } = useCart();
@@ -35,9 +36,15 @@ export const CartPage: React.FC = () => {
   const [tableNumber, setTableNumber] = useState<string>(tableUrlParam ? String(tableUrlParam) : '');
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [phoneCallingCode, setPhoneCallingCode] = useState<string>('+229');
+  const [whatsappConsent, setWhatsappConsent] = useState<boolean>(false);
   const [customerAddress, setCustomerAddress] = useState<string>('');
   const [customerNotes, setCustomerNotes] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('MTN_MOMO');
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [isCheckingCoupon, setIsCheckingCoupon] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -69,7 +76,54 @@ export const CartPage: React.FC = () => {
 
   // Calcul du total avec frais de livraison
   const deliveryFee = orderType === 'DELIVERY' && restaurant ? (restaurant.deliveryFee || 0) : 0;
-  const grandTotal = cartTotal + deliveryFee;
+  const grandTotal = cartTotal + deliveryFee - (appliedCoupon?.discount ?? 0);
+
+  const handleApplyCoupon = async () => {
+    const activeRestaurantId = restaurant?.id || cartRestaurantId || restaurantUrlParam;
+    if (!activeRestaurantId || !couponCode.trim()) {
+      setCouponError('Saisissez un code promotionnel.');
+      return;
+    }
+
+    const checkedSubtotal = cartTotal;
+    try {
+      setIsCheckingCoupon(true);
+      setCouponError(null);
+      setAppliedCoupon(null);
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurantId: activeRestaurantId,
+          code: couponCode.trim(),
+          subtotal: checkedSubtotal,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.data) {
+        throw new Error(result.error || 'Ce code promotionnel ne peut pas être appliqué.');
+      }
+      if (checkedSubtotal !== cartTotal) return;
+      setAppliedCoupon({ code: result.data.code, discount: result.data.discount });
+      setCouponCode(result.data.code);
+    } catch (error: unknown) {
+      setCouponError(error instanceof Error ? error.message : 'Impossible de vérifier ce code promotionnel.');
+    } finally {
+      setIsCheckingCoupon(false);
+    }
+  };
+
+  const handleUpdateQuantity = (cartItemId: string, delta: number) => {
+    setAppliedCoupon(null);
+    setCouponError(null);
+    updateCartQuantity(cartItemId, delta);
+  };
+
+  const handleRemoveItem = (cartItemId: string) => {
+    setAppliedCoupon(null);
+    setCouponError(null);
+    removeFromCart(cartItemId);
+  };
 
   // 2. Soumission de la commande vers l'API PostgreSQL
   const handleCheckout = async (e: React.FormEvent) => {
@@ -86,8 +140,13 @@ export const CartPage: React.FC = () => {
       setFormError('Veuillez renseigner votre nom complet.');
       return;
     }
-    if (!customerPhone.trim() || customerPhone.length < 8) {
-      setFormError('Veuillez renseigner un numéro de téléphone valide.');
+    const customerWhatsapp = normalizeWhatsappPhone(customerPhone, phoneCallingCode);
+    if (!customerWhatsapp) {
+      setFormError('Veuillez renseigner un numéro WhatsApp valide au format international.');
+      return;
+    }
+    if (!whatsappConsent) {
+      setFormError('Votre consentement est requis pour recevoir les messages liés à la commande.');
       return;
     }
     if (orderType === 'DELIVERY' && !customerAddress.trim()) {
@@ -107,9 +166,12 @@ export const CartPage: React.FC = () => {
         type: orderType,
         tableNumber: orderType === 'DINE_IN' ? tableNumber : undefined,
         customerName,
-        customerPhone,
+        customerPhone: customerWhatsapp,
+        customerWhatsapp,
+        whatsappConsent,
         customerAddress: orderType === 'DELIVERY' ? customerAddress : undefined,
         customerNotes,
+        couponCode: appliedCoupon?.code,
         paymentMethod,
       });
 
@@ -134,7 +196,7 @@ export const CartPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 py-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-ink-50 py-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
       <CartHeader
         restaurantName={restaurant?.name}
         restaurantCity={restaurant?.city}
@@ -147,24 +209,61 @@ export const CartPage: React.FC = () => {
           <CartItemsSummary
             cart={cart}
             restaurantName={restaurant?.name}
+            currency={restaurant?.currency || 'FCFA'}
             cartTotal={cartTotal}
             deliveryFee={deliveryFee}
+            couponDiscount={appliedCoupon?.discount ?? 0}
             grandTotal={grandTotal}
             orderType={orderType}
-            onUpdateQuantity={updateCartQuantity}
-            onRemoveItem={removeFromCart}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
           />
         </div>
 
         {/* Colonne de droite : Formulaire de livraison/table & paiement */}
         <div className="lg:col-span-7">
-          <form onSubmit={handleCheckout} className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-xs space-y-6">
+          <form onSubmit={handleCheckout} className="bg-paper-white p-6 sm:p-8 rounded-3xl border border-ink-200 shadow-xs space-y-6">
             {formError && (
-              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
-                <FaIcon name="fa-solid fa-circle-exclamation" />
+              <div className="p-4 rounded-xl bg-negative-50 border border-negative-200 text-negative-700 text-xs font-medium flex items-center gap-2">
+                <Icon name="circle-exclamation" />
                 <span>{formError}</span>
               </div>
             )}
+
+            <section className="space-y-2">
+              <label htmlFor="coupon-code" className="block text-xs font-bold text-ink-700">
+                Code promotionnel
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="coupon-code"
+                  value={couponCode}
+                  onChange={(event) => {
+                    setCouponCode(event.target.value.toUpperCase());
+                    setAppliedCoupon(null);
+                    setCouponError(null);
+                  }}
+                  maxLength={30}
+                  autoComplete="off"
+                  placeholder="Ex. BIENVENUE"
+                  className="min-w-0 flex-1 px-4 py-3 bg-ink-50 border border-ink-200 rounded-xl text-xs font-semibold uppercase"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={isCheckingCoupon || !couponCode.trim()}
+                  className="px-4 py-3 rounded-xl bg-ink-900 text-paper-white text-xs font-bold disabled:opacity-50"
+                >
+                  {isCheckingCoupon ? 'Vérification…' : 'Appliquer'}
+                </button>
+              </div>
+              {couponError && <p role="alert" className="text-xs text-negative-700">{couponError}</p>}
+              {appliedCoupon && (
+                <p className="text-xs text-positive-700">
+                  Code {appliedCoupon.code} appliqué : −{appliedCoupon.discount.toLocaleString()} {restaurant?.currency || 'FCFA'}
+                </p>
+              )}
+            </section>
 
             <OrderTypeSelector
               orderType={orderType}
@@ -179,6 +278,10 @@ export const CartPage: React.FC = () => {
               setCustomerName={setCustomerName}
               customerPhone={customerPhone}
               setCustomerPhone={setCustomerPhone}
+              phoneCallingCode={phoneCallingCode}
+              setPhoneCallingCode={setPhoneCallingCode}
+              whatsappConsent={whatsappConsent}
+              setWhatsappConsent={setWhatsappConsent}
               customerAddress={customerAddress}
               setCustomerAddress={setCustomerAddress}
               customerNotes={customerNotes}
@@ -197,18 +300,18 @@ export const CartPage: React.FC = () => {
             >
               {isSubmitting ? (
                 <>
-                  <FaIcon name="fa-solid fa-spinner" className="animate-spin text-lg" />
+                  <Icon name="spinner" className="animate-spin text-lg" />
                   <span>Validation de la commande en cours...</span>
                 </>
               ) : (
                 <>
-                  <FaIcon name="fa-solid fa-lock" />
-                  <span>Confirmer la commande ({grandTotal.toLocaleString()} FCFA)</span>
+                  <Icon name="lock" />
+                  <span>Confirmer la commande ({grandTotal.toLocaleString()} {restaurant?.currency || 'FCFA'})</span>
                 </>
               )}
             </button>
 
-            <p className="text-[11px] text-stone-400 text-center">
+            <p className="text-[0.6875rem] text-ink-400 text-center">
               Vous recevrez un code de suivi après validation pour suivre l'avancement de votre commande.
             </p>
           </form>
