@@ -172,7 +172,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             <button
               type="button"
               onClick={() => {
-                onConfirmOrder(order.id, 'READY');
+                onConfirmOrder(order.id, 'CONFIRMED');
                 onClose();
               }}
               className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
