@@ -23,6 +23,7 @@ describe('findPublicTrackedOrder', () => {
       restaurant: { currency: 'EUR' },
       status: 'PREPARING',
       total: 2_500,
+      review: null,
       items: [{ name: 'Plat', price: 2_500, quantity: 1 }],
       statusHistory: [{
         status: 'PREPARING',
@@ -42,6 +43,7 @@ describe('findPublicTrackedOrder', () => {
         restaurant: { select: { currency: true } },
         status: true,
         total: true,
+        review: { select: { id: true } },
         items: { select: { name: true, price: true, quantity: true } },
         statusHistory: {
           select: { status: true, timestamp: true, comment: true },
@@ -55,6 +57,7 @@ describe('findPublicTrackedOrder', () => {
       restaurantPhone: '+22997001122',
       currency: 'EUR',
       status: 'PREPARING',
+      hasReview: false,
       total: 2_500,
       items: [{ name: 'Plat', price: 2_500, quantity: 1 }],
       statusHistory: [{

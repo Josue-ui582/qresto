@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => {
     orderItem: { createMany: vi.fn() },
     orderStatusHistory: { create: vi.fn() },
     notification: { create: vi.fn() },
+    dish: { findFirst: vi.fn(), updateMany: vi.fn() },
+    inventoryMovement: { createMany: vi.fn() },
   };
   return {
     transaction,
@@ -28,6 +30,9 @@ vi.mock('@/lib/orders/public-order', () => ({
 }));
 vi.mock('@/lib/orders/order-notifier', () => ({
   notifyOrderCreated: mocks.notifyOrderCreated,
+}));
+vi.mock('@/lib/subscription/service', () => ({
+  enforceSubscriptionWriteAccess: vi.fn().mockResolvedValue({ allowed: true, status: 'ACTIVE' }),
 }));
 
 import { POST as createOrder } from './route';
@@ -166,5 +171,49 @@ describe('POST /api/orders', () => {
     } finally {
       errorSpy.mockRestore();
     }
+  });
+
+  it('deducts tracked stock and records its order movement atomically', async () => {
+    mocks.transaction.dish.findFirst.mockResolvedValue({
+      id: dish.id,
+      name: dish.name,
+      stockQuantity: 5,
+      lowStockThreshold: 3,
+    });
+    mocks.transaction.dish.updateMany.mockResolvedValue({ count: 1 });
+
+    const response = await createOrder(request(validPayload()));
+
+    expect(response.status).toBe(201);
+    expect(mocks.transaction.dish.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({ id: dish.id, stockQuantity: { gte: 2 } }),
+      data: { stockQuantity: { decrement: 2 } },
+    });
+    expect(mocks.transaction.inventoryMovement.createMany).toHaveBeenCalledWith({
+      data: [{
+        dishId: dish.id,
+        orderId: 'order-1',
+        quantityChange: -2,
+        type: 'ORDER',
+      }],
+    });
+    expect(mocks.transaction.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ type: 'LOW_STOCK' }),
+    });
+  });
+
+  it('rejects orders that exceed tracked stock before creating the order', async () => {
+    mocks.transaction.dish.findFirst.mockResolvedValue({
+      id: dish.id,
+      name: dish.name,
+      stockQuantity: 1,
+      lowStockThreshold: 0,
+    });
+
+    const response = await createOrder(request(validPayload()));
+
+    expect(response.status).toBe(409);
+    expect(mocks.transaction.order.create).not.toHaveBeenCalled();
+    expect(mocks.transaction.inventoryMovement.createMany).not.toHaveBeenCalled();
   });
 });

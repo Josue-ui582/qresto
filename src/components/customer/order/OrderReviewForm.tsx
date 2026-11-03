@@ -4,16 +4,14 @@ import React, { useState } from 'react';
 
 interface OrderReviewFormProps {
   trackingCode: string;
-  customerName: string;
   onSubmitted: () => void;
 }
 
 export const OrderReviewForm: React.FC<OrderReviewFormProps> = ({
   trackingCode,
-  customerName,
   onSubmitted,
 }) => {
-  const [name, setName] = useState(customerName);
+  const [name, setName] = useState('');
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [error, setError] = useState<string | null>(null);

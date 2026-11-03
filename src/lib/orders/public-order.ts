@@ -10,7 +10,6 @@ export async function findPublicTrackedOrder(code: string) {
       restaurant: { select: { currency: true } },
       status: true,
       total: true,
-      customerName: true,
       review: { select: { id: true } },
       items: { select: { name: true, price: true, quantity: true } },
       statusHistory: {

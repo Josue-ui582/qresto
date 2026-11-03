@@ -139,7 +139,6 @@ export const OrderTrackingPage: React.FC = () => {
           {currentOrder.status === 'DELIVERED' && !currentOrder.hasReview && (
             <OrderReviewForm
               trackingCode={currentOrder.trackingCode}
-              customerName={currentOrder.customerName}
               onSubmitted={() => setCurrentOrder((order) => order ? { ...order, hasReview: true } : order)}
             />
           )}

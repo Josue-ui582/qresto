@@ -9,8 +9,7 @@ const mocks = vi.hoisted(() => {
   return {
     transaction,
     prisma: {
-      restaurant: { findUnique: vi.fn() },
-      dish: { findFirst: vi.fn() },
+      order: { findUnique: vi.fn() },
       $transaction: vi.fn(),
     },
   };
@@ -32,8 +31,12 @@ function request(body: Record<string, unknown>) {
 describe('POST /api/reviews', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.prisma.restaurant.findUnique.mockResolvedValue({ id: 'restaurant-1' });
-    mocks.prisma.dish.findFirst.mockResolvedValue({ id: 'dish-1' });
+    mocks.prisma.order.findUnique.mockResolvedValue({
+      id: 'order-1',
+      restaurantId: 'restaurant-1',
+      status: 'DELIVERED',
+      review: null,
+    });
     mocks.transaction.review.create.mockResolvedValue({
       id: 'review-1',
       rating: 5,
@@ -48,8 +51,7 @@ describe('POST /api/reviews', () => {
 
   it('creates a review and its notification in one transaction', async () => {
     const response = await POST(request({
-      restaurantId: 'restaurant-1',
-      dishId: 'dish-1',
+      trackingCode: 'QR-ABCDEFG2',
       customerName: 'Client',
       rating: 5,
       comment: 'Très bon',
@@ -59,8 +61,8 @@ describe('POST /api/reviews', () => {
     expect(mocks.prisma.$transaction).toHaveBeenCalledOnce();
     expect(mocks.transaction.review.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
+        orderId: 'order-1',
         restaurantId: 'restaurant-1',
-        dishId: 'dish-1',
         rating: 5,
       }),
       select: { id: true, rating: true, createdAt: true },
@@ -75,7 +77,7 @@ describe('POST /api/reviews', () => {
 
   it('rejects ratings outside the supported range', async () => {
     const response = await POST(request({
-      restaurantId: 'restaurant-1',
+      trackingCode: 'QR-ABCDEFG2',
       customerName: 'Client',
       rating: 6,
     }));
