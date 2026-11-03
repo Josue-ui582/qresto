@@ -9,8 +9,11 @@ interface OrderStatusCardProps {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'En attente',
+  NEW: 'Nouvelle',
+  CONFIRMED: 'Confirmée',
   PREPARING: 'En cuisine',
+  READY: 'Prête',
+  OUT_FOR_DELIVERY: 'En livraison',
   DELIVERED: 'Livrée / Servie',
   CANCELLED: 'Annulée',
 };

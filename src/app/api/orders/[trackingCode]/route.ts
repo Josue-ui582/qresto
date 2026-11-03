@@ -8,6 +8,7 @@ import { enforceRateLimit } from '@/lib/rate-limit';
 import { findPublicTrackedOrder } from '@/lib/orders/public-order';
 import { TRACKING_CODE_PATTERN } from '@/lib/orders/tracking-code';
 import { canTransitionOrderStatus } from '@/lib/orders/order-status';
+import { publishOrderEvent } from '@/lib/realtime/event-bus';
 
 const routeCodeSchema = z.string().trim().regex(TRACKING_CODE_PATTERN);
 const updateStatusSchema = z.object({
@@ -64,7 +65,7 @@ export async function PATCH(request: NextRequest, { params }: TrackingRouteConte
             { trackingCode: parsedIdentifier.data.toUpperCase() },
           ],
         },
-        select: { id: true, status: true },
+        select: { id: true, status: true, trackingCode: true },
       });
       if (!order) return { kind: 'not-found' as const };
       if (!canTransitionOrderStatus(order.status, parsed.data.status)) {
@@ -86,6 +87,14 @@ export async function PATCH(request: NextRequest, { params }: TrackingRouteConte
           orderId: order.id,
           status: parsed.data.status,
           comment: `Statut mis à jour vers : ${parsed.data.status}`,
+        },
+      });
+      await transaction.notification.create({
+        data: {
+          restaurantId: auth.session.restaurantId,
+          title: 'Statut de commande mis à jour',
+          message: `Commande ${order.trackingCode} : ${parsed.data.status}.`,
+          type: 'ORDER_STATUS',
         },
       });
       const updatedOrder = await transaction.order.findUnique({
@@ -112,6 +121,11 @@ export async function PATCH(request: NextRequest, { params }: TrackingRouteConte
       );
     }
 
+    publishOrderEvent(
+      result.order.restaurantId,
+      result.order.trackingCode,
+      'order.updated'
+    );
     return NextResponse.json(
       { success: true, message: 'Statut mis à jour avec succès.', data: result.order },
       { status: 200 }

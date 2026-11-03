@@ -38,6 +38,7 @@ export const RestaurantDashboard: React.FC = () => {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [notificationRefreshToken, setNotificationRefreshToken] = useState(0);
 
   useEffect(() => {
     if (!currentRestaurant?.id) return;
@@ -62,8 +63,45 @@ export const RestaurantDashboard: React.FC = () => {
 
     void fetchOrders(true);
 
-    const interval = setInterval(() => void fetchOrders(), 10000);
-    return () => clearInterval(interval);
+    const eventSource = new EventSource(
+      `/api/events/restaurants/${encodeURIComponent(currentRestaurant.id)}`
+    );
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+    const stopFallback = () => {
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      fallbackInterval = null;
+    };
+    const startFallback = () => {
+      if (!fallbackInterval) {
+        fallbackInterval = setInterval(() => {
+          void fetchOrders();
+          setNotificationRefreshToken((token) => token + 1);
+        }, 10000);
+      }
+    };
+
+    eventSource.onopen = stopFallback;
+    eventSource.onerror = startFallback;
+    eventSource.onmessage = (event) => {
+      try {
+        const payload: { type?: string } = JSON.parse(event.data);
+        if (payload.type?.startsWith('order.')) void fetchOrders();
+        if (
+          payload.type?.startsWith('order.') ||
+          payload.type === 'review.created' ||
+          payload.type?.startsWith('notification.')
+        ) {
+          setNotificationRefreshToken((token) => token + 1);
+        }
+      } catch (error: unknown) {
+        console.error('Événement temps réel invalide reçu pour le dashboard.', error);
+      }
+    };
+
+    return () => {
+      eventSource.close();
+      stopFallback();
+    };
   }, [currentRestaurant?.id, showToast]);
 
   useEffect(() => {
@@ -72,8 +110,8 @@ export const RestaurantDashboard: React.FC = () => {
     let isCurrent = true;
     const fetchRestaurantData = async () => {
       try {
-        const shouldLoadMenu = ['categories', 'dishes', 'analytics'].includes(dashboardTab);
-        const shouldLoadTables = ['tables', 'qrcodes', 'analytics'].includes(dashboardTab);
+        const shouldLoadMenu = ['categories', 'dishes'].includes(dashboardTab);
+        const shouldLoadTables = ['tables', 'qrcodes'].includes(dashboardTab);
 
         if (shouldLoadMenu) {
           const [dishesResponse, categoriesResponse] = await Promise.all([
@@ -220,8 +258,8 @@ export const RestaurantDashboard: React.FC = () => {
             setRestaurantDropdownOpen(false);
             router.push(`/restaurant/${currentRestaurant.slug}`);
           }}
-          pendingOrdersCount={pendingOrdersCount}
-          onNotificationClick={() => setDashboardTab('orders')}
+          restaurantId={restaurantId}
+          notificationRefreshToken={notificationRefreshToken}
         />
 
         <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
@@ -271,33 +309,8 @@ export const RestaurantDashboard: React.FC = () => {
 
           {dashboardTab === 'analytics' && (
             <AnalyticsTab
-              stats={{
-                totalRevenue,
-                totalOrders: totalOrdersCount,
-                averageOrderValue,
-                activeTablesCount: tables.length,
-                ordersByStatus: [
-                  { status: 'Nouveau', count: orders.filter((o) => o.status === 'NEW').length },
-                  { status: 'Confirmé', count: orders.filter((o) => o.status === 'CONFIRMED').length },
-                  { status: 'En préparation', count: orders.filter((o) => o.status === 'PREPARING').length },
-                  { status: 'Prêt', count: orders.filter((o) => o.status === 'READY').length },
-                  { status: 'Annulé', count: orders.filter((o) => o.status === 'CANCELLED').length },
-                ],
-                topItems: dishes.slice(0, 5).map((dish) => {
-                  const totalQty = orders.reduce((acc, order) => {
-                    const item = order.items?.find((i) => i.dishId === dish.id);
-                    return acc + (item?.quantity || 0);
-                  }, 0);
-
-                  return {
-                    id: dish.id,
-                    name: dish.name,
-                    category: dish.categoryId || 'Général',
-                    quantity: totalQty,
-                    revenue: totalQty * (dish.price || 0),
-                  };
-                }),
-              }}
+              restaurantId={restaurantId}
+              currencySymbol={currentRestaurant.currency}
             />
           )}
 

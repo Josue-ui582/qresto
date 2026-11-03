@@ -1,4 +1,4 @@
-export type AnalyticsPeriod = 'today' | '7d' | '30d' | 'all';
+export type AnalyticsPeriod = 'day' | 'week' | 'month' | 'custom';
 
 export interface AnalyticsStats {
   totalRevenue: number;
@@ -6,6 +6,8 @@ export interface AnalyticsStats {
   averageOrderValue: number;
   activeTablesCount: number;
   ordersByStatus: Array<{ status: string; count: number }>;
+  ordersByType: Array<{ type: string; count: number }>;
+  peakHours: Array<{ hour: number; count: number }>;
   topItems: Array<{
     id: string;
     name: string;
@@ -17,6 +19,5 @@ export interface AnalyticsStats {
 
 export interface AnalyticsTabProps {
   restaurantId?: string;
-  stats?: AnalyticsStats;
   currencySymbol?: string;
 }

@@ -32,7 +32,7 @@ export const KpiGrid: React.FC<KpiGridProps> = ({ stats, formatCurrency }) => {
         </div>
         <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 mt-2">
           <ArrowUpRight className="w-3.5 h-3.5" />
-          <span>Commandes encaissées</span>
+          <span>Commandes non annulées</span>
         </div>
       </motion.div>
 
@@ -78,7 +78,7 @@ export const KpiGrid: React.FC<KpiGridProps> = ({ stats, formatCurrency }) => {
           {formatCurrency(stats?.averageOrderValue || 0)}
         </div>
         <div className="flex items-center gap-1 text-[11px] font-bold text-stone-400 mt-2">
-          <span>Dépense moy. par client</span>
+          <span>Moyenne par commande non annulée</span>
         </div>
       </motion.div>
 
