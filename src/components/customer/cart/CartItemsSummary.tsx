@@ -3,6 +3,7 @@ import { CartItem } from '@/context/CartContext';
 import { OrderType } from '@/types';
 import React from 'react';
 import { getSelectedDishOptionTotal } from '@/lib/orders/order-pricing';
+import { ImageWithFallback } from '@/components/common/ImageWithFallback';
 
 interface CartItemsSummaryProps {
   cart: CartItem[];
@@ -42,10 +43,11 @@ export const CartItemsSummary: React.FC<CartItemsSummaryProps> = ({
         const unitPrice = dish.price + getSelectedDishOptionTotal(dish.optionGroups ?? [], optionIds);
         return (
         <div key={cartItemId} className="py-3.5 flex items-center gap-3">
-          <img
+          <ImageWithFallback
             src={dish.image}
             alt={dish.name}
             className="w-16 h-16 rounded-xl object-cover bg-ink-100 shrink-0"
+            placeholderClassName="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-ink-100 text-ink-300"
           />
           <div className="flex-1 min-w-0">
             <h4 className="text-xs sm:text-sm font-bold text-ink-900 truncate">{dish.name}</h4>

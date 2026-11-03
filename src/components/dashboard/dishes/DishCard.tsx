@@ -3,7 +3,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import {
-  Image as ImageIcon,
   CheckCircle2,
   EyeOff,
   Eye,
@@ -12,6 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { DishData } from './types';
+import { ImageWithFallback } from '@/components/common/ImageWithFallback';
 
 interface DishCardProps {
   dish: DishData;
@@ -38,21 +38,12 @@ export const DishCard: React.FC<DishCardProps> = ({
       <div>
         {/* Visuel principal / Placeholder */}
         <div className="relative h-44 bg-ink-100 w-full overflow-hidden">
-          {dish.image || dish.imageUrl ? (
-            <img
-              src={dish.image || dish.imageUrl || undefined}
-              alt={dish.name}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${!dish.isAvailable ? 'grayscale opacity-75' : ''
-                }`}
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center text-ink-300">
-              <ImageIcon className="w-8 h-8 mb-1" />
-              <span className="text-[0.625rem] font-bold uppercase tracking-wider">
-                Pas d'image
-              </span>
-            </div>
-          )}
+          <ImageWithFallback
+            src={dish.image || dish.imageUrl}
+            alt={dish.name}
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${!dish.isAvailable ? 'grayscale opacity-75' : ''}`}
+            placeholderClassName="flex h-full w-full flex-col items-center justify-center bg-ink-100 text-ink-300"
+          />
 
           {/* Badge de Disponibilité */}
           <div className="absolute top-3 right-3">
