@@ -1,3 +1,5 @@
+import type { PlanId } from '@/lib/subscription/catalog';
+
 export type UserRole = 'SUPER_ADMIN' | 'RESTAURANT_OWNER' | 'RESTAURANT_STAFF' | 'DELIVERY_PARTNER';
 
 export interface User {
@@ -12,7 +14,7 @@ export interface User {
   createdAt: string;
 }
 
-export type SubscriptionPlan = 'FREE' | 'STARTER_5000' | 'PRO_8000';
+export type SubscriptionPlan = PlanId;
 
 export interface RestaurantSettings {
   soundNotifications: boolean;

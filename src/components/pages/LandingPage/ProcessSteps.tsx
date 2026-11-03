@@ -20,13 +20,13 @@ const PROCESS_STEPS = [
   {
     step: '03',
     title: 'Commande immédiate',
-    desc: 'Le client personnalise ses cuissons ou accompagnements et valide son panier. La commande est transmise en cuisine.',
+    desc: 'Le client valide son panier et le restaurant reçoit la commande dans son tableau de bord.',
     icon: Utensils,
   },
   {
     step: '04',
-    title: 'Paiement sans attente',
-    desc: 'Règlement en un clic par MTN MoMo, Moov Money, Carte ou en espèces auprès du serveur.',
+    title: 'Service au restaurant',
+    desc: 'Le client et le restaurant conviennent directement des modalités de règlement.',
     icon: ShieldCheck,
   },
 ];

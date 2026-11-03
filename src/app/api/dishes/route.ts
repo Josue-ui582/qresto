@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { handleDatabaseError, parseJson, parseQueryParam } from '@/lib/api/validation';
 import { authorizeRequest } from '@/lib/auth/session';
 import { dishesSlugify } from '@/utils';
+import { createPlanLimitMessage, getPlanResourceUsage, isResourceLimitReached } from '@/lib/subscription/service';
 
 const createDishSchema = z.object({
   name: z.string().trim().min(1).max(150),
@@ -64,29 +65,47 @@ export async function POST(request: NextRequest) {
   if (auth.response) return auth.response;
 
   try {
-    const category = await prisma.category.findFirst({
-      where: { id: parsed.data.categoryId, restaurantId: auth.session.restaurantId },
-      select: { id: true },
-    });
-    if (!category) {
+    const result = await prisma.$transaction(async (tx) => {
+      const category = await tx.category.findFirst({
+        where: { id: parsed.data.categoryId, restaurantId: auth.session.restaurantId },
+        select: { id: true },
+      });
+      if (!category) return { categoryMissing: true as const };
+
+      const planLimit = await getPlanResourceUsage(tx, auth.session.restaurantId, 'dishes');
+      const limit = planLimit.limit;
+      if (isResourceLimitReached(limit, planLimit.usage)) {
+        return { limitReached: { limit, planName: planLimit.planName } };
+      }
+
+      const baseSlug = dishesSlugify(parsed.data.name);
+      const dish = await tx.dish.create({
+        data: {
+          name: parsed.data.name,
+          slug: `${baseSlug}-${crypto.randomUUID().slice(0, 8)}`,
+          description: parsed.data.description || null,
+          price: Math.round(parsed.data.price),
+          image: parsed.data.imageUrl || parsed.data.image || null,
+          isAvailable: parsed.data.isAvailable ?? true,
+          categoryId: category.id,
+          restaurantId: auth.session.restaurantId,
+        },
+        include: { category: { select: { id: true, name: true } } },
+      });
+      return { dish };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+    if ('categoryMissing' in result) {
       return NextResponse.json({ error: 'Catégorie introuvable.' }, { status: 404 });
     }
-
-    const baseSlug = dishesSlugify(parsed.data.name);
-    const dish = await prisma.dish.create({
-      data: {
-        name: parsed.data.name,
-        slug: `${baseSlug}-${crypto.randomUUID().slice(0, 8)}`,
-        description: parsed.data.description || null,
-        price: Math.round(parsed.data.price),
-        image: parsed.data.imageUrl || parsed.data.image || null,
-        isAvailable: parsed.data.isAvailable ?? true,
-        categoryId: category.id,
-        restaurantId: auth.session.restaurantId,
-      },
-      include: { category: { select: { id: true, name: true } } },
-    });
-    return NextResponse.json({ success: true, dish }, { status: 201 });
+    if ('limitReached' in result && result.limitReached) {
+      const { limit, planName } = result.limitReached;
+      return NextResponse.json(
+        { error: createPlanLimitMessage(planName, 'dishes', limit) },
+        { status: 403 }
+      );
+    }
+    return NextResponse.json({ success: true, dish: result.dish }, { status: 201 });
   } catch (error: unknown) {
     return handleDatabaseError(error, 'Impossible de créer le plat.');
   }

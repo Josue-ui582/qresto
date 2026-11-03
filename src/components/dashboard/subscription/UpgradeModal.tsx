@@ -9,7 +9,7 @@ interface UpgradeModalProps {
   selectedPlan: PlanCatalogItem | null;
   billingCycle: 'MONTHLY' | 'YEARLY';
   isSubmitting: boolean;
-  formatPrice: (amount: number) => string;
+  formatPrice: (amount: number, currency?: string) => string;
   onClose: () => void;
   onConfirm: () => void;
 }
@@ -56,7 +56,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
             <div className="space-y-4 mb-6">
               <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80">
                 <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">
-                  Formule sélectionnée
+                  Formule sélectionnée — tarif indicatif
                 </span>
                 <div className="text-lg font-bold text-stone-950">
                   {selectedPlan.name}
@@ -68,7 +68,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                       : selectedPlan.monthlyPrice
                   )}{' '}
                   <span className="text-xs text-stone-500 font-normal">
-                    ({billingCycle === 'YEARLY' ? 'Facturation Annuelle' : 'Facturation Mensuelle'})
+                    ({billingCycle === 'YEARLY' ? 'Durée annuelle' : 'Durée mensuelle'})
                   </span>
                 </div>
               </div>
@@ -76,6 +76,9 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               <p className="text-xs text-stone-500 leading-relaxed">
                 En confirmant, votre établissement basculera immédiatement sur les fonctionnalités de la formule{' '}
                 <strong className="text-stone-900">{selectedPlan.name}</strong>.
+              </p>
+              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                Aucun paiement ne sera effectué. Le changement de formule est activé sans encaissement, dans l’attente de l’intégration d’un prestataire.
               </p>
             </div>
 

@@ -1,15 +1,33 @@
 'use client';
 
 import React from 'react';
-import { Crown, Calendar } from 'lucide-react';
+import { Crown, Calendar, Ban } from 'lucide-react';
 import { SubscriptionData } from './types';
 
 interface ActivePlanCardProps {
   subData: SubscriptionData;
   daysRemaining: number;
+  onCancel: () => void;
+  isCancelling: boolean;
 }
 
-export const ActivePlanCard: React.FC<ActivePlanCardProps> = ({ subData, daysRemaining }) => {
+export const ActivePlanCard: React.FC<ActivePlanCardProps> = ({
+  subData,
+  daysRemaining,
+  onCancel,
+  isCancelling,
+}) => {
+  const canCancel = subData.status === 'ACTIVE' || subData.status === 'TRIAL';
+  const statusLabel = subData.status === 'TRIAL'
+    ? 'Période d’essai gratuite'
+    : subData.status === 'ACTIVE'
+      ? 'Abonnement actif'
+      : subData.status === 'CANCELLED'
+        ? 'Abonnement annulé'
+        : subData.status === 'PAST_DUE'
+          ? 'Paiement en attente'
+          : 'Abonnement expiré';
+
   return (
     <div className="bg-stone-950 text-white rounded-3xl p-6 sm:p-8 border border-stone-800 shadow-xl relative overflow-hidden">
       <div className="absolute top-0 right-0 translate-x-8 -translate-y-8 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -19,11 +37,7 @@ export const ActivePlanCard: React.FC<ActivePlanCardProps> = ({ subData, daysRem
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold">
             <Crown className="w-3.5 h-3.5" />
             <span>
-              {subData.status === 'TRIAL'
-                ? 'Période d’essai gratuite'
-                : subData.status === 'ACTIVE'
-                ? 'Abonnement Actif'
-                : 'Abonnement Expiré'}
+              {statusLabel}
             </span>
           </div>
 
@@ -39,7 +53,11 @@ export const ActivePlanCard: React.FC<ActivePlanCardProps> = ({ subData, daysRem
         {/* Métriques d'échéance */}
         <div className="bg-stone-900/80 p-5 rounded-2xl border border-stone-800 flex flex-col items-start md:items-end justify-center shrink-0 min-w-25">
           <span className="text-[10px] font-black uppercase tracking-wider text-stone-400 mb-1">
-            Renouvellement dans
+            {subData.status === 'TRIAL'
+              ? 'Fin de l’essai dans'
+              : subData.status === 'ACTIVE'
+                ? 'Fin de la période'
+                : 'Accès clôturé le'}
           </span>
           <div className="text-3xl font-black text-amber-400">
             {daysRemaining} jour(s)
@@ -50,6 +68,22 @@ export const ActivePlanCard: React.FC<ActivePlanCardProps> = ({ subData, daysRem
           </span>
         </div>
       </div>
+      {canCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isCancelling}
+          className="relative z-10 mt-5 inline-flex items-center gap-2 text-xs font-bold text-stone-300 hover:text-white"
+        >
+          <Ban className="w-4 h-4" />
+          {isCancelling ? 'Annulation...' : 'Annuler l’abonnement'}
+        </button>
+      )}
+      {!canCancel && (
+        <p className="relative z-10 mt-5 text-xs text-stone-300">
+          Les données restent consultables, mais les modifications sont désactivées. Choisissez une formule pour réactiver l’accès.
+        </p>
+      )}
     </div>
   );
 };

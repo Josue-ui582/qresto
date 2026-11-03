@@ -385,7 +385,7 @@ model SubscriptionHistory {
   restaurant   Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   plan         SubscriptionPlan
   amount       Int
-  status       String           @default("PAID") // PAID, PENDING, FAILED
+  status       String           @default("PENDING") // PAID, PENDING, FAILED
   paymentRef   String?
   startDate    DateTime         @default(now())
   endDate      DateTime
@@ -418,7 +418,7 @@ model Subscription {
   billingCycle BillingCycle       @default(MONTHLY)
   startDate    DateTime           @default(now())
   endDate      DateTime
-  autoRenew    Boolean            @default(true)
+  autoRenew    Boolean            @default(false)
 
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
@@ -435,7 +435,7 @@ model Invoice {
 
   amount         Int
   currency       String       @default("FCFA")
-  status         String       @default("PAID")
+  status         String       @default("PENDING")
   description    String
 
   createdAt      DateTime     @default(now())

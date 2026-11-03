@@ -18,7 +18,7 @@ export const BillingCycleToggle: React.FC<BillingCycleToggleProps> = ({
           Choisissez votre formule
         </h3>
         <p className="text-xs text-stone-500">
-          Économisez jusqu'à 20% en optant pour la facturation annuelle.
+          Sélectionnez une durée de formule; aucun paiement automatique n’est effectué.
         </p>
       </div>
 
@@ -31,7 +31,7 @@ export const BillingCycleToggle: React.FC<BillingCycleToggleProps> = ({
               : 'text-stone-500 hover:text-stone-900'
           }`}
         >
-          Facturation Mensuelle
+          Durée mensuelle
         </button>
         <button
           onClick={() => onCycleChange('YEARLY')}
@@ -41,7 +41,7 @@ export const BillingCycleToggle: React.FC<BillingCycleToggleProps> = ({
               : 'text-stone-500 hover:text-stone-900'
           }`}
         >
-          <span>Facturation Annuelle</span>
+          <span>Durée annuelle</span>
           <span className="px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 text-[10px] font-black">
             -20%
           </span>

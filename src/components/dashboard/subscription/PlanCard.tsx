@@ -8,7 +8,7 @@ interface PlanCardProps {
   plan: PlanCatalogItem;
   isCurrent: boolean;
   billingCycle: 'MONTHLY' | 'YEARLY';
-  formatPrice: (amount: number) => string;
+  formatPrice: (amount: number, currency?: string) => string;
   onSelect: (plan: PlanCatalogItem) => void;
 }
 
@@ -56,7 +56,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
           </div>
           {billingCycle === 'YEARLY' && (
             <span className="text-[11px] text-amber-700 font-bold block mt-1">
-              Facturé {formatPrice(plan.yearlyPrice)} / an
+              Prix annuel indicatif : {formatPrice(plan.yearlyPrice)}
             </span>
           )}
         </div>

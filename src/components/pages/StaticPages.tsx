@@ -5,6 +5,7 @@ import { useNavigation } from '../../context/NavigationContext';
 import Link from 'next/link';
 import { useToast } from '../../context/ToastContext';
 import { FaIcon } from '../common/Icon';
+import { PLAN_CURRENCY, PLANS_CATALOG } from '@/lib/subscription/catalog';
 
 export const CguPage: React.FC = () => {
   const { navigateTo } = useNavigation();
@@ -33,7 +34,14 @@ export const CguPage: React.FC = () => {
 
           <h2 className="text-base font-bold text-text">3. Abonnements Restaurateurs</h2>
           <p>
-            Les abonnements restaurateurs sont proposés aux formules mensuelles de 5 000 FCFA (Plan Starter) et 8 000 FCFA (Plan Pro Illimité). Le règlement s'effectue via les moyens de paiement locaux (MTN Mobile Money, Moov Money).
+            Les formules actuellement affichées sont :
+            {' '}{PLANS_CATALOG.map((plan, index) => (
+              <React.Fragment key={plan.id}>
+                {index > 0 ? ', ' : ''}
+                {plan.name} : {new Intl.NumberFormat('fr-FR').format(plan.monthlyPrice)} {PLAN_CURRENCY} par mois ou {new Intl.NumberFormat('fr-FR').format(plan.yearlyPrice)} {PLAN_CURRENCY} par an
+              </React.Fragment>
+            ))}.
+            {' '}Ces tarifs sont à confirmer. Un essai de 14 jours est proposé. Le changement de formule est actuellement simulé : aucun paiement ni renouvellement automatique n’est effectué. Les moyens de paiement seront précisés lorsqu’un prestataire sera intégré.
           </p>
         </section>
       </div>

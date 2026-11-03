@@ -321,7 +321,6 @@ export const RestaurantDashboard: React.FC = () => {
           {dashboardTab === 'subscription' && (
             <SubscriptionTab
               restaurantId={restaurantId}
-              currencySymbol={currentRestaurant.currency}
             />
           )}
 

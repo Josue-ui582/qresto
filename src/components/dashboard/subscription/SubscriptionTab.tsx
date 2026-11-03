@@ -14,11 +14,11 @@ import { BillingCycleToggle } from './BillingCycleToggle';
 import { PlanCard } from './PlanCard';
 import { InvoicesTable } from './InvoicesTable';
 import { UpgradeModal } from './UpgradeModal';
+import { PLAN_CURRENCY } from '@/lib/subscription/catalog';
 
 export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
   restaurantId,
   plan: initialPlan,
-  currencySymbol = 'FCFA',
   onRefreshNeeded,
 }) => {
   const [subData, setSubData] = useState<SubscriptionData | null>(initialPlan || null);
@@ -30,6 +30,7 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
   // Modal de changement de plan
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<PlanCatalogItem | null>(null);
   const [isSubmittingUpgrade, setIsSubmittingUpgrade] = useState<boolean>(false);
+  const [isCancelling, setIsCancelling] = useState<boolean>(false);
 
   // Toast Notice
   const [notice, setNotice] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -79,10 +80,10 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
 
   // Formater les prix
   const formatPrice = useCallback(
-    (amount: number) => {
-      return new Intl.NumberFormat('fr-FR').format(amount) + ` ${currencySymbol}`;
+    (amount: number, currency = PLAN_CURRENCY) => {
+      return new Intl.NumberFormat('fr-FR').format(amount) + ` ${currency}`;
     },
-    [currencySymbol]
+    []
   );
 
   // Calcul des jours restants
@@ -116,17 +117,51 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
         throw new Error(data.error || 'Impossible de mettre à jour le plan.');
       }
 
-      showNotice('success', `Abonnement mis à jour vers "${selectedPlanForUpgrade.name}" !`);
+      showNotice('success', data.message || `Formule "${selectedPlanForUpgrade.name}" activée sans paiement.`);
       setSelectedPlanForUpgrade(null);
       fetchSubscription();
       if (onRefreshNeeded) onRefreshNeeded();
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : 'Erreur lors du paiement.';
+      const errorMsg = err instanceof Error ? err.message : 'Erreur lors de l’activation de la formule.';
       showNotice('error', errorMsg);
     } finally {
       setIsSubmittingUpgrade(false);
     }
   };
+
+  const handleCancelSubscription = async () => {
+    if (!restaurantId || !window.confirm('Annuler maintenant l’abonnement ? Les modifications seront immédiatement désactivées.')) {
+      return;
+    }
+
+    try {
+      setIsCancelling(true);
+      const res = await fetch('/api/subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantId, action: 'CANCEL' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Impossible d’annuler l’abonnement.');
+      }
+      showNotice('success', data.message);
+      await fetchSubscription();
+      onRefreshNeeded?.();
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'Erreur lors de l’annulation.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const usageRows = subData?.usage && subData.planDetails
+    ? [
+        { label: 'Plats', usage: subData.usage.dishes, limit: subData.planDetails.limits.dishes },
+        { label: 'Tables actives', usage: subData.usage.tables, limit: subData.planDetails.limits.tables },
+        { label: 'Membres actifs', usage: subData.usage.members, limit: subData.planDetails.limits.members },
+      ]
+    : [];
 
   return (
     <div className="space-y-8">
@@ -145,12 +180,36 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
         </div>
       ) : (
         <>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+            Tarifs indicatifs à confirmer. Le changement de formule est sans paiement ni renouvellement automatique.
+          </div>
           {subData ? (
-            <ActivePlanCard subData={subData} daysRemaining={daysRemaining} />
+            <ActivePlanCard
+              subData={subData}
+              daysRemaining={daysRemaining}
+              onCancel={handleCancelSubscription}
+              isCancelling={isCancelling}
+            />
           ) : (
             <div className="rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-500">
               Aucun abonnement n’est actuellement associé à ce restaurant.
             </div>
+          )}
+
+          {usageRows.length > 0 && (
+            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs">
+              <h3 className="text-lg font-bold text-stone-950 mb-4">Utilisation de votre formule</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {usageRows.map(({ label, usage, limit }) => (
+                  <div key={label} className="rounded-2xl bg-stone-50 border border-stone-200 p-4">
+                    <div className="text-xs text-stone-500">{label}</div>
+                    <div className="mt-1 text-lg font-black text-stone-950">
+                      {usage} / {limit === null ? 'Illimité' : limit}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
 
           <BillingCycleToggle billingCycle={billingCycle} onCycleChange={setBillingCycle} />
@@ -161,7 +220,10 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
                 <PlanCard
                   key={plan.id}
                   plan={plan}
-                  isCurrent={subData?.planId === plan.id}
+                  isCurrent={
+                    subData?.planId === plan.id &&
+                    (subData.status === 'ACTIVE' || subData.status === 'TRIAL')
+                  }
                   billingCycle={billingCycle}
                   formatPrice={formatPrice}
                   onSelect={setSelectedPlanForUpgrade}

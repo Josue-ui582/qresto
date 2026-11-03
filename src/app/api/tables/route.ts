@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { handleDatabaseError, parseJson, parseQueryParam } from '@/lib/api/validation';
 import { authorizeRequest } from '@/lib/auth/session';
+import { createPlanLimitMessage, getPlanResourceUsage, isResourceLimitReached } from '@/lib/subscription/service';
+import { Prisma } from 'generated/prisma/client';
 
 const createTableSchema = z.object({
   number: z.union([z.string().trim().min(1).max(30), z.number().int().positive()]),
@@ -43,23 +45,42 @@ export async function POST(request: NextRequest) {
 
   try {
     const number = String(parsed.data.number).trim();
-    const existing = await prisma.restaurantTable.findFirst({
-      where: { restaurantId: auth.session.restaurantId, number },
-      select: { id: true },
-    });
-    if (existing) {
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.restaurantTable.findFirst({
+        where: { restaurantId: auth.session.restaurantId, number },
+        select: { id: true },
+      });
+      if (existing) return { duplicate: true as const };
+
+      const planLimit = await getPlanResourceUsage(tx, auth.session.restaurantId, 'tables');
+      const limit = planLimit.limit;
+      if (isResourceLimitReached(limit, planLimit.usage)) {
+        return { limitReached: { limit, planName: planLimit.planName } };
+      }
+
+      const table = await tx.restaurantTable.create({
+        data: {
+          number,
+          capacity: parsed.data.capacity ?? 4,
+          name: parsed.data.name || null,
+          restaurantId: auth.session.restaurantId,
+        },
+        include: { restaurant: { select: { id: true, name: true, slug: true } } },
+      });
+      return { table };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+    if ('duplicate' in result) {
       return NextResponse.json({ error: `La table #${number} existe déjà.` }, { status: 409 });
     }
-    const table = await prisma.restaurantTable.create({
-      data: {
-        number,
-        capacity: parsed.data.capacity ?? 4,
-        name: parsed.data.name || null,
-        restaurantId: auth.session.restaurantId,
-      },
-      include: { restaurant: { select: { id: true, name: true, slug: true } } },
-    });
-    return NextResponse.json({ success: true, table }, { status: 201 });
+    if ('limitReached' in result && result.limitReached) {
+      const { limit, planName } = result.limitReached;
+      return NextResponse.json(
+        { error: createPlanLimitMessage(planName, 'tables', limit) },
+        { status: 403 }
+      );
+    }
+    return NextResponse.json({ success: true, table: result.table }, { status: 201 });
   } catch (error: unknown) {
     return handleDatabaseError(error, 'Impossible de créer la table.');
   }

@@ -3,63 +3,23 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { handleDatabaseError, parseJson } from '@/lib/api/validation';
 import { authorizeRequest } from '@/lib/auth/session';
+import { getPlanById, PLANS_CATALOG } from '@/lib/subscription/catalog';
+import {
+  activatePlanWithoutPayment,
+  cancelSubscription,
+  ensureTrialSubscription,
+  getEffectiveSubscriptionState,
+} from '@/lib/subscription/service';
 
 const updateSubscriptionSchema = z.object({
   restaurantId: z.string().optional(),
-  planId: z.enum(['STARTER', 'PRO', 'ENTERPRISE']),
+  action: z.enum(['CHANGE_PLAN', 'CANCEL']).default('CHANGE_PLAN'),
+  planId: z.enum(['STARTER', 'PRO', 'ENTERPRISE']).optional(),
   billingCycle: z.enum(['MONTHLY', 'YEARLY']).default('MONTHLY'),
+}).refine((value) => value.action === 'CANCEL' || value.planId !== undefined, {
+  message: 'Une formule doit être sélectionnée.',
+  path: ['planId'],
 });
-
-// Constantes des plans tarifaires
-export const PLANS_CATALOG = [
-  {
-    id: 'STARTER',
-    name: 'Starter / Découverte',
-    description: 'Idéal pour les petits établissements ou pour tester le menu QR.',
-    monthlyPrice: 15000,
-    yearlyPrice: 144000, // 12 000 FCFA / mois
-    maxTables: 10,
-    features: [
-      'Jusqu’à 10 tables',
-      'Menu numérique dynamique HD',
-      'Génération de QR Codes standards',
-      'Support par e-mail',
-    ],
-  },
-  {
-    id: 'PRO',
-    name: 'Pro / Restaurant',
-    popular: true,
-    description: 'La solution complète pour optimiser le service et booster les ventes.',
-    monthlyPrice: 35000,
-    yearlyPrice: 336000, // 28 000 FCFA / mois
-    maxTables: 999, // Illimité
-    features: [
-      'Tables illimitées',
-      'Signalétique QR HD & Personnalisée',
-      'Suivi des commandes en temps réel',
-      'Tableau de bord Analytics avancé',
-      'Gestion des rôles de l’équipe',
-      'Support prioritaire WhatsApp 7j/7',
-    ],
-  },
-  {
-    id: 'ENTERPRISE',
-    name: 'Enterprise / Multi-Sites',
-    description: 'Pour les chaînes de restaurants, hôtels et complexes VIP.',
-    monthlyPrice: 75000,
-    yearlyPrice: 720000, // 60 000 FCFA / mois
-    maxTables: 9999,
-    features: [
-      'Multi-établissements intégrés',
-      'Tout du Plan Pro inclus',
-      'Intégration API & Caisses POS',
-      'Accompagnement & Setup sur site',
-      'Account Manager dédié',
-      'SLA Garanti 99.9%',
-    ],
-  },
-];
 
 // GET : Récupérer l'état de l'abonnement du restaurant
 export async function GET(request: NextRequest) {
@@ -68,7 +28,6 @@ export async function GET(request: NextRequest) {
   if (auth.response) return auth.response;
 
   try {
-    // Récupération de l'abonnement
     let subscription = await prisma.subscription.findUnique({
       where: { restaurantId: auth.session.restaurantId },
       include: {
@@ -79,29 +38,46 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Si aucun abonnement en BDD, créer un plan Découverte / Essai par défaut
     if (!subscription) {
-      const now = new Date();
-      const trialEnd = new Date();
-      trialEnd.setDate(now.getDate() + 14); // 14 jours d'essai
-
-      subscription = await prisma.subscription.create({
-        data: {
-          restaurantId: auth.session.restaurantId,
-          planId: 'PRO',
-          status: 'TRIAL',
-          billingCycle: 'MONTHLY',
-          startDate: now,
-          endDate: trialEnd,
-          autoRenew: true,
-        },
+      await ensureTrialSubscription(auth.session.restaurantId);
+      subscription = await prisma.subscription.findUnique({
+        where: { restaurantId: auth.session.restaurantId },
         include: {
-          invoices: true,
+          invoices: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
+        },
+      });
+    }
+    if (!subscription) throw new Error('Impossible de créer l’abonnement d’essai.');
+
+    const currentPlan = getPlanById(subscription.planId);
+    if (!currentPlan) {
+      return NextResponse.json(
+        { success: false, error: 'Le plan associé à cet abonnement n’est plus disponible.' },
+        { status: 500 }
+      );
+    }
+    const effectiveStatus = getEffectiveSubscriptionState(subscription.status, subscription.endDate);
+    if (effectiveStatus !== subscription.status || subscription.autoRenew) {
+      subscription = await prisma.subscription.update({
+        where: { restaurantId: auth.session.restaurantId },
+        data: { status: effectiveStatus, autoRenew: false },
+        include: {
+          invoices: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
         },
       });
     }
 
-    const currentPlan = PLANS_CATALOG.find((p) => p.id === subscription?.planId) || PLANS_CATALOG[0];
+    const [dishes, tables, members] = await Promise.all([
+      prisma.dish.count({ where: { restaurantId: auth.session.restaurantId } }),
+      prisma.restaurantTable.count({ where: { restaurantId: auth.session.restaurantId, active: true } }),
+      prisma.teamMember.count({ where: { restaurantId: auth.session.restaurantId, active: true } }),
+    ]);
 
     return NextResponse.json(
       {
@@ -109,6 +85,7 @@ export async function GET(request: NextRequest) {
         subscription: {
           ...subscription,
           planDetails: currentPlan,
+          usage: { dishes, tables, members },
         },
         availablePlans: PLANS_CATALOG,
       },
@@ -127,9 +104,17 @@ export async function POST(request: NextRequest) {
   if (auth.response) return auth.response;
 
   try {
+    if (parsed.data.action === 'CANCEL') {
+      const subscription = await cancelSubscription(auth.session.restaurantId);
+      return NextResponse.json({
+        success: true,
+        message: 'Abonnement annulé. Les modifications sont désormais en lecture seule.',
+        subscription,
+      });
+    }
     const { planId, billingCycle } = parsed.data;
 
-    const selectedPlan = PLANS_CATALOG.find((p) => p.id === planId);
+    const selectedPlan = planId ? getPlanById(planId) : undefined;
     if (!selectedPlan) {
       return NextResponse.json(
         { success: false, error: 'Plan sélectionné invalide.' },
@@ -137,54 +122,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date();
-    const nextEndDate = new Date();
-    if (billingCycle === 'YEARLY') {
-      nextEndDate.setFullYear(now.getFullYear() + 1);
-    } else {
-      nextEndDate.setMonth(now.getMonth() + 1);
-    }
-
-    const price =
-      billingCycle === 'YEARLY' ? selectedPlan.yearlyPrice : selectedPlan.monthlyPrice;
-
-    // Mise à jour ou création de l'abonnement
-    const updatedSubscription = await prisma.subscription.upsert({
-      where: { restaurantId: auth.session.restaurantId },
-      update: {
-        planId,
-        billingCycle,
-        status: 'ACTIVE',
-        startDate: now,
-        endDate: nextEndDate,
-        autoRenew: true,
-      },
-      create: {
-        restaurantId: auth.session.restaurantId,
-        planId,
-        billingCycle,
-        status: 'ACTIVE',
-        startDate: now,
-        endDate: nextEndDate,
-        autoRenew: true,
-      },
-    });
-
-    // Générer une facture correspondante
-    await prisma.invoice.create({
-      data: {
-        subscriptionId: updatedSubscription.id,
-        amount: price,
-        currency: 'FCFA',
-        status: 'PAID',
-        description: `Abonnement ${selectedPlan.name} (${billingCycle === 'YEARLY' ? 'Annuel' : 'Mensuel'})`,
-      },
-    });
+    const updatedSubscription = await activatePlanWithoutPayment(
+      auth.session.restaurantId,
+      selectedPlan.id,
+      billingCycle
+    );
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Abonnement mis à jour avec succès.',
+        message: 'Formule activée sans paiement. Le paiement en ligne sera intégré ultérieurement.',
         subscription: updatedSubscription,
       },
       { status: 200 }

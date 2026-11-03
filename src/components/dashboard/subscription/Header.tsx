@@ -20,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({ isLoading, onRefresh }) => {
           Gestion de l'Abonnement
         </h2>
         <p className="text-xs sm:text-sm text-stone-500 mt-1 font-normal">
-          Consultez votre formule actuelle, changez de plan et gérez vos factures.
+          Consultez votre formule, ses limites d’usage et les opérations enregistrées.
         </p>
       </div>
 
