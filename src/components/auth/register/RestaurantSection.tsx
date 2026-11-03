@@ -5,18 +5,14 @@ import { RegisterFormData, UpdateFormFn } from '@/types';
 interface Props {
   formData: RegisterFormData;
   updateForm: UpdateFormFn;
+  onImageFileChange: (target: 'logoPreview' | 'coverPreview', file: File) => void;
 }
 
-export const RestaurantSection: React.FC<Props> = ({ formData, updateForm }) => {
+export const RestaurantSection: React.FC<Props> = ({ formData, updateForm, onImageFileChange }) => {
   const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>, target: 'logoPreview' | 'coverPreview') => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
-        const result = uploadEvent.target?.result as string;
-        updateForm(target, result);
-      };
-      reader.readAsDataURL(file);
+      onImageFileChange(target, file);
     }
   };
 
@@ -73,9 +69,9 @@ export const RestaurantSection: React.FC<Props> = ({ formData, updateForm }) => 
           <div className="p-3 bg-surface-alt rounded-2xl border border-soft">
             <label className="form-label">Logo du restaurant</label>
             <div className="flex items-center gap-3">
-              <img src={formData.logoPreview} alt="Logo" className="w-14 h-14 rounded-xl object-cover border border-soft" />
+              <img src={formData.logoPreview} alt="Logo" referrerPolicy="no-referrer" className="w-14 h-14 rounded-xl object-cover border border-soft" />
               <div>
-                <input type="file" accept="image/*" onChange={(e) => handleImageFile(e, 'logoPreview')}
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleImageFile(e, 'logoPreview')}
                   className="text-xs text-muted file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-soft file:text-brand hover:file:bg-brand-200" />
               </div>
             </div>
@@ -83,9 +79,9 @@ export const RestaurantSection: React.FC<Props> = ({ formData, updateForm }) => 
           <div className="p-3 bg-surface-alt rounded-2xl border border-soft">
             <label className="form-label">Image de couverture / Bannière</label>
             <div className="flex items-center gap-3">
-              <img src={formData.coverPreview} alt="Couverture" className="w-14 h-14 rounded-xl object-cover border border-soft" />
+              <img src={formData.coverPreview} alt="Couverture" referrerPolicy="no-referrer" className="w-14 h-14 rounded-xl object-cover border border-soft" />
               <div>
-                <input type="file" accept="image/*" onChange={(e) => handleImageFile(e, 'coverPreview')}
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleImageFile(e, 'coverPreview')}
                   className="text-xs text-muted file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-soft file:text-brand hover:file:bg-brand-200" />
               </div>
             </div>

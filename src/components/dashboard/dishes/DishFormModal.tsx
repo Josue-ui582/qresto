@@ -40,40 +40,72 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
   // 'upload' par défaut si base64/upload, 'url' si c'est une adresse HTTP
   const [imageMode, setImageMode] = useState<'upload' | 'url'>('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [debouncedImageUrl, setDebouncedImageUrl] = useState('');
+  const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
 
   // Détecter automatiquement le mode selon l'image existante à l'ouverture (ex: édition)
   useEffect(() => {
-    if (formData.imageUrl?.startsWith('http://') || formData.imageUrl?.startsWith('https://')) {
+    if (/^https?:\/\//i.test(formData.imageUrl || '')) {
       setImageMode('url');
     } else {
       setImageMode('upload');
     }
+    setImageError(null);
   }, [isOpen]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedImageUrl(formData.imageUrl.trim());
+      setPreviewState(formData.imageUrl.trim() ? 'loading' : 'idle');
+    }, imageMode === 'url' ? 350 : 0);
+    return () => clearTimeout(timeout);
+  }, [formData.imageUrl, imageMode]);
 
   if (!isOpen) return null;
 
-  // Traitement du fichier uploadé (Conversion Data URL Base64)
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-    if (!validTypes.includes(file.type)) {
-      alert('Seuls les formats JPG, JPEG et PNG sont autorisés.');
-      return;
-    }
-
+    setImageError(null);
     if (file.size > 5 * 1024 * 1024) {
-      alert('La taille de l\'image ne doit pas dépasser 5 Mo.');
+      setImageError('L’image dépasse la taille maximale de 5 Mo.');
+      e.target.value = '';
       return;
     }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setImageError('Type refusé. Sélectionnez une image JPEG, PNG ou WebP.');
+      e.target.value = '';
+      return;
+    }
+    setIsUploadingImage(true);
+    try {
+      const uploadData = new FormData();
+      uploadData.set('file', file);
+      const response = await fetch('/api/uploads', { method: 'POST', body: uploadData });
+      const result: { success?: boolean; imageUrl?: string; error?: string } = await response.json();
+      if (!response.ok || !result.success || !result.imageUrl) {
+        throw new Error(result.error || 'Impossible de téléverser cette image.');
+      }
+      onChangeFormData({ ...formData, imageUrl: result.imageUrl });
+      setPreviewState('loaded');
+    } catch (error: unknown) {
+      setImageError(error instanceof Error ? error.message : 'Erreur réseau lors du téléversement.');
+      e.target.value = '';
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      onChangeFormData({ ...formData, imageUrl: base64String });
-    };
-    reader.readAsDataURL(file);
+  const isPreviewableUrl = (value: string) => {
+    if (/^\/api\/uploads\/[0-9a-f-]+\.(?:jpg|png|webp)$/i.test(value)) return true;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
   };
 
   return (
@@ -186,6 +218,7 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                     type="button"
                     onClick={() => {
                       setImageMode('upload');
+                      setImageError(null);
                       onChangeFormData({ ...formData, imageUrl: '' });
                     }}
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.6875rem] font-bold transition-all cursor-pointer ${
@@ -201,6 +234,7 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                     type="button"
                     onClick={() => {
                       setImageMode('url');
+                      setImageError(null);
                       onChangeFormData({ ...formData, imageUrl: '' });
                     }}
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.6875rem] font-bold transition-all cursor-pointer ${
@@ -221,8 +255,8 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                   <input
                     type="file"
                     ref={fileInputRef}
-                    accept="image/png, image/jpeg, image/jpg"
-                    onChange={handleFileChange}
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={(event) => void handleFileChange(event)}
                     className="hidden"
                   />
                   <div
@@ -233,11 +267,18 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                         : 'border-ink-200 bg-ink-50 hover:bg-ink-100/80 hover:border-brand-400'
                     }`}
                   >
-                    {formData.imageUrl ? (
+                    {isUploadingImage ? (
+                      <div className="flex items-center gap-3 text-xs font-semibold text-ink-700">
+                        <Loader2 className="h-5 w-5 animate-spin text-brand-600" />
+                        Téléversement de l’image…
+                      </div>
+                    ) : formData.imageUrl ? (
                       <div className="flex items-center gap-3 w-full">
                         <img
                           src={formData.imageUrl}
                           alt="Aperçu"
+                          referrerPolicy="no-referrer"
+                          onError={() => setPreviewState('error')}
                           className="w-14 h-14 rounded-xl object-cover border border-ink-200 shrink-0"
                         />
                         <div className="flex-1 min-w-0">
@@ -270,27 +311,38 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                   <input
                     type="url"
                     value={formData.imageUrl}
-                    onChange={(e) => onChangeFormData({ ...formData, imageUrl: e.target.value })}
+                    onChange={(e) => {
+                      setImageError(null);
+                      onChangeFormData({ ...formData, imageUrl: e.target.value });
+                    }}
                     placeholder="https://images.unsplash.com/photo-..."
                     className="w-full px-4 py-2.5 bg-ink-50 border border-ink-200 rounded-xl text-xs sm:text-sm text-ink-900 focus:outline-none focus:border-brand-500 focus:bg-paper-white transition-all font-medium"
                   />
-                  {formData.imageUrl && (
+                  {debouncedImageUrl && (
                     <div className="flex items-center gap-3 p-2 bg-ink-50 border border-ink-200 rounded-xl">
-                      <img
-                        src={formData.imageUrl}
-                        alt="Aperçu"
-                        className="w-12 h-12 rounded-lg object-cover shrink-0"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
-                      />
-                      <span className="text-[0.6875rem] text-ink-500 truncate">
-                        Aperçu de l'image
-                      </span>
+                      {isPreviewableUrl(debouncedImageUrl) && previewState !== 'error' ? (
+                        <>
+                          <img
+                            src={debouncedImageUrl}
+                            alt="Aperçu du plat"
+                            referrerPolicy="no-referrer"
+                            onLoad={() => setPreviewState('loaded')}
+                            onError={() => setPreviewState('error')}
+                            className={`${previewState === 'loaded' ? 'block' : 'hidden'} w-12 h-12 rounded-lg object-cover shrink-0`}
+                          />
+                          {previewState === 'loading' && <Loader2 className="h-5 w-5 animate-spin text-brand-600" />}
+                          {previewState === 'loaded' && <span className="text-[0.6875rem] text-ink-500 truncate">Aperçu de l’image</span>}
+                        </>
+                      ) : (
+                        <span className="text-[0.6875rem] text-negative-700">
+                          Cette URL ne mène pas à une image affichable.
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
               )}
+              {imageError && <p role="alert" className="text-xs text-negative-700">{imageError}</p>}
             </div>
 
             {/* Description */}
