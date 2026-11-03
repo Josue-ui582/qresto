@@ -1,5 +1,7 @@
 import { FaIcon } from '@/components/common/Icon';
 import { OrderStatus, TrackedOrder } from '@/types';
+import { useToast } from '@/context/ToastContext';
+import Link from 'next/link';
 import React from 'react';
 
 interface OrderTrackingTimelineProps {
@@ -8,6 +10,7 @@ interface OrderTrackingTimelineProps {
 }
 
 export const OrderTrackingTimeline: React.FC<OrderTrackingTimelineProps> = ({ currentOrder, handleManualRefresh }) => {
+  const { showToast } = useToast();
   const steps: { status: OrderStatus; label: string; icon: string; desc: string }[] = [
     { status: 'NEW', label: 'Commande Reçue', icon: 'fa-solid fa-receipt', desc: 'Enregistrée sur le terminal' },
     { status: 'CONFIRMED', label: 'Confirmée', icon: 'fa-solid fa-circle-check', desc: 'Validée par l\'équipe' },
@@ -31,6 +34,15 @@ export const OrderTrackingTimeline: React.FC<OrderTrackingTimelineProps> = ({ cu
   };
 
   const currentStepIdx = getStepIndex(currentOrder.status);
+
+  const copyTrackingCode = async () => {
+    try {
+      await navigator.clipboard.writeText(currentOrder.trackingCode);
+      showToast('Code de suivi copié.', 'success');
+    } catch {
+      showToast('Impossible de copier le code de suivi.', 'error');
+    }
+  };
 
   return (
     <>
@@ -67,6 +79,19 @@ export const OrderTrackingTimeline: React.FC<OrderTrackingTimelineProps> = ({ cu
               <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-extrabold text-sm border border-amber-300">
                 {currentOrder.trackingCode}
               </span>
+              <button
+                type="button"
+                onClick={copyTrackingCode}
+                className="text-xs font-semibold text-amber-700 hover:text-amber-900 underline"
+              >
+                Copier
+              </button>
+              <Link
+                href={`/order-tracking?trackingCode=${encodeURIComponent(currentOrder.trackingCode)}`}
+                className="text-xs font-semibold text-amber-700 hover:text-amber-900 underline"
+              >
+                Lien direct
+              </Link>
             </div>
             <h2 className="text-xl font-extrabold text-stone-900 mt-2">{currentOrder.restaurantName}</h2>
           </div>
