@@ -58,7 +58,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addToCart = (dish: Dish, quantity: number = 1, options: AddToCartOptions = {}) => {
     const restaurantId = options.restaurantId || dish.restaurantId;
-    if (cartRestaurantId && cartRestaurantId !== restaurantId && cart.length > 0) {
+    const containsAnotherRestaurant = cart.some(
+      (item) => item.dish.restaurantId !== restaurantId
+    );
+    if (cart.length > 0 && (cartRestaurantId !== restaurantId || containsAnotherRestaurant)) {
       const shouldReset = window.confirm("Votre panier contient déjà des plats d'un autre restaurant. Réinitialiser ?");
       if (!shouldReset) return;
       setCart([]);
