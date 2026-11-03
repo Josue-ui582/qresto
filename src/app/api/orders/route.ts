@@ -12,6 +12,7 @@ import { isE164WhatsappPhone } from '@/lib/orders/whatsapp-phone';
 import { generateTrackingCode, TRACKING_CODE_PATTERN } from '@/lib/orders/tracking-code';
 import { notifyOrderCreated } from '@/lib/orders/order-notifier';
 import { publishOrderEvent } from '@/lib/realtime/event-bus';
+import { enforceSubscriptionWriteAccess } from '@/lib/subscription/service';
 
 const createOrderSchema = z.object({
   restaurantId: z.string().min(1),
@@ -69,6 +70,13 @@ export async function POST(request: NextRequest) {
     });
     if (!restaurant) {
       return NextResponse.json({ error: 'Restaurant introuvable.' }, { status: 404 });
+    }
+    const subscriptionAccess = await enforceSubscriptionWriteAccess(restaurant.id);
+    if (!subscriptionAccess.allowed) {
+      return NextResponse.json(
+        { error: 'Ce restaurant n’accepte pas les commandes en ligne pour le moment.' },
+        { status: 409 }
+      );
     }
 
     let verifiedTableNumber: string | null = null;
