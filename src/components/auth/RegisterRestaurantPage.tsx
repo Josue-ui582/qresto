@@ -7,6 +7,7 @@ import { Icon } from '@/components/common/Icon';
 import { OwnerSection } from './register/OwnerSection';
 import { RestaurantSection } from './register/RestaurantSection';
 import { RegisterFormData, UpdateFormFn } from '@/types';
+import { uploadImage } from '@/lib/uploads/client';
 
 export const RegisterRestaurantPage: React.FC = () => {
   const { registerOwnerAndRestaurant } = useAuth();
@@ -68,18 +69,14 @@ export const RegisterRestaurantPage: React.FC = () => {
   const uploadSelectedImages = async () => {
     const uploads: { logo?: string; coverImage?: string } = {};
     for (const [field, file] of Object.entries(imageFiles) as Array<['logo' | 'coverImage', File]>) {
-      const uploadData = new FormData();
-      uploadData.set('file', file);
-      const response = await fetch('/api/uploads', { method: 'POST', body: uploadData });
-      const result: { success?: boolean; imageUrl?: string; error?: string } = await response.json();
-      if (!response.ok || !result.success || !result.imageUrl) {
+      try {
+        uploads[field] = await uploadImage(file);
+      } catch (error: unknown) {
         const label = field === 'logo' ? 'le logo' : 'la couverture';
-        const message = response.status === 401
-          ? 'Votre session a expiré. Reconnectez-vous pour téléverser les images du restaurant.'
-          : result.error || `Impossible de téléverser ${label}.`;
-        throw new Error(message);
+        throw new Error(
+          error instanceof Error ? error.message : `Impossible de téléverser ${label}.`
+        );
       }
-      uploads[field] = result.imageUrl;
     }
     if (Object.keys(uploads).length) {
       const response = await fetch('/api/settings', {

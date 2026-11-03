@@ -278,11 +278,6 @@ export const RestaurantsPage: React.FC = () => {
                             <QrCode className="w-3.5 h-3.5 text-brand-600" />
                             <span>Menu QR à table</span>
                           </span>
-                          <span>·</span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-ink-400" />
-                            <span>{resto.openingHours || 'Horaires non renseignés'}</span>
-                          </span>
                         </div>
                       </div>
                     </div>

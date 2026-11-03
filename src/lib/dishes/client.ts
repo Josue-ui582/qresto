@@ -15,10 +15,10 @@ export async function submitDish(
   payload: Record<string, unknown>,
   editingDishId?: string
 ): Promise<void> {
-  const imageUrl = payload.imageUrl;
-  if (typeof imageUrl !== 'string' || !validateImageUrl(imageUrl.trim())) {
+  const imageUrl = typeof payload.imageUrl === 'string' ? payload.imageUrl.trim() : '';
+  if (!imageUrl || !validateImageUrl(imageUrl)) {
     throw new DishSubmissionError(
-      typeof imageUrl === 'string' && imageUrl.startsWith('data:')
+      imageUrl.toLowerCase().startsWith('data:')
         ? 'L’image n’a pas été téléversée. Sélectionnez à nouveau le fichier.'
         : 'Choisissez une URL d’image valide ou téléversez un fichier.',
       { imageUrl: 'Une URL valide ou une image téléversée est requise.' }
@@ -30,7 +30,7 @@ export async function submitDish(
     response = await fetch('/api/dishes', {
       method: editingDishId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, imageUrl }),
     });
   } catch {
     throw new DishSubmissionError('Erreur réseau : impossible d’enregistrer le plat.');

@@ -2,6 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { uploadImage } from '@/lib/uploads/client';
+import { MAX_IMAGE_SIZE_BYTES } from '@/lib/uploads/image-validation';
 import { 
   UtensilsCrossed, 
   X, 
@@ -88,15 +90,10 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
     setImageError(null);
     onClearFieldError('imageUrl');
     setPreviewState('idle');
-    if (file.size > 5 * 1024 * 1024) {
-      setImageError('L’image dépasse la taille maximale de 5 Mo.');
-      clearLocalPreview();
-      onChangeFormData((current) => ({ ...current, imageUrl: '' }));
-      input.value = '';
-      return;
-    }
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      setImageError('Type refusé. Sélectionnez une image JPEG, PNG ou WebP.');
+    if (file.size > MAX_IMAGE_SIZE_BYTES || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setImageError(file.size > MAX_IMAGE_SIZE_BYTES
+        ? 'L’image dépasse la taille maximale de 5 Mo.'
+        : 'Type refusé. Sélectionnez une image JPEG, PNG ou WebP.');
       clearLocalPreview();
       onChangeFormData((current) => ({ ...current, imageUrl: '' }));
       input.value = '';
@@ -109,28 +106,11 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
     onChangeFormData((current) => ({ ...current, imageUrl: '' }));
     setIsUploadingImage(true);
     try {
-      const uploadData = new FormData();
-      uploadData.set('file', file);
-      const response = await fetch('/api/uploads', { method: 'POST', body: uploadData });
-      const result: { success?: boolean; imageUrl?: string; error?: string } = await response.json();
-      if (!response.ok || !result.success || !result.imageUrl) {
-        const message = response.status === 401
-          ? 'Votre session a expiré. Reconnectez-vous puis téléversez à nouveau l’image.'
-          : result.error || 'Impossible de téléverser cette image.';
-        throw new Error(message);
-      }
-      const uploadedImageUrl = result.imageUrl;
-      if (!uploadedImageUrl || uploadedImageUrl.startsWith('data:') || uploadedImageUrl.startsWith('blob:')) {
-        throw new Error('Le serveur n’a pas retourné une URL d’image valide.');
-      }
+      const uploadedImageUrl = await uploadImage(file);
       onChangeFormData((current) => ({ ...current, imageUrl: uploadedImageUrl }));
       setPreviewState('loaded');
     } catch (error: unknown) {
-      setImageError(
-        error instanceof TypeError
-          ? 'Erreur réseau : vérifiez votre connexion puis réessayez le téléversement.'
-          : error instanceof Error ? error.message : 'Erreur réseau lors du téléversement.'
-      );
+      setImageError(error instanceof Error ? error.message : 'Erreur réseau lors du téléversement.');
       onChangeFormData((current) => ({ ...current, imageUrl: '' }));
     } finally {
       setIsUploadingImage(false);
@@ -148,7 +128,7 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
       event.preventDefault();
       return;
     }
-    if (formData.imageUrl.startsWith('data:') || formData.imageUrl.startsWith('blob:')) {
+    if (/^(?:data|blob):/i.test(formData.imageUrl.trim())) {
       event.preventDefault();
       setImageError('Cette image doit être téléversée avant de créer le plat.');
       return;
