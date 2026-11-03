@@ -93,6 +93,21 @@ export async function POST(req: Request) {
         },
       });
 
+      const trialStart = new Date();
+      const trialEnd = new Date(trialStart);
+      trialEnd.setDate(trialEnd.getDate() + 14);
+      await tx.subscription.create({
+        data: {
+          restaurantId: newRestaurant.id,
+          planId: 'PRO',
+          status: 'TRIAL',
+          billingCycle: 'MONTHLY',
+          startDate: trialStart,
+          endDate: trialEnd,
+          autoRenew: false,
+        },
+      });
+
       return { user: newUser, restaurant: newRestaurant };
     });
 

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Check } from 'lucide-react';
-import { PLANS_CATALOG } from '@/lib/subscription/catalog';
+import { PLAN_CURRENCY, PLANS_CATALOG } from '@/lib/subscription/catalog';
 
 export const PricingSection: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -39,7 +39,7 @@ export const PricingSection: React.FC = () => {
                   : 'text-stone-600 hover:text-stone-950'
               }`}
             >
-              Paiement Mensuel
+              Tarif mensuel
             </button>
             <button
               type="button"
@@ -89,11 +89,11 @@ export const PricingSection: React.FC = () => {
                       {new Intl.NumberFormat('fr-FR').format(price)}
                     </span>
                     <span className={`text-sm font-bold ml-1 ${highlighted ? 'text-stone-400' : 'text-stone-500'}`}>
-                      FCFA / mois
+                      {PLAN_CURRENCY} / mois
                     </span>
                     {billingCycle === 'yearly' && (
                       <p className={`mt-1 text-[11px] ${highlighted ? 'text-stone-400' : 'text-stone-500'}`}>
-                        Facturé {new Intl.NumberFormat('fr-FR').format(plan.yearlyPrice)} FCFA / an
+                        Prix annuel indicatif : {new Intl.NumberFormat('fr-FR').format(plan.yearlyPrice)} {PLAN_CURRENCY}
                       </p>
                     )}
                   </div>
@@ -124,7 +124,7 @@ export const PricingSection: React.FC = () => {
           })}
         </div>
         <p className="mt-6 text-xs text-stone-500">
-          Tarifs indicatifs à confirmer. Le changement de formule n’entraîne pas encore de paiement automatique.
+          Tarifs indicatifs à confirmer. Le changement de formule n’entraîne pas de paiement automatique.
         </p>
       </div>
     </section>

@@ -1,7 +1,7 @@
 import type { PlanCatalogItem, PlanId } from '@/lib/subscription/catalog';
 
 export type { PlanId, PlanCatalogItem };
-export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'EXPIRED' | 'CANCELLED';
+export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'PAST_DUE' | 'EXPIRED' | 'CANCELLED';
 
 export interface PlanUsage {
   dishes: number;
@@ -35,6 +35,5 @@ export interface SubscriptionData {
 export interface SubscriptionTabProps {
   restaurantId?: string;
   plan?: SubscriptionData;
-  currencySymbol?: string;
   onRefreshNeeded?: () => void;
 }

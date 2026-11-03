@@ -282,7 +282,7 @@ export const Navbar: React.FC = () => {
                   Connexion gérant
                 </Link>
                 <Link href="/register-restaurant" onClick={() => setMobileMenuOpen(false)} className="w-full rounded-full bg-stone-950 py-2.5 text-center text-xs font-bold text-white">
-                  Digitaliser mon restaurant gratuitement
+                  Démarrer l’essai de 14 jours
                 </Link>
               </div>
             )}

@@ -5,7 +5,7 @@ import { useNavigation } from '../../context/NavigationContext';
 import Link from 'next/link';
 import { useToast } from '../../context/ToastContext';
 import { FaIcon } from '../common/Icon';
-import { PLANS_CATALOG } from '@/lib/subscription/catalog';
+import { PLAN_CURRENCY, PLANS_CATALOG } from '@/lib/subscription/catalog';
 
 export const CguPage: React.FC = () => {
   const { navigateTo } = useNavigation();
@@ -38,7 +38,7 @@ export const CguPage: React.FC = () => {
             {' '}{PLANS_CATALOG.map((plan, index) => (
               <React.Fragment key={plan.id}>
                 {index > 0 ? ', ' : ''}
-                {plan.name} : {new Intl.NumberFormat('fr-FR').format(plan.monthlyPrice)} FCFA par mois ou {new Intl.NumberFormat('fr-FR').format(plan.yearlyPrice)} FCFA par an
+                {plan.name} : {new Intl.NumberFormat('fr-FR').format(plan.monthlyPrice)} {PLAN_CURRENCY} par mois ou {new Intl.NumberFormat('fr-FR').format(plan.yearlyPrice)} {PLAN_CURRENCY} par an
               </React.Fragment>
             ))}.
             {' '}Ces tarifs sont à confirmer. Un essai de 14 jours est proposé. Le changement de formule est actuellement simulé : aucun paiement ni renouvellement automatique n’est effectué. Les moyens de paiement seront précisés lorsqu’un prestataire sera intégré.

@@ -6,7 +6,7 @@ import { InvoiceData } from './types';
 
 interface InvoicesTableProps {
   invoices?: InvoiceData[];
-  formatPrice: (amount: number) => string;
+  formatPrice: (amount: number, currency?: string) => string;
 }
 
 export const InvoicesTable: React.FC<InvoicesTableProps> = ({ invoices, formatPrice }) => {
@@ -18,10 +18,10 @@ export const InvoicesTable: React.FC<InvoicesTableProps> = ({ invoices, formatPr
         </div>
         <div>
           <h3 className="text-lg font-bold text-stone-950">
-            Historique des Factures
+            Historique de facturation
           </h3>
           <p className="text-xs text-stone-500">
-            Téléchargez vos reçus et justificatifs de paiement.
+            Aucun paiement ni reçu automatique n’est généré tant que l’encaissement n’est pas intégré.
           </p>
         </div>
       </div>
@@ -48,7 +48,7 @@ export const InvoicesTable: React.FC<InvoicesTableProps> = ({ invoices, formatPr
                     {new Date(invoice.createdAt).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="py-3.5 font-black text-stone-950">
-                    {formatPrice(invoice.amount)}
+                    {formatPrice(invoice.amount, invoice.currency)}
                   </td>
                   <td className="py-3.5">
                     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
@@ -58,14 +58,14 @@ export const InvoicesTable: React.FC<InvoicesTableProps> = ({ invoices, formatPr
                           ? 'bg-amber-50 text-amber-700 border-amber-200'
                           : 'bg-rose-50 text-rose-700 border-rose-200'
                     }`}>
-                      {invoice.status === 'PAID' ? '● Payée' : invoice.status === 'PENDING' ? '● En attente' : '● Échouée'}
+                      {invoice.status === 'PAID' ? '● À vérifier' : invoice.status === 'PENDING' ? '● En attente' : '● Échouée'}
                     </span>
                   </td>
                   <td className="py-3.5 text-right">
                     <button
                       onClick={() => window.print()}
                       className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors cursor-pointer"
-                      title="Télécharger le reçu"
+                      title="Imprimer le récapitulatif"
                     >
                       <Download className="w-3.5 h-3.5" />
                     </button>

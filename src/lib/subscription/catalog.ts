@@ -1,5 +1,6 @@
 export type PlanId = 'STARTER' | 'PRO' | 'ENTERPRISE';
 export type PlanLimit = number | null;
+export const PLAN_CURRENCY = 'FCFA';
 
 export interface PlanCatalogItem {
   id: PlanId;

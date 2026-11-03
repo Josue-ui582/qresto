@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getJwtSecret, JwtConfigurationError } from './jwt';
 import { roleHasPermission, type ApiPermission } from './permissions';
+import { enforceSubscriptionWriteAccess } from '@/lib/subscription/service';
 
 async function fetchSessionUser(userId: string) {
   return prisma.user.findUnique({
@@ -152,6 +153,30 @@ export async function authorizeRequest(
         { status: 403 }
       ),
     };
+  }
+
+  if (request.method !== 'GET' && permission !== 'SUBSCRIPTION_ADMIN') {
+    try {
+      const access = await enforceSubscriptionWriteAccess(restaurantId);
+      if (!access.allowed) {
+        const message = access.status === 'CANCELLED'
+          ? 'Cet abonnement est annulé. Choisissez une formule pour réactiver les modifications.'
+          : access.status === 'PAST_DUE'
+            ? 'Cet abonnement est en attente de règlement. Les modifications sont temporairement désactivées.'
+            : 'Cet abonnement a expiré. Choisissez une formule pour réactiver les modifications.';
+        return {
+          response: NextResponse.json({ error: message }, { status: 403 }),
+        };
+      }
+    } catch (error: unknown) {
+      console.error('Erreur lors de la vérification de l’abonnement:', error);
+      return {
+        response: NextResponse.json(
+          { error: 'Impossible de vérifier les droits de modification de cet abonnement.' },
+          { status: 500 }
+        ),
+      };
+    }
   }
 
   return {

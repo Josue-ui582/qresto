@@ -4,11 +4,21 @@ import { prisma } from '@/lib/prisma';
 import { handleDatabaseError, parseJson } from '@/lib/api/validation';
 import { authorizeRequest } from '@/lib/auth/session';
 import { getPlanById, PLANS_CATALOG } from '@/lib/subscription/catalog';
+import {
+  activatePlanWithoutPayment,
+  cancelSubscription,
+  ensureTrialSubscription,
+  getEffectiveSubscriptionState,
+} from '@/lib/subscription/service';
 
 const updateSubscriptionSchema = z.object({
   restaurantId: z.string().optional(),
-  planId: z.enum(['STARTER', 'PRO', 'ENTERPRISE']),
+  action: z.enum(['CHANGE_PLAN', 'CANCEL']).default('CHANGE_PLAN'),
+  planId: z.enum(['STARTER', 'PRO', 'ENTERPRISE']).optional(),
   billingCycle: z.enum(['MONTHLY', 'YEARLY']).default('MONTHLY'),
+}).refine((value) => value.action === 'CANCEL' || value.planId !== undefined, {
+  message: 'Une formule doit être sélectionnée.',
+  path: ['planId'],
 });
 
 // GET : Récupérer l'état de l'abonnement du restaurant
@@ -18,7 +28,6 @@ export async function GET(request: NextRequest) {
   if (auth.response) return auth.response;
 
   try {
-    // Récupération de l'abonnement
     let subscription = await prisma.subscription.findUnique({
       where: { restaurantId: auth.session.restaurantId },
       include: {
@@ -29,27 +38,19 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Si aucun abonnement en BDD, créer un plan Découverte / Essai par défaut
     if (!subscription) {
-      const now = new Date();
-      const trialEnd = new Date();
-      trialEnd.setDate(now.getDate() + 14); // 14 jours d'essai
-
-      subscription = await prisma.subscription.create({
-        data: {
-          restaurantId: auth.session.restaurantId,
-          planId: 'PRO',
-          status: 'TRIAL',
-          billingCycle: 'MONTHLY',
-          startDate: now,
-          endDate: trialEnd,
-          autoRenew: true,
-        },
+      await ensureTrialSubscription(auth.session.restaurantId);
+      subscription = await prisma.subscription.findUnique({
+        where: { restaurantId: auth.session.restaurantId },
         include: {
-          invoices: true,
+          invoices: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
         },
       });
     }
+    if (!subscription) throw new Error('Impossible de créer l’abonnement d’essai.');
 
     const currentPlan = getPlanById(subscription.planId);
     if (!currentPlan) {
@@ -58,6 +59,25 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
+    const effectiveStatus = getEffectiveSubscriptionState(subscription.status, subscription.endDate);
+    if (effectiveStatus !== subscription.status || subscription.autoRenew) {
+      subscription = await prisma.subscription.update({
+        where: { restaurantId: auth.session.restaurantId },
+        data: { status: effectiveStatus, autoRenew: false },
+        include: {
+          invoices: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
+        },
+      });
+    }
+
+    const [dishes, tables, members] = await Promise.all([
+      prisma.dish.count({ where: { restaurantId: auth.session.restaurantId } }),
+      prisma.restaurantTable.count({ where: { restaurantId: auth.session.restaurantId, active: true } }),
+      prisma.teamMember.count({ where: { restaurantId: auth.session.restaurantId, active: true } }),
+    ]);
 
     return NextResponse.json(
       {
@@ -65,6 +85,7 @@ export async function GET(request: NextRequest) {
         subscription: {
           ...subscription,
           planDetails: currentPlan,
+          usage: { dishes, tables, members },
         },
         availablePlans: PLANS_CATALOG,
       },
@@ -83,9 +104,17 @@ export async function POST(request: NextRequest) {
   if (auth.response) return auth.response;
 
   try {
+    if (parsed.data.action === 'CANCEL') {
+      const subscription = await cancelSubscription(auth.session.restaurantId);
+      return NextResponse.json({
+        success: true,
+        message: 'Abonnement annulé. Les modifications sont désormais en lecture seule.',
+        subscription,
+      });
+    }
     const { planId, billingCycle } = parsed.data;
 
-    const selectedPlan = getPlanById(planId);
+    const selectedPlan = planId ? getPlanById(planId) : undefined;
     if (!selectedPlan) {
       return NextResponse.json(
         { success: false, error: 'Plan sélectionné invalide.' },
@@ -93,35 +122,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date();
-    const nextEndDate = new Date();
-    if (billingCycle === 'YEARLY') {
-      nextEndDate.setFullYear(now.getFullYear() + 1);
-    } else {
-      nextEndDate.setMonth(now.getMonth() + 1);
-    }
-
-    // Mise à jour ou création de l'abonnement
-    const updatedSubscription = await prisma.subscription.upsert({
-      where: { restaurantId: auth.session.restaurantId },
-      update: {
-        planId,
-        billingCycle,
-        status: 'ACTIVE',
-        startDate: now,
-        endDate: nextEndDate,
-        autoRenew: false,
-      },
-      create: {
-        restaurantId: auth.session.restaurantId,
-        planId,
-        billingCycle,
-        status: 'ACTIVE',
-        startDate: now,
-        endDate: nextEndDate,
-        autoRenew: false,
-      },
-    });
+    const updatedSubscription = await activatePlanWithoutPayment(
+      auth.session.restaurantId,
+      selectedPlan.id,
+      billingCycle
+    );
 
     return NextResponse.json(
       {
