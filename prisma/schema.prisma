@@ -311,6 +311,7 @@ model Order {
 
   items         OrderItem[]
   statusHistory OrderStatusHistory[]
+  review        Review?
 
   @@index([restaurantId])
   @@map("orders")
@@ -350,14 +351,17 @@ model Review {
   id           String     @id @default(cuid())
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderId      String?    @unique
+  order        Order?     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   dishId       String?
   dish         Dish?      @relation(fields: [dishId], references: [id], onDelete: Cascade)
   customerName String
   rating       Int        @default(5)
   comment      String?
+  isApproved   Boolean    @default(false)
   createdAt    DateTime   @default(now())
 
-  @@index([restaurantId])
+  @@index([restaurantId, isApproved])
   @@map("reviews")
 }
 

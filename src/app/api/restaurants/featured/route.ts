@@ -40,6 +40,7 @@ export async function GET() {
       }),
       prisma.review.groupBy({
         by: ['restaurantId'],
+        where: { isApproved: true },
         _avg: { rating: true },
         _count: { _all: true },
       }),

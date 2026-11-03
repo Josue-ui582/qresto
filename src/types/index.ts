@@ -162,10 +162,12 @@ export interface Order {
 
 export interface TrackedOrder {
   trackingCode: string;
+  customerName: string;
   restaurantName: string;
   restaurantPhone?: string | null;
   currency: string;
   status: OrderStatus;
+  hasReview: boolean;
   items: Array<Pick<OrderItem, 'name' | 'price' | 'quantity'>>;
   total: number;
   statusHistory: Array<{
