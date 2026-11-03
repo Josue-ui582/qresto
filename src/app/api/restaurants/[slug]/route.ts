@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { isRestaurantOpenNow } from '@/lib/restaurants/opening-hours';
 
 export async function GET(
   req: NextRequest,
@@ -87,7 +88,19 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ restaurant }, { status: 200 });
+    const reviewAggregate = await prisma.review.aggregate({
+      where: { restaurantId: restaurant.id },
+      _avg: { rating: true },
+      _count: { _all: true },
+    });
+    return NextResponse.json({
+      restaurant: {
+        ...restaurant,
+        isOpen: isRestaurantOpenNow(restaurant.openingHours),
+        rating: reviewAggregate._avg.rating ?? 0,
+        reviewCount: reviewAggregate._count._all,
+      },
+    }, { status: 200 });
   } catch (error) {
     console.error('Erreur API /api/restaurants/[slug]:', error);
     return NextResponse.json(

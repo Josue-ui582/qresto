@@ -73,8 +73,10 @@ export const RestaurantHero: React.FC<RestaurantHeroProps> = ({
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight">
                 {restaurant.name}
               </h1>
-              <span className="px-2 py-0.5 rounded-md bg-emerald-500 text-white text-[10px] font-bold">
-                ● Ouvert
+              <span className={`px-2 py-0.5 rounded-md text-white text-[10px] font-bold ${
+                restaurant.isOpen ? 'bg-emerald-500' : 'bg-stone-600'
+              }`}>
+                ● {restaurant.isOpen ? 'Ouvert' : 'Fermé'}
               </span>
             </div>
             <p className="text-amber-300 text-xs sm:text-sm font-semibold mb-1">
@@ -97,13 +99,19 @@ export const RestaurantHero: React.FC<RestaurantHeroProps> = ({
         <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-1.5 bg-black/50 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 text-white shrink-0 text-left sm:text-right">
           <div className="flex items-center gap-1.5 text-sm font-bold text-amber-400">
             <Star className="w-4 h-4 fill-amber-400" />
-            <span>{restaurant.rating.toFixed(1)}</span>
-            <span className="text-xs text-stone-300 font-normal">
-              ({restaurant.reviewCount || 140} avis)
-            </span>
+            {restaurant.reviewCount > 0 ? (
+              <>
+                <span>{restaurant.rating.toFixed(1)}</span>
+                <span className="text-xs text-stone-300 font-normal">
+                  ({restaurant.reviewCount} avis)
+                </span>
+              </>
+            ) : (
+              <span className="text-xs text-stone-300 font-normal">Pas encore d’avis</span>
+            )}
           </div>
           <div className="text-xs text-stone-300 font-medium">
-            Frais livraison : <strong className="text-white">{restaurant.deliveryFee.toLocaleString()} FCFA</strong>
+            Frais livraison : <strong className="text-white">{restaurant.deliveryFee.toLocaleString()} {restaurant.currency}</strong>
           </div>
         </div>
       </div>

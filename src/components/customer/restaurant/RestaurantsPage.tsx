@@ -226,11 +226,15 @@ export const RestaurantsPage: React.FC = () => {
                           <span className="text-xs font-semibold text-amber-800">
                             {resto.cuisineType || resto.category || 'Cuisine Africaine'}
                           </span>
-                          <div className="flex items-center gap-1 text-xs font-bold text-amber-600">
-                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                            <span>{resto.rating || '4.8'}</span>
-                            <span className="text-stone-400 font-normal">({resto.reviewCount || 0})</span>
-                          </div>
+                          {resto.reviewCount > 0 ? (
+                            <div className="flex items-center gap-1 text-xs font-bold text-amber-600">
+                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                              <span>{resto.rating.toFixed(1)}</span>
+                              <span className="text-stone-400 font-normal">({resto.reviewCount})</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs font-normal text-stone-500">Pas encore d’avis</span>
+                          )}
                         </div>
 
                         <h3 className="text-xl font-bold text-stone-950 mb-2 group-hover:text-amber-700 transition-colors">
