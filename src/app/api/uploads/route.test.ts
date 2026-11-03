@@ -93,10 +93,16 @@ describe('POST /api/uploads', () => {
     const largeFile = new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'dish.png', { type: 'image/png' });
     const tooLarge = await POST(request(largeFile));
     const fakeImage = await POST(request(new File([new TextEncoder().encode('<html>')], 'fake.jpg', { type: 'image/jpeg' })));
+    const svg = await POST(request(new File(
+      [new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"></svg>')],
+      'dish.svg',
+      { type: 'image/svg+xml' }
+    )));
 
     expect(badType.status).toBe(415);
     expect(tooLarge.status).toBe(413);
     expect(fakeImage.status).toBe(415);
+    expect(svg.status).toBe(415);
     expect(mocks.store).not.toHaveBeenCalled();
   });
 
