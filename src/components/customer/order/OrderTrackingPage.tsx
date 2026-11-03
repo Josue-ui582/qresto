@@ -8,7 +8,7 @@ import { OrderTrackingSearch } from './OrderTrackingSearch';
 import { OrderTrackingTimeline } from './OrderTrackingTimeline';
 import { OrderTrackingSummary } from './OrderTrackingSummary';
 import { OrderReviewForm } from './OrderReviewForm';
-import { FaIcon } from '@/components/common/Icon';
+import { Icon } from '@/components/common/Icon';
 import { useSearchParams } from 'next/navigation';
 
 export const OrderTrackingPage: React.FC = () => {
@@ -115,14 +115,14 @@ export const OrderTrackingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-ink-50 py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
       <OrderTrackingSearch 
         searchInput={searchInput}
         setSearchInput={setSearchInput}
         handleSearch={handleSearch}
       />
       {searchError && (
-        <p role="status" className="mb-6 text-center text-sm text-stone-600">
+        <p role="status" className="mb-6 text-center text-sm text-ink-600">
           {searchError}
         </p>
       )}
@@ -144,9 +144,9 @@ export const OrderTrackingPage: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-stone-300 p-8">
-          <FaIcon name="fa-solid fa-receipt" className="text-3xl text-stone-300 mb-2" />
-          <p className="text-stone-500 text-sm">Entrez votre code ci-dessus pour afficher votre commande.</p>
+        <div className="text-center py-12 bg-paper-white rounded-3xl border border-dashed border-ink-300 p-8">
+          <Icon name="receipt" className="text-3xl text-ink-300 mb-2" />
+          <p className="text-ink-500 text-sm">Entrez votre code ci-dessus pour afficher votre commande.</p>
         </div>
       )}
     </div>

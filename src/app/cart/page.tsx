@@ -8,7 +8,7 @@ import { Toast } from '@/components/common/Toast';
 
 export default function CartRoute() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+    <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1">
         <Suspense fallback={null}>

@@ -26,36 +26,36 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 
   return (
     <div
-      className={`bg-white rounded-3xl p-6 sm:p-8 border transition-all flex flex-col justify-between relative shadow-xs hover:shadow-md ${
+      className={`bg-paper-white rounded-3xl p-6 sm:p-8 border transition-all flex flex-col justify-between relative shadow-xs hover:shadow-md ${
         plan.popular
-          ? 'border-amber-500 ring-2 ring-amber-500/20'
-          : 'border-stone-200/80'
+          ? 'border-brand-500 ring-2 ring-brand-500/20'
+          : 'border-ink-200/80'
       }`}
     >
       {plan.popular && (
-        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-amber-500 text-stone-950 text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-brand-500 text-ink-950 text-[0.625rem] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
           Recommandé
         </div>
       )}
 
       <div>
-        <h4 className="text-xl font-bold text-stone-950 mb-1">
+        <h4 className="text-xl font-bold text-ink-950 mb-1">
           {plan.name}
         </h4>
-        <p className="text-xs text-stone-500 mb-6 leading-relaxed min-h-9">
+        <p className="text-xs text-ink-500 mb-6 leading-relaxed min-h-9">
           {plan.description}
         </p>
 
         {/* Affichage du Tarif */}
-        <div className="mb-6 pb-6 border-b border-stone-100">
+        <div className="mb-6 pb-6 border-b border-ink-100">
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl sm:text-4xl font-black text-stone-950">
+            <span className="text-3xl sm:text-4xl font-black text-ink-950">
               {formatPrice(price)}
             </span>
-            <span className="text-xs text-stone-400 font-bold">/ mois</span>
+            <span className="text-xs text-ink-400 font-bold">/ mois</span>
           </div>
           {billingCycle === 'YEARLY' && (
-            <span className="text-[11px] text-amber-700 font-bold block mt-1">
+            <span className="text-[0.6875rem] text-brand-700 font-bold block mt-1">
               Prix annuel indicatif : {formatPrice(plan.yearlyPrice)}
             </span>
           )}
@@ -64,8 +64,8 @@ export const PlanCard: React.FC<PlanCardProps> = ({
         {/* Liste des fonctionnalités */}
         <ul className="space-y-3 mb-8">
           {plan.features.map((feature, idx) => (
-            <li key={idx} className="flex items-start gap-2.5 text-xs text-stone-700">
-              <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <li key={idx} className="flex items-start gap-2.5 text-xs text-ink-700">
+              <Check className="w-4 h-4 text-positive-600 shrink-0 mt-0.5" />
               <span className="font-medium">{feature}</span>
             </li>
           ))}
@@ -78,10 +78,10 @@ export const PlanCard: React.FC<PlanCardProps> = ({
         disabled={isCurrent}
         className={`w-full py-3.5 px-4 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
           isCurrent
-            ? 'bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed'
+            ? 'bg-ink-100 text-ink-400 border border-ink-200 cursor-not-allowed'
             : plan.popular
-            ? 'bg-amber-500 hover:bg-amber-400 text-stone-950 font-black shadow-md'
-            : 'bg-stone-950 hover:bg-stone-800 text-white'
+            ? 'bg-brand-500 hover:bg-brand-400 text-ink-950 font-black shadow-md'
+            : 'bg-ink-950 hover:bg-ink-800 text-paper-white'
         }`}
       >
         {isCurrent ? (

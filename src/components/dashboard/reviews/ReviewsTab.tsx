@@ -67,31 +67,31 @@ export const ReviewsTab: React.FC<{ restaurantId: string }> = ({ restaurantId })
 
   return (
     <section className="space-y-5">
-      <header className="rounded-3xl border border-stone-200/80 bg-white p-6 sm:p-8">
-        <h2 className="text-xl font-black text-stone-950">Avis clients</h2>
-        <p className="mt-1 text-xs text-stone-500">Les avis sont liés à une commande livrée et attendent votre modération.</p>
+      <header className="rounded-3xl border border-ink-200/80 bg-paper-white p-6 sm:p-8">
+        <h2 className="text-xl font-black text-ink-950">Avis clients</h2>
+        <p className="mt-1 text-xs text-ink-500">Les avis sont liés à une commande livrée et attendent votre modération.</p>
       </header>
-      {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-800">{error}</p>}
-      {isLoading ? <p className="text-sm text-stone-500">Chargement des avis…</p> : reviews.length === 0 ? (
-        <p className="rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-500">Aucun avis pour le moment.</p>
+      {error && <p role="alert" className="rounded-xl border border-negative-200 bg-negative-50 p-4 text-xs text-negative-800">{error}</p>}
+      {isLoading ? <p className="text-sm text-ink-500">Chargement des avis…</p> : reviews.length === 0 ? (
+        <p className="rounded-2xl border border-ink-200 bg-paper-white p-6 text-sm text-ink-500">Aucun avis pour le moment.</p>
       ) : (
         <div className="space-y-3">
           {reviews.map((review) => (
-            <article key={review.id} className="rounded-2xl border border-stone-200 bg-white p-5">
+            <article key={review.id} className="rounded-2xl border border-ink-200 bg-paper-white p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h3 className="font-bold text-stone-900">{review.customerName} · {review.rating}/5</h3>
-                  <p className="text-[11px] text-stone-500">
+                  <h3 className="font-bold text-ink-900">{review.customerName} · {review.rating}/5</h3>
+                  <p className="text-[0.6875rem] text-ink-500">
                     {review.order?.trackingCode ?? 'Avis historique non vérifié'} · {new Date(review.createdAt).toLocaleDateString('fr-FR')}
                   </p>
-                  {review.comment && <p className="mt-3 whitespace-pre-wrap text-sm text-stone-700">{review.comment}</p>}
+                  {review.comment && <p className="mt-3 whitespace-pre-wrap text-sm text-ink-700">{review.comment}</p>}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${review.isApproved ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                  <span className={`rounded-full px-2.5 py-1 text-[0.6875rem] font-bold ${review.isApproved ? 'bg-positive-100 text-positive-800' : 'bg-brand-100 text-brand-800'}`}>
                     {review.isApproved ? 'Publié' : 'À modérer'}
                   </span>
                   {review.order && <button type="button" onClick={() => void moderateReview(review, !review.isApproved)}
-                    className="rounded-lg border border-stone-200 px-3 py-2 text-xs font-bold text-stone-800">
+                    className="rounded-lg border border-ink-200 px-3 py-2 text-xs font-bold text-ink-800">
                     {review.isApproved ? 'Masquer' : 'Publier'}
                   </button>}
                 </div>

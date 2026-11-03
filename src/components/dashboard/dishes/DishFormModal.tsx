@@ -78,24 +78,24 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-950/60 backdrop-blur-xs">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-ink-950/60 backdrop-blur-xs">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="bg-white rounded-3xl max-w-lg w-full max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] border border-stone-200 shadow-2xl relative overflow-hidden flex flex-col"
+          className="bg-paper-white rounded-3xl max-w-lg w-full max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] border border-ink-200 shadow-2xl relative overflow-hidden flex flex-col"
         >
           {/* Entête Modal */}
-          <div className="flex items-center justify-between p-6 sm:p-8 pb-4 border-b border-stone-100 shrink-0">
+          <div className="flex items-center justify-between p-6 sm:p-8 pb-4 border-b border-ink-100 shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl bg-brand-500/10 text-brand-700 flex items-center justify-center">
                 <UtensilsCrossed className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-stone-950">
+                <h3 className="text-lg font-bold text-ink-950">
                   {editingDish ? 'Éditer le plat' : 'Nouveau plat'}
                 </h3>
-                <p className="text-[11px] text-stone-500">
+                <p className="text-[0.6875rem] text-ink-500">
                   Ajustez les informations présentées au client.
                 </p>
               </div>
@@ -104,7 +104,7 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
             <button
               onClick={onClose}
               type="button"
-              className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-ink-100 hover:bg-ink-200 text-ink-500 flex items-center justify-center transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -112,8 +112,8 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
 
           {/* Affichage des Erreurs */}
           {formError && (
-            <div className="mx-6 sm:mx-8 mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2 shrink-0">
-              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+            <div className="mx-6 sm:mx-8 mt-4 p-3 rounded-xl bg-alert-50 border border-alert-200 text-alert-800 text-xs font-semibold flex items-center gap-2 shrink-0">
+              <AlertTriangle className="w-4 h-4 text-alert-600 shrink-0" />
               <span>{formError}</span>
             </div>
           )}
@@ -123,8 +123,8 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
             {/* Nom, Prix, Catégorie */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                  Nom du plat <span className="text-amber-600">*</span>
+                <label className="block text-xs font-bold text-ink-700 mb-1.5">
+                  Nom du plat <span className="text-brand-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -132,13 +132,13 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                   value={formData.name}
                   onChange={(e) => onChangeFormData({ ...formData, name: e.target.value })}
                   placeholder="Ex: Poulet Yassa, Alloco Poisson, Mojito..."
-                  className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all font-medium"
+                  className="w-full px-4 py-2.5 bg-ink-50 border border-ink-200 rounded-xl text-xs sm:text-sm text-ink-900 focus:outline-none focus:border-brand-500 focus:bg-paper-white transition-all font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                  Prix (FCFA) <span className="text-amber-600">*</span>
+                <label className="block text-xs font-bold text-ink-700 mb-1.5">
+                  Prix (FCFA) <span className="text-brand-600">*</span>
                 </label>
                 <input
                   type="number"
@@ -148,19 +148,19 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                   value={formData.price}
                   onChange={(e) => onChangeFormData({ ...formData, price: e.target.value })}
                   placeholder="Ex: 3500"
-                  className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all font-medium"
+                  className="w-full px-4 py-2.5 bg-ink-50 border border-ink-200 rounded-xl text-xs sm:text-sm text-ink-900 focus:outline-none focus:border-brand-500 focus:bg-paper-white transition-all font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                  Catégorie <span className="text-amber-600">*</span>
+                <label className="block text-xs font-bold text-ink-700 mb-1.5">
+                  Catégorie <span className="text-brand-600">*</span>
                 </label>
                 <select
                   required
                   value={formData.categoryId}
                   onChange={(e) => onChangeFormData({ ...formData, categoryId: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all font-medium cursor-pointer"
+                  className="w-full px-4 py-2.5 bg-ink-50 border border-ink-200 rounded-xl text-xs sm:text-sm text-ink-900 focus:outline-none focus:border-brand-500 focus:bg-paper-white transition-all font-medium cursor-pointer"
                 >
                   <option value="" disabled>
                     Sélectionner...
@@ -177,21 +177,21 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
             {/* Section Sélection/Upload Image */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-stone-700">
-                  Image du plat <span className="text-amber-600">*</span>
+                <label className="block text-xs font-bold text-ink-700">
+                  Image du plat <span className="text-brand-600">*</span>
                 </label>
                 {/* Sélecteur de Mode (Onglets) */}
-                <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200">
+                <div className="flex bg-ink-100 p-0.5 rounded-lg border border-ink-200">
                   <button
                     type="button"
                     onClick={() => {
                       setImageMode('upload');
                       onChangeFormData({ ...formData, imageUrl: '' });
                     }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.6875rem] font-bold transition-all cursor-pointer ${
                       imageMode === 'upload'
-                        ? 'bg-white text-stone-900 shadow-xs'
-                        : 'text-stone-500 hover:text-stone-800'
+                        ? 'bg-paper-white text-ink-900 shadow-xs'
+                        : 'text-ink-500 hover:text-ink-800'
                     }`}
                   >
                     <Upload className="w-3 h-3" />
@@ -203,10 +203,10 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                       setImageMode('url');
                       onChangeFormData({ ...formData, imageUrl: '' });
                     }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.6875rem] font-bold transition-all cursor-pointer ${
                       imageMode === 'url'
-                        ? 'bg-white text-stone-900 shadow-xs'
-                        : 'text-stone-500 hover:text-stone-800'
+                        ? 'bg-paper-white text-ink-900 shadow-xs'
+                        : 'text-ink-500 hover:text-ink-800'
                     }`}
                   >
                     <LinkIcon className="w-3 h-3" />
@@ -229,8 +229,8 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                     onClick={() => fileInputRef.current?.click()}
                     className={`w-full p-4 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all ${
                       formData.imageUrl
-                        ? 'border-amber-500 bg-amber-500/5'
-                        : 'border-stone-200 bg-stone-50 hover:bg-stone-100/80 hover:border-amber-400'
+                        ? 'border-brand-500 bg-brand-500/5'
+                        : 'border-ink-200 bg-ink-50 hover:bg-ink-100/80 hover:border-brand-400'
                     }`}
                   >
                     {formData.imageUrl ? (
@@ -238,26 +238,26 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                         <img
                           src={formData.imageUrl}
                           alt="Aperçu"
-                          className="w-14 h-14 rounded-xl object-cover border border-stone-200 shrink-0"
+                          className="w-14 h-14 rounded-xl object-cover border border-ink-200 shrink-0"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-stone-900 truncate">
+                          <p className="text-xs font-bold text-ink-900 truncate">
                             Image téléchargée
                           </p>
-                          <p className="text-[11px] text-amber-700 font-medium">
+                          <p className="text-[0.6875rem] text-brand-700 font-medium">
                             Cliquer pour changer d'image
                           </p>
                         </div>
                       </div>
                     ) : (
                       <div className="text-center py-1">
-                        <div className="w-9 h-9 rounded-full bg-white border border-stone-200 flex items-center justify-center mx-auto mb-1.5 text-stone-500 shadow-xs">
-                          <Upload className="w-4 h-4 text-amber-600" />
+                        <div className="w-9 h-9 rounded-full bg-paper-white border border-ink-200 flex items-center justify-center mx-auto mb-1.5 text-ink-500 shadow-xs">
+                          <Upload className="w-4 h-4 text-brand-600" />
                         </div>
-                        <p className="text-xs font-bold text-stone-800">
+                        <p className="text-xs font-bold text-ink-800">
                           Téléverser une image
                         </p>
-                        <p className="text-[10px] text-stone-400">
+                        <p className="text-[0.625rem] text-ink-400">
                           Formats : PNG, JPG, JPEG (Max 5Mo)
                         </p>
                       </div>
@@ -272,10 +272,10 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                     value={formData.imageUrl}
                     onChange={(e) => onChangeFormData({ ...formData, imageUrl: e.target.value })}
                     placeholder="https://images.unsplash.com/photo-..."
-                    className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all font-medium"
+                    className="w-full px-4 py-2.5 bg-ink-50 border border-ink-200 rounded-xl text-xs sm:text-sm text-ink-900 focus:outline-none focus:border-brand-500 focus:bg-paper-white transition-all font-medium"
                   />
                   {formData.imageUrl && (
-                    <div className="flex items-center gap-3 p-2 bg-stone-50 border border-stone-200 rounded-xl">
+                    <div className="flex items-center gap-3 p-2 bg-ink-50 border border-ink-200 rounded-xl">
                       <img
                         src={formData.imageUrl}
                         alt="Aperçu"
@@ -284,7 +284,7 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                           (e.target as HTMLElement).style.display = 'none';
                         }}
                       />
-                      <span className="text-[11px] text-stone-500 truncate">
+                      <span className="text-[0.6875rem] text-ink-500 truncate">
                         Aperçu de l'image
                       </span>
                     </div>
@@ -295,7 +295,7 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
 
             {/* Description */}
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5">
+              <label className="block text-xs font-bold text-ink-700 mb-1.5">
                 Description / Ingrédients
               </label>
               <textarea
@@ -303,17 +303,17 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                 value={formData.description}
                 onChange={(e) => onChangeFormData({ ...formData, description: e.target.value })}
                 placeholder="Description attrayante ou ingrédients principaux..."
-                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all font-medium resize-none"
+                className="w-full px-4 py-2.5 bg-ink-50 border border-ink-200 rounded-xl text-xs sm:text-sm text-ink-900 focus:outline-none focus:border-brand-500 focus:bg-paper-white transition-all font-medium resize-none"
               />
             </div>
 
             {/* Disponibilité */}
-            <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-between">
+            <div className="p-3.5 bg-ink-50 rounded-2xl border border-ink-200 flex items-center justify-between">
               <div>
-                <span className="block text-xs font-bold text-stone-900">
+                <span className="block text-xs font-bold text-ink-900">
                   Disponible à la commande
                 </span>
-                <span className="text-[11px] text-stone-500">
+                <span className="text-[0.6875rem] text-ink-500">
                   Décochez si le plat est temporairement en rupture de stock.
                 </span>
               </div>
@@ -321,34 +321,34 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
                 type="checkbox"
                 checked={formData.isAvailable}
                 onChange={(e) => onChangeFormData({ ...formData, isAvailable: e.target.checked })}
-                className="w-5 h-5 accent-amber-600 rounded cursor-pointer"
+                className="w-5 h-5 accent-brand-600 rounded cursor-pointer"
               />
             </div>
 
             </div>
 
             {/* Boutons d'action */}
-            <div className="px-6 sm:px-8 py-4 flex items-center justify-end gap-3 border-t border-stone-100 bg-white shrink-0">
+            <div className="px-6 sm:px-8 py-4 flex items-center justify-end gap-3 border-t border-ink-100 bg-paper-white shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-bold transition-colors cursor-pointer"
+                className="px-4 py-2.5 rounded-xl border border-ink-200 text-ink-600 hover:bg-ink-50 text-xs font-bold transition-colors cursor-pointer"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl bg-stone-950 hover:bg-stone-800 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl bg-ink-950 hover:bg-ink-800 text-paper-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                    <Loader2 className="w-4 h-4 animate-spin text-brand-400" />
                     <span>Enregistrement...</span>
                   </>
                 ) : (
                   <>
-                    <Check className="w-4 h-4 text-amber-400" />
+                    <Check className="w-4 h-4 text-brand-400" />
                     <span>{editingDish ? 'Mettre à jour' : 'Créer le plat'}</span>
                   </>
                 )}

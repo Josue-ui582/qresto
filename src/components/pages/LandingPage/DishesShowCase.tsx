@@ -88,26 +88,26 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
           className="mb-12 flex flex-col items-center gap-6 text-center"
         >
           <div className="max-w-3xl">
-            <div className="text-xs uppercase font-extrabold tracking-widest text-amber-700 mb-2">
+            <div className="text-xs uppercase font-extrabold tracking-widest text-brand-700 mb-2">
               Innovation Gastronomique
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
+            <h2 className="text-3xl sm:text-4xl font-black text-ink-950">
               Plats signatures & immersion 3D
             </h2>
-            <p className="text-sm sm:text-base text-stone-500 mt-2 font-normal">
+            <p className="text-sm sm:text-base text-ink-500 mt-2 font-normal">
               Permettez à vos convives de voir exactement ce qu’ils vont déguster avant de commander.
             </p>
           </div>
 
           {/* Filtres par Catégorie */}
           {categoriesList.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-stone-200/60 p-1">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-ink-200/60 p-1">
               <button
                 type="button"
                 onClick={() => setActiveCategory('all')}
                 className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${activeCategory === 'all'
-                  ? 'bg-white text-stone-950 shadow-sm'
-                  : 'text-stone-600 hover:text-stone-950'
+                  ? 'bg-paper-white text-ink-950 shadow-sm'
+                  : 'text-ink-600 hover:text-ink-950'
                   }`}
               >
                 Toutes les spécialités
@@ -118,8 +118,8 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                   type="button"
                   onClick={() => setActiveCategory(cat)}
                   className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${activeCategory === cat
-                    ? 'bg-white text-stone-950 shadow-sm'
-                    : 'text-stone-600 hover:text-stone-950'
+                    ? 'bg-paper-white text-ink-950 shadow-sm'
+                    : 'text-ink-600 hover:text-ink-950'
                     }`}
                 >
                   {cat}
@@ -131,8 +131,8 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
 
         {/* Loading State */}
         {isLoading ? (
-          <div className="py-16 flex flex-col items-center justify-center text-stone-400">
-            <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-2" />
+          <div className="py-16 flex flex-col items-center justify-center text-ink-400">
+            <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-2" />
             <span className="text-xs font-medium">Chargement des plats...</span>
           </div>
         ) : filteredDishes.length > 0 ? (
@@ -149,10 +149,10 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
                   whileHover={{ y: -6 }}
-                  className="bg-white rounded-3xl overflow-hidden border border-stone-200/90 shadow-xs hover:shadow-xl hover:shadow-stone-200/60 transition-all flex flex-col justify-between group"
+                  className="bg-paper-white rounded-3xl overflow-hidden border border-ink-200/90 shadow-xs hover:shadow-xl hover:shadow-ink-200/60 transition-all flex flex-col justify-between group"
                 >
                   <div>
-                    <div className="relative h-48 overflow-hidden bg-stone-100">
+                    <div className="relative h-48 overflow-hidden bg-ink-100">
                       {dish.image ? (
                         <img
                           src={dish.image}
@@ -160,13 +160,13 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                           className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
                         />
                       ) : (
-                        <div className="h-full flex items-center justify-center text-stone-400">
+                        <div className="h-full flex items-center justify-center text-ink-400">
                           <UtensilsCrossed className="w-8 h-8" />
                         </div>
                       )}
                       {dish.prepTime && (
-                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-stone-900/80 backdrop-blur-xs text-white text-[10px] font-bold flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-amber-400" />
+                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-ink-900/80 backdrop-blur-xs text-paper-white text-[0.625rem] font-bold flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-brand-400" />
                           <span>{dish.prepTime}</span>
                         </div>
                       )}
@@ -188,12 +188,9 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                               restaurantSlug: dish.restaurant.slug,
                             })
                           }
-                          className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-extrabold shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-105 transition-all"
+                          className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-ink-950 text-xs font-extrabold shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-105 transition-all"
                         >
-                          <RotateCw
-                            className="w-3.5 h-3.5 animate-spin"
-                            style={{ animationDuration: '8s' }}
-                          />
+                          <RotateCw className="w-3.5 h-3.5 animate-spin-showcase" />
                           <span>Voir en 3D</span>
                         </button>
                       )}
@@ -202,17 +199,17 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                     <div className="p-5">
                       <div className="flex items-center justify-between mb-1.5">
                         {dish.restaurant?.name && (
-                          <span className="text-xs font-semibold text-amber-800 uppercase tracking-wider truncate max-w-32.5">
+                          <span className="text-xs font-semibold text-brand-800 uppercase tracking-wider truncate max-w-32.5">
                             {dish.restaurant.name}
                           </span>
                         )}
                       </div>
 
-                      <h3 className="text-base font-bold text-stone-900 leading-snug mb-2 group-hover:text-amber-700 transition-colors">
+                      <h3 className="text-base font-bold text-ink-900 leading-snug mb-2 group-hover:text-brand-700 transition-colors">
                         {dish.name}
                       </h3>
                       {dish.description && (
-                        <p className="text-xs text-stone-500 leading-relaxed line-clamp-2 mb-4 font-normal">
+                        <p className="text-xs text-ink-500 leading-relaxed line-clamp-2 mb-4 font-normal">
                           {dish.description}
                         </p>
                       )}
@@ -222,7 +219,7 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                           {dish.ingredients.slice(0, 2).map((ing) => (
                             <span
                               key={ing}
-                              className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-600 text-[10px] font-medium"
+                              className="px-2 py-0.5 rounded-md bg-ink-100 text-ink-600 text-[0.625rem] font-medium"
                             >
                               {ing}
                             </span>
@@ -232,12 +229,12 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                     </div>
                   </div>
 
-                  <div className="p-5 pt-0 border-t border-stone-100 mt-2 flex items-center justify-between">
+                  <div className="p-5 pt-0 border-t border-ink-100 mt-2 flex items-center justify-between">
                     <div>
-                      <span className="text-base font-black text-stone-950">
+                      <span className="text-base font-black text-ink-950">
                         {dish.price.toLocaleString('fr-FR')}
                       </span>
-                      <span className="text-[10px] font-bold text-stone-500 ml-1">{dish.restaurant?.currency}</span>
+                      <span className="text-[0.625rem] font-bold text-ink-500 ml-1">{dish.restaurant?.currency}</span>
                     </div>
 
                     {restaurantSlug ? (
@@ -246,7 +243,7 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                           type="button"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className="px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs transition-colors cursor-pointer"
+                          className="px-4 py-2 rounded-xl bg-ink-900 hover:bg-ink-800 text-paper-white font-bold text-xs transition-colors cursor-pointer"
                         >
                           Commander
                         </motion.button>
@@ -255,7 +252,7 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
                       <motion.button
                         type="button"
                         disabled
-                        className="px-4 py-2 rounded-xl bg-stone-300 text-stone-500 font-bold text-xs cursor-not-allowed"
+                        className="px-4 py-2 rounded-xl bg-ink-300 text-ink-500 font-bold text-xs cursor-not-allowed"
                       >
                         Indisponible
                       </motion.button>
@@ -266,10 +263,10 @@ export const DishesShowcase: React.FC<DishesShowcaseProps> = ({ onSelectDish }) 
             })}
           </div>
         ) : (
-          <div className="bg-white rounded-3xl p-8 text-center border border-stone-200 max-w-md mx-auto">
-            <UtensilsCrossed className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-            <p className="text-sm font-bold text-stone-800">Aucun plat disponible pour le moment</p>
-            <p className="text-xs text-stone-500 mt-1">
+          <div className="bg-paper-white rounded-3xl p-8 text-center border border-ink-200 max-w-md mx-auto">
+            <UtensilsCrossed className="w-10 h-10 text-ink-300 mx-auto mb-3" />
+            <p className="text-sm font-bold text-ink-800">Aucun plat disponible pour le moment</p>
+            <p className="text-xs text-ink-500 mt-1">
               Les plats enregistrés par les restaurants partenaires apparaîtront ici.
             </p>
           </div>

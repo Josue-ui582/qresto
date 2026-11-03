@@ -133,14 +133,14 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
       />
 
       {error && (
-        <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="rounded-2xl border border-negative-200 bg-negative-50 px-4 py-3 text-sm text-negative-700">
           {error}
         </div>
       )}
 
       {isLoading && !statsData ? (
-        <div className="py-24 flex flex-col items-center justify-center text-stone-400 bg-white rounded-3xl border border-stone-200/80">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-3" />
+        <div className="py-24 flex flex-col items-center justify-center text-ink-400 bg-paper-white rounded-3xl border border-ink-200/80">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-3" />
           <span className="text-xs font-semibold">Calcul des métriques financières...</span>
         </div>
       ) : statsData ? (

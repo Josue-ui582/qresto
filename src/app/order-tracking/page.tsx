@@ -9,7 +9,7 @@ import { Suspense } from 'react';
 
 export default function OrderTrackingRoute() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+    <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1">
         <Suspense fallback={null}>

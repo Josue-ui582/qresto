@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaIcon } from '../common/Icon';
+import { Icon } from '../common/Icon';
 import { DashboardTab } from '../../context/NavigationContext';
 import { NavItem } from '@/types';
 
@@ -32,24 +32,24 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         collapsed ? 'w-20' : 'w-64'
       }`}
     >
-      <div className="h-16 px-6 border-b border-stone-100 flex items-center justify-between">
+      <div className="h-16 px-6 border-b border-ink-100 flex items-center justify-between">
         {!collapsed ? (
           <div onClick={onNavigateHome} className="cursor-pointer select-none group">
-            <span className="text-2xl font-black tracking-tight text-stone-900">
-              Q<span className="text-amber-500">Resto</span>
+            <span className="text-2xl font-black tracking-tight text-ink-900">
+              Q<span className="text-brand-500">Resto</span>
             </span>
           </div>
         ) : (
-          <span className="text-2xl font-black text-stone-900 mx-auto">Q</span>
+          <span className="text-2xl font-black text-ink-900 mx-auto">Q</span>
         )}
 
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className="text-stone-400 hover:text-stone-700 p-1 text-xs"
+          className="text-ink-400 hover:text-ink-700 p-1 text-xs"
           title={collapsed ? 'Déplier' : 'Replier'}
         >
-          <FaIcon name={collapsed ? 'fa-solid fa-chevron-right' : 'fa-solid fa-chevron-left'} />
+          <Icon name={collapsed ? 'chevron-right' : 'chevron-left'} />
         </button>
       </div>
 
@@ -63,20 +63,20 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               onClick={() => setDashboardTab(item.id as DashboardTab)}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 isActive
-                  ? 'bg-stone-900 text-white shadow-xs'
-                  : 'text-stone-700 hover:bg-stone-100 hover:text-stone-950'
+                  ? 'bg-ink-900 text-paper-white shadow-xs'
+                  : 'text-ink-700 hover:bg-ink-100 hover:text-ink-950'
               }`}
               title={collapsed ? item.label : undefined}
             >
-              <FaIcon
+              <Icon
                 name={item.icon}
-                className={`text-base shrink-0 ${isActive ? 'text-white' : 'text-stone-500'}`}
+                className={`text-base shrink-0 ${isActive ? 'text-paper-white' : 'text-ink-500'}`}
               />
               {!collapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
               {!collapsed && item.badge !== undefined && item.badge > 0 && (
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                    isActive ? 'bg-amber-500 text-stone-900' : 'bg-amber-100 text-amber-900'
+                  className={`px-2 py-0.5 rounded-full text-[0.6875rem] font-bold ${
+                    isActive ? 'bg-brand-500 text-ink-900' : 'bg-brand-100 text-brand-900'
                   }`}
                 >
                   {item.badge}
@@ -87,35 +87,35 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         })}
       </nav>
 
-      <div className="p-4 border-t border-stone-100">
+      <div className="p-4 border-t border-ink-100">
         {!collapsed ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 truncate">
-              <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
+              <div className="w-8 h-8 rounded-full bg-ink-900 text-paper-white flex items-center justify-center text-xs font-bold shrink-0">
                 M
               </div>
               <div className="truncate">
-                <p className="text-xs font-bold text-stone-900 truncate">{restaurantName}</p>
-                <p className="text-[11px] text-stone-400 truncate">{userEmail}</p>
+                <p className="text-xs font-bold text-ink-900 truncate">{restaurantName}</p>
+                <p className="text-[0.6875rem] text-ink-400 truncate">{userEmail}</p>
               </div>
             </div>
             <button
               type="button"
               onClick={onLogout}
-              className="text-stone-400 hover:text-red-600 p-1.5 transition-colors"
+              className="text-ink-400 hover:text-negative-600 p-1.5 transition-colors"
               title="Déconnexion"
             >
-              <FaIcon name="fa-solid fa-arrow-right-from-bracket" className="text-sm" />
+              <Icon name="arrow-right-from-bracket" className="text-sm" />
             </button>
           </div>
         ) : (
           <button
             type="button"
             onClick={onLogout}
-            className="w-full text-stone-400 hover:text-red-600 py-2 flex justify-center text-sm"
+            className="w-full text-ink-400 hover:text-negative-600 py-2 flex justify-center text-sm"
             title="Déconnexion"
           >
-            <FaIcon name="fa-solid fa-arrow-right-from-bracket" />
+            <Icon name="arrow-right-from-bracket" />
           </button>
         )}
       </div>

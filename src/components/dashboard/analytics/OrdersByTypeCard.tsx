@@ -15,26 +15,26 @@ interface OrdersByTypeCardProps {
 }
 
 export const OrdersByTypeCard: React.FC<OrdersByTypeCardProps> = ({ ordersByType }) => (
-  <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs">
+  <div className="bg-paper-white rounded-3xl p-6 sm:p-8 border border-ink-200/80 shadow-xs">
     <div className="flex items-center gap-2 mb-6">
-      <div className="w-9 h-9 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
+      <div className="w-9 h-9 rounded-2xl bg-indigo-accent-500/10 text-indigo-accent-600 flex items-center justify-center">
         <UtensilsCrossed className="w-5 h-5" />
       </div>
       <div>
-        <h3 className="text-lg font-bold text-stone-950">Modes de service</h3>
-        <p className="text-xs text-stone-500">Commandes par mode choisi.</p>
+        <h3 className="text-lg font-bold text-ink-950">Modes de service</h3>
+        <p className="text-xs text-ink-500">Commandes par mode choisi.</p>
       </div>
     </div>
     <div className="space-y-3">
       {ordersByType.length ? ordersByType.map(({ type, count }) => (
-        <div key={type} className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/60 flex items-center justify-between">
-          <span className="text-xs font-bold text-stone-700">{SERVICE_LABELS[type] ?? type}</span>
-          <span className="px-3 py-1 rounded-xl bg-white border border-stone-200 font-black text-xs text-stone-900 shadow-2xs">
+        <div key={type} className="p-3.5 rounded-2xl bg-ink-50 border border-ink-200/60 flex items-center justify-between">
+          <span className="text-xs font-bold text-ink-700">{SERVICE_LABELS[type] ?? type}</span>
+          <span className="px-3 py-1 rounded-xl bg-paper-white border border-ink-200 font-black text-xs text-ink-900 shadow-2xs">
             {count}
           </span>
         </div>
       )) : (
-        <p className="py-8 text-center text-stone-400 text-xs">Aucune commande sur cette période.</p>
+        <p className="py-8 text-center text-ink-400 text-xs">Aucune commande sur cette période.</p>
       )}
     </div>
   </div>

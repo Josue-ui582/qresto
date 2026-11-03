@@ -121,21 +121,21 @@ export const RestaurantsPage: React.FC = () => {
       >
         {/* Input de recherche */}
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-stone-400">
-            <Search className="w-4 h-4 text-stone-400" />
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-ink-400">
+            <Search className="w-4 h-4 text-ink-400" />
           </div>
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Rechercher un restaurant, igname pilée, poulet bicyclette, amiwo, capitaine..."
-            className="w-full pl-11 pr-10 py-3.5 bg-stone-50/80 border border-stone-200 rounded-2xl text-stone-900 placeholder-stone-400 text-sm focus:outline-hidden focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition-all font-medium"
+            className="w-full pl-11 pr-10 py-3.5 bg-ink-50/80 border border-ink-200 rounded-2xl text-ink-900 placeholder-ink-400 text-sm focus:outline-hidden focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all font-medium"
           />
           {searchTerm && (
             <button
               type="button"
               onClick={() => setSearchTerm('')}
-              className="absolute inset-y-0 right-0 pr-4 flex items-center text-stone-400 hover:text-stone-700 text-xs cursor-pointer"
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-ink-400 hover:text-ink-700 text-xs cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -143,8 +143,8 @@ export const RestaurantsPage: React.FC = () => {
         </div>
 
         {/* Ligne des contrôles de filtres */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-1 border-t border-stone-100">
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-stone-100 rounded-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-1 border-t border-ink-100">
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-ink-100 rounded-2xl">
             {[
               { id: 'all', label: 'Toutes les villes' },
               ...cities.map((city) => ({ id: `city:${city}`, label: city })),
@@ -155,8 +155,8 @@ export const RestaurantsPage: React.FC = () => {
                 onClick={() => setSelectedCity(city.id === 'all' ? 'all' : city.label)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   (city.id === 'all' ? selectedCity === 'all' : selectedCity === city.label)
-                    ? 'bg-white text-stone-950 shadow-xs'
-                    : 'text-stone-600 hover:text-stone-950'
+                    ? 'bg-paper-white text-ink-950 shadow-xs'
+                    : 'text-ink-600 hover:text-ink-950'
                 }`}
               >
                 {city.label}
@@ -182,11 +182,11 @@ export const RestaurantsPage: React.FC = () => {
               onClick={() => setOnlyOpen(!onlyOpen)}
               className={`px-4 py-2 rounded-xl text-xs font-bold border flex items-center gap-2 transition-all cursor-pointer ${
                 onlyOpen
-                  ? 'bg-accent text-white border-accent shadow-xs'
-                  : 'bg-surface-alt border-soft text-text hover:bg-white'
+                  ? 'bg-accent text-paper-white border-accent shadow-xs'
+                  : 'bg-surface-alt border-soft text-text hover:bg-paper-white'
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${onlyOpen ? 'bg-white' : 'bg-emerald-500'}`} />
+              <span className={`w-2 h-2 rounded-full ${onlyOpen ? 'bg-paper-white' : 'bg-positive-500'}`} />
               <span>Ouverts actuellement</span>
             </button>
           </div>
@@ -196,13 +196,13 @@ export const RestaurantsPage: React.FC = () => {
       {/* État de chargement */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="w-10 h-10 text-amber-500 animate-spin mb-4" />
-          <p className="text-sm font-medium text-stone-600">Chargement des établissements...</p>
+          <Loader2 className="w-10 h-10 text-brand-500 animate-spin mb-4" />
+          <p className="text-sm font-medium text-ink-600">Chargement des établissements...</p>
         </div>
       ) : error ? (
         /* État d'erreur */
-        <div className="bg-red-50 border border-red-200 rounded-3xl p-8 text-center max-w-lg mx-auto">
-          <p className="text-sm font-semibold text-red-700 mb-4">{error}</p>
+        <div className="bg-negative-50 border border-negative-200 rounded-3xl p-8 text-center max-w-lg mx-auto">
+          <p className="text-sm font-semibold text-negative-700 mb-4">{error}</p>
           <Button variant="dark" size="sm" onClick={() => window.location.reload()}>
             Réessayer
           </Button>
@@ -211,7 +211,7 @@ export const RestaurantsPage: React.FC = () => {
         <>
           {/* Nombre de résultats */}
           <div className="flex items-center justify-between mb-6">
-            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+            <span className="text-xs font-bold text-ink-500 uppercase tracking-wider">
               {filteredRestaurants.length} établissement{filteredRestaurants.length > 1 ? 's' : ''} trouvé{filteredRestaurants.length > 1 ? 's' : ''}
             </span>
           </div>
@@ -224,7 +224,7 @@ export const RestaurantsPage: React.FC = () => {
                   <Card as="article" className="overflow-hidden flex flex-col justify-between group h-full">
                     <div>
                       {/* Image Banner */}
-                      <div className="relative h-52 overflow-hidden bg-stone-100">
+                      <div className="relative h-52 overflow-hidden bg-ink-100">
                         <img
                           src={resto.coverImage || resto.logo || '/images/resto_ambiance_1790196207320.jpg'}
                           alt={resto.name}
@@ -232,18 +232,18 @@ export const RestaurantsPage: React.FC = () => {
                         />
 
                         {/* Badge statut */}
-                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-stone-950/85 backdrop-blur-xs text-white text-[10px] font-bold flex items-center gap-1.5 shadow-sm">
+                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-ink-950/85 backdrop-blur-xs text-paper-white text-[0.625rem] font-bold flex items-center gap-1.5 shadow-sm">
                           <span
                             className={`w-2 h-2 rounded-full ${
-                              resto.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
+                              resto.isOpen ? 'bg-positive-400 animate-pulse' : 'bg-negative-400'
                             }`}
                           />
                           <span>{resto.isOpen ? 'Ouvert' : 'Fermé'}</span>
                         </div>
 
                         {/* Tag Ville */}
-                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-xs text-stone-900 text-[10px] font-bold flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-amber-600" />
+                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-paper-white/90 backdrop-blur-xs text-ink-900 text-[0.625rem] font-bold flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-brand-600" />
                           <span>{resto.city}</span>
                         </div>
                       </div>
@@ -251,36 +251,36 @@ export const RestaurantsPage: React.FC = () => {
                       {/* Détails */}
                       <div className="p-6">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold text-amber-800">
+                          <span className="text-xs font-semibold text-brand-800">
                             {resto.cuisineType || resto.category || 'Cuisine Africaine'}
                           </span>
                           {resto.reviewCount > 0 ? (
-                            <div className="flex items-center gap-1 text-xs font-bold text-amber-600">
-                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                            <div className="flex items-center gap-1 text-xs font-bold text-brand-600">
+                              <Star className="w-3.5 h-3.5 fill-brand-400 text-brand-400" />
                               <span>{resto.rating.toFixed(1)}</span>
-                              <span className="text-stone-400 font-normal">({resto.reviewCount})</span>
+                              <span className="text-ink-400 font-normal">({resto.reviewCount})</span>
                             </div>
                           ) : (
-                            <span className="text-xs font-normal text-stone-500">Pas encore d’avis</span>
+                            <span className="text-xs font-normal text-ink-500">Pas encore d’avis</span>
                           )}
                         </div>
 
-                        <h3 className="text-xl font-bold text-stone-950 mb-2 group-hover:text-amber-700 transition-colors">
+                        <h3 className="text-xl font-bold text-ink-950 mb-2 group-hover:text-brand-700 transition-colors">
                           {resto.name}
                         </h3>
 
-                        <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed mb-5 font-normal">
+                        <p className="text-xs text-ink-500 line-clamp-2 leading-relaxed mb-5 font-normal">
                           {resto.description || 'Découvrez notre menu digital complet et passez vos commandes en ligne.'}
                         </p>
 
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500 pt-3 border-t border-stone-100">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-ink-500 pt-3 border-t border-ink-100">
                           <span className="flex items-center gap-1">
-                            <QrCode className="w-3.5 h-3.5 text-amber-600" />
+                            <QrCode className="w-3.5 h-3.5 text-brand-600" />
                             <span>Menu QR à table</span>
                           </span>
                           <span>·</span>
                           <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-stone-400" />
+                            <Clock className="w-3.5 h-3.5 text-ink-400" />
                             <span>{resto.openingHours || 'Horaires non renseignés'}</span>
                           </span>
                         </div>
@@ -288,13 +288,13 @@ export const RestaurantsPage: React.FC = () => {
                     </div>
 
                     {/* Footer de la carte */}
-                    <div className="p-6 pt-0 mt-2 flex items-center justify-between border-t border-stone-100">
-                      <span className="text-xs font-bold text-stone-700 group-hover:text-stone-950">
+                    <div className="p-6 pt-0 mt-2 flex items-center justify-between border-t border-ink-100">
+                      <span className="text-xs font-bold text-ink-700 group-hover:text-ink-950">
                         Accéder à la carte
                       </span>
                       <motion.div
                         whileHover={{ scale: 1.1 }}
-                        className="w-9 h-9 rounded-xl bg-stone-900 text-white flex items-center justify-center group-hover:bg-amber-600 transition-colors shadow-xs"
+                        className="w-9 h-9 rounded-xl bg-ink-900 text-paper-white flex items-center justify-center group-hover:bg-brand-600 transition-colors shadow-xs"
                       >
                         <ArrowRight className="w-4 h-4" />
                       </motion.div>
@@ -304,10 +304,10 @@ export const RestaurantsPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-3xl p-12 text-center border border-stone-200 max-w-lg mx-auto">
-              <Utensils className="w-12 h-12 text-stone-300 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-stone-900 mb-1">Aucun restaurant trouvé</h3>
-              <p className="text-xs text-stone-500 mb-6">
+            <div className="bg-paper-white rounded-3xl p-12 text-center border border-ink-200 max-w-lg mx-auto">
+              <Utensils className="w-12 h-12 text-ink-300 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-ink-900 mb-1">Aucun restaurant trouvé</h3>
+              <p className="text-xs text-ink-500 mb-6">
                 Essayez de modifier vos filtres ou effectuez une recherche différente.
               </p>
               <Button

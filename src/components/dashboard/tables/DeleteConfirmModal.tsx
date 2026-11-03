@@ -20,20 +20,20 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   return (
     <AnimatePresence>
       {deletingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/60 backdrop-blur-xs">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-3xl max-w-sm w-full p-6 text-center border border-stone-200 shadow-2xl"
+            className="bg-paper-white rounded-3xl max-w-sm w-full p-6 text-center border border-ink-200 shadow-2xl"
           >
-            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 rounded-full bg-alert-100 text-alert-600 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-stone-950 mb-1">
+            <h3 className="text-base font-bold text-ink-950 mb-1">
               Supprimer cette table ?
             </h3>
-            <p className="text-xs text-stone-500 mb-6 leading-relaxed">
+            <p className="text-xs text-ink-500 mb-6 leading-relaxed">
               Le QR Code associé ne permettra plus d'injecter automatiquement le numéro de table.
             </p>
 
@@ -41,14 +41,14 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
               <button
                 onClick={onClose}
                 disabled={isDeleting}
-                className="px-4 py-2.5 rounded-xl border border-stone-200 text-stone-600 text-xs font-bold transition-colors cursor-pointer"
+                className="px-4 py-2.5 rounded-xl border border-ink-200 text-ink-600 text-xs font-bold transition-colors cursor-pointer"
               >
                 Annuler
               </button>
               <button
                 onClick={() => onConfirm(deletingId)}
                 disabled={isDeleting}
-                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-alert-600 hover:bg-alert-700 text-paper-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 {isDeleting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
