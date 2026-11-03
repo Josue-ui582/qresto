@@ -1,15 +1,12 @@
-export type PlanId = 'STARTER' | 'PRO' | 'ENTERPRISE';
+import type { PlanCatalogItem, PlanId } from '@/lib/subscription/catalog';
+
+export type { PlanId, PlanCatalogItem };
 export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'EXPIRED' | 'CANCELLED';
 
-export interface PlanCatalogItem {
-  id: PlanId;
-  name: string;
-  popular?: boolean;
-  description: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  maxTables: number;
-  features: string[];
+export interface PlanUsage {
+  dishes: number;
+  tables: number;
+  members: number;
 }
 
 export interface InvoiceData {
@@ -32,6 +29,7 @@ export interface SubscriptionData {
   autoRenew: boolean;
   planDetails?: PlanCatalogItem;
   invoices?: InvoiceData[];
+  usage?: PlanUsage;
 }
 
 export interface SubscriptionTabProps {

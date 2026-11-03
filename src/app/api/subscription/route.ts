@@ -3,63 +3,13 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { handleDatabaseError, parseJson } from '@/lib/api/validation';
 import { authorizeRequest } from '@/lib/auth/session';
+import { getPlanById, PLANS_CATALOG } from '@/lib/subscription/catalog';
 
 const updateSubscriptionSchema = z.object({
   restaurantId: z.string().optional(),
   planId: z.enum(['STARTER', 'PRO', 'ENTERPRISE']),
   billingCycle: z.enum(['MONTHLY', 'YEARLY']).default('MONTHLY'),
 });
-
-// Constantes des plans tarifaires
-export const PLANS_CATALOG = [
-  {
-    id: 'STARTER',
-    name: 'Starter / Découverte',
-    description: 'Idéal pour les petits établissements ou pour tester le menu QR.',
-    monthlyPrice: 15000,
-    yearlyPrice: 144000, // 12 000 FCFA / mois
-    maxTables: 10,
-    features: [
-      'Jusqu’à 10 tables',
-      'Menu numérique dynamique HD',
-      'Génération de QR Codes standards',
-      'Support par e-mail',
-    ],
-  },
-  {
-    id: 'PRO',
-    name: 'Pro / Restaurant',
-    popular: true,
-    description: 'La solution complète pour optimiser le service et booster les ventes.',
-    monthlyPrice: 35000,
-    yearlyPrice: 336000, // 28 000 FCFA / mois
-    maxTables: 999, // Illimité
-    features: [
-      'Tables illimitées',
-      'Signalétique QR HD & Personnalisée',
-      'Suivi des commandes en temps réel',
-      'Tableau de bord Analytics avancé',
-      'Gestion des rôles de l’équipe',
-      'Support prioritaire WhatsApp 7j/7',
-    ],
-  },
-  {
-    id: 'ENTERPRISE',
-    name: 'Enterprise / Multi-Sites',
-    description: 'Pour les chaînes de restaurants, hôtels et complexes VIP.',
-    monthlyPrice: 75000,
-    yearlyPrice: 720000, // 60 000 FCFA / mois
-    maxTables: 9999,
-    features: [
-      'Multi-établissements intégrés',
-      'Tout du Plan Pro inclus',
-      'Intégration API & Caisses POS',
-      'Accompagnement & Setup sur site',
-      'Account Manager dédié',
-      'SLA Garanti 99.9%',
-    ],
-  },
-];
 
 // GET : Récupérer l'état de l'abonnement du restaurant
 export async function GET(request: NextRequest) {
@@ -101,7 +51,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const currentPlan = PLANS_CATALOG.find((p) => p.id === subscription?.planId) || PLANS_CATALOG[0];
+    const currentPlan = getPlanById(subscription.planId);
+    if (!currentPlan) {
+      return NextResponse.json(
+        { success: false, error: 'Le plan associé à cet abonnement n’est plus disponible.' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       {
@@ -129,7 +85,7 @@ export async function POST(request: NextRequest) {
   try {
     const { planId, billingCycle } = parsed.data;
 
-    const selectedPlan = PLANS_CATALOG.find((p) => p.id === planId);
+    const selectedPlan = getPlanById(planId);
     if (!selectedPlan) {
       return NextResponse.json(
         { success: false, error: 'Plan sélectionné invalide.' },
@@ -145,9 +101,6 @@ export async function POST(request: NextRequest) {
       nextEndDate.setMonth(now.getMonth() + 1);
     }
 
-    const price =
-      billingCycle === 'YEARLY' ? selectedPlan.yearlyPrice : selectedPlan.monthlyPrice;
-
     // Mise à jour ou création de l'abonnement
     const updatedSubscription = await prisma.subscription.upsert({
       where: { restaurantId: auth.session.restaurantId },
@@ -157,7 +110,7 @@ export async function POST(request: NextRequest) {
         status: 'ACTIVE',
         startDate: now,
         endDate: nextEndDate,
-        autoRenew: true,
+        autoRenew: false,
       },
       create: {
         restaurantId: auth.session.restaurantId,
@@ -166,25 +119,14 @@ export async function POST(request: NextRequest) {
         status: 'ACTIVE',
         startDate: now,
         endDate: nextEndDate,
-        autoRenew: true,
-      },
-    });
-
-    // Générer une facture correspondante
-    await prisma.invoice.create({
-      data: {
-        subscriptionId: updatedSubscription.id,
-        amount: price,
-        currency: 'FCFA',
-        status: 'PAID',
-        description: `Abonnement ${selectedPlan.name} (${billingCycle === 'YEARLY' ? 'Annuel' : 'Mensuel'})`,
+        autoRenew: false,
       },
     });
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Abonnement mis à jour avec succès.',
+        message: 'Formule activée sans paiement. Le paiement en ligne sera intégré ultérieurement.',
         subscription: updatedSubscription,
       },
       { status: 200 }

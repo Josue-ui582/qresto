@@ -51,8 +51,14 @@ export const InvoicesTable: React.FC<InvoicesTableProps> = ({ invoices, formatPr
                     {formatPrice(invoice.amount)}
                   </td>
                   <td className="py-3.5">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
-                      ● Payée
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                      invoice.status === 'PAID'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : invoice.status === 'PENDING'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                    }`}>
+                      {invoice.status === 'PAID' ? '● Payée' : invoice.status === 'PENDING' ? '● En attente' : '● Échouée'}
                     </span>
                   </td>
                   <td className="py-3.5 text-right">
