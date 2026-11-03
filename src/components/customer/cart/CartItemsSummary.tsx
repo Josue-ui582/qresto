@@ -6,6 +6,7 @@ import React from 'react';
 interface CartItemsSummaryProps {
   cart: CartItem[];
   restaurantName?: string;
+  currency: string;
   cartTotal: number;
   deliveryFee: number;
   grandTotal: number;
@@ -17,6 +18,7 @@ interface CartItemsSummaryProps {
 export const CartItemsSummary: React.FC<CartItemsSummaryProps> = ({
   cart,
   restaurantName,
+  currency,
   cartTotal,
   deliveryFee,
   grandTotal,
@@ -41,7 +43,7 @@ export const CartItemsSummary: React.FC<CartItemsSummaryProps> = ({
           <div className="flex-1 min-w-0">
             <h4 className="text-xs sm:text-sm font-bold text-stone-900 truncate">{dish.name}</h4>
             <p className="text-xs text-amber-600 font-semibold">
-              {(dish.price * quantity).toLocaleString()} FCFA
+              {(dish.price * quantity).toLocaleString()} {currency}
             </p>
             <div className="flex items-center gap-2 mt-1">
               <button
@@ -76,17 +78,17 @@ export const CartItemsSummary: React.FC<CartItemsSummaryProps> = ({
     <div className="pt-4 mt-4 border-t border-stone-100 space-y-2 text-xs">
       <div className="flex justify-between text-stone-600">
         <span>Sous-total plats</span>
-        <span className="font-semibold">{cartTotal.toLocaleString()} FCFA</span>
+        <span className="font-semibold">{cartTotal.toLocaleString()} {currency}</span>
       </div>
       <div className="flex justify-between text-stone-600">
         <span>Frais de livraison</span>
         <span className="font-semibold">
-          {orderType === 'DELIVERY' ? `${deliveryFee.toLocaleString()} FCFA` : 'Gratuit (Sur place / À emporter)'}
+          {orderType === 'DELIVERY' ? `${deliveryFee.toLocaleString()} ${currency}` : 'Gratuit (Sur place / À emporter)'}
         </span>
       </div>
       <div className="flex justify-between text-base font-extrabold text-stone-900 pt-2 border-t border-stone-100">
         <span>Total à régler</span>
-        <span className="text-amber-600">{grandTotal.toLocaleString()} FCFA</span>
+        <span className="text-amber-600">{grandTotal.toLocaleString()} {currency}</span>
       </div>
     </div>
   </div>

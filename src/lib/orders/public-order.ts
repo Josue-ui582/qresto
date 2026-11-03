@@ -7,6 +7,7 @@ export async function findPublicTrackedOrder(code: string) {
       trackingCode: true,
       restaurantName: true,
       restaurantPhone: true,
+      restaurant: { select: { currency: true } },
       status: true,
       total: true,
       items: { select: { name: true, price: true, quantity: true } },
@@ -18,9 +19,11 @@ export async function findPublicTrackedOrder(code: string) {
   });
 
   if (!order) return null;
+  const { restaurant, ...publicOrder } = order;
   return {
-    ...order,
-    statusHistory: order.statusHistory.map(({ status, timestamp, comment }) => ({
+    ...publicOrder,
+    currency: restaurant.currency,
+    statusHistory: publicOrder.statusHistory.map(({ status, timestamp, comment }) => ({
       status,
       timestamp,
       note: comment,

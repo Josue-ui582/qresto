@@ -157,6 +157,7 @@ export const CartPage: React.FC = () => {
           <CartItemsSummary
             cart={cart}
             restaurantName={restaurant?.name}
+            currency={restaurant?.currency || 'FCFA'}
             cartTotal={cartTotal}
             deliveryFee={deliveryFee}
             grandTotal={grandTotal}
@@ -217,7 +218,7 @@ export const CartPage: React.FC = () => {
               ) : (
                 <>
                   <FaIcon name="fa-solid fa-lock" />
-                  <span>Confirmer la commande ({grandTotal.toLocaleString()} FCFA)</span>
+                  <span>Confirmer la commande ({grandTotal.toLocaleString()} {restaurant?.currency || 'FCFA'})</span>
                 </>
               )}
             </button>

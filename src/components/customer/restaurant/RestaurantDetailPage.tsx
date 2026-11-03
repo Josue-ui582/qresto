@@ -211,6 +211,7 @@ export const RestaurantDetailPage: React.FC = () => {
               <RestaurantDishCard 
                 key={dish.id} 
                 dish={dish} 
+                currency={restaurant.currency}
                 index={idx}
                 onOpen3D={setActive3DDish}
                 onAddToCart={handleAddToCart}
@@ -295,7 +296,7 @@ export const RestaurantDetailPage: React.FC = () => {
               <div className="flex items-center justify-between pt-2 border-t border-stone-800">
                 <div>
                   <span className="text-2xl font-black text-amber-400">
-                    {active3DDish.price.toLocaleString()} FCFA
+                    {active3DDish.price.toLocaleString()} {restaurant.currency}
                   </span>
                 </div>
                 <motion.button

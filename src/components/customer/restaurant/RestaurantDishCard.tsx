@@ -5,6 +5,7 @@ import { Dish } from '@/types';
 
 interface RestaurantDishCardProps {
   dish: Dish;
+  currency: string;
   index: number;
   onOpen3D: (dish: Dish) => void;
   onAddToCart: (dish: Dish) => void;
@@ -12,6 +13,7 @@ interface RestaurantDishCardProps {
 
 export const RestaurantDishCard: React.FC<RestaurantDishCardProps> = ({
   dish,
+  currency,
   index,
   onOpen3D,
   onAddToCart,
@@ -69,11 +71,11 @@ export const RestaurantDishCard: React.FC<RestaurantDishCardProps> = ({
       <div className="p-5 pt-0 border-t border-stone-100 flex items-center justify-between">
         <div className="text-left">
           <span className="text-lg font-black text-stone-950">
-            {dish.price.toLocaleString()} FCFA
+            {dish.price.toLocaleString()} {currency}
           </span>
           {dish.originalPrice && (
             <span className="block text-xs text-stone-400 line-through">
-              {dish.originalPrice.toLocaleString()} FCFA
+              {dish.originalPrice.toLocaleString()} {currency}
             </span>
           )}
         </div>
