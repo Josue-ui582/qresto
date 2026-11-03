@@ -9,16 +9,18 @@ import { handleDatabaseError, parseJson } from '@/lib/api/validation';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { findPublicTrackedOrder } from '@/lib/orders/public-order';
 import { calculateOrderTotals, resolveSelectedDishOptions } from '@/lib/orders/order-pricing';
+import { isE164WhatsappPhone } from '@/lib/orders/whatsapp-phone';
 
 const createOrderSchema = z.object({
   restaurantId: z.string().min(1),
   type: z.nativeEnum(OrderType).default(OrderType.DINE_IN),
   tableNumber: z.union([z.string().trim().min(1).max(30), z.number().int().positive()]).optional(),
   customerName: z.string().trim().min(1).max(150),
-  customerPhone: z.string().trim().min(8).max(30).refine(
-    (phone) => phone.replace(/\D/g, '').length >= 8,
-    'Un numéro WhatsApp valide est requis.'
+  customerWhatsapp: z.string().trim().refine(
+    isE164WhatsappPhone,
+    'Un numéro WhatsApp valide au format E.164 est requis.'
   ),
+  whatsappConsent: z.literal(true),
   customerAddress: z.string().trim().max(500).optional(),
   customerNotes: z.string().trim().max(1000).optional(),
   paymentMethod: z.nativeEnum(PaymentMethod).default(PaymentMethod.CASH_ON_DELIVERY),
@@ -72,6 +74,26 @@ export async function POST(request: NextRequest) {
     });
     if (!restaurant) {
       return NextResponse.json({ error: 'Restaurant introuvable.' }, { status: 404 });
+    }
+
+    let verifiedTableNumber: string | null = null;
+    if (input.type === OrderType.DINE_IN) {
+      const requestedTableNumber = String(input.tableNumber);
+      const table = await prisma.restaurantTable.findFirst({
+        where: {
+          restaurantId: restaurant.id,
+          number: requestedTableNumber,
+          active: true,
+        },
+        select: { number: true },
+      });
+      if (!table) {
+        return NextResponse.json(
+          { error: 'La table indiquée est indisponible dans ce restaurant.' },
+          { status: 400 }
+        );
+      }
+      verifiedTableNumber = table.number;
     }
 
     const dishIds = [...new Set(input.items.map((item) => item.dishId))];
@@ -149,13 +171,15 @@ export async function POST(request: NextRequest) {
           restaurantName: restaurant.name,
           restaurantPhone: restaurant.phone,
           type: input.type,
-          tableNumber: input.type === OrderType.DINE_IN ? String(input.tableNumber) : null,
+          tableNumber: verifiedTableNumber,
           subtotal,
           deliveryFee,
           total,
           status: OrderStatus.NEW,
           customerName: input.customerName,
-          customerPhone: input.customerPhone,
+          customerPhone: input.customerWhatsapp,
+          customerWhatsapp: input.customerWhatsapp,
+          whatsappConsent: input.whatsappConsent,
           customerAddress: input.type === OrderType.DELIVERY ? input.customerAddress : null,
           customerNotes: input.customerNotes || null,
           paymentMethod: input.paymentMethod,

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeWhatsappPhone, whatsappLinkDigits } from './whatsapp-phone';
+import {
+  isE164WhatsappPhone,
+  normalizeWhatsappPhone,
+  whatsappLinkDigits,
+} from './whatsapp-phone';
 
 describe('normalizeWhatsappPhone', () => {
   it('normalizes a local Beninese number to E.164', () => {
@@ -31,5 +35,11 @@ describe('normalizeWhatsappPhone', () => {
     expect(normalizeWhatsappPhone('123', '+229')).toBeNull();
     expect(normalizeWhatsappPhone('+00012345678', '+229')).toBeNull();
     expect(normalizeWhatsappPhone('+1234567890123456', '+229')).toBeNull();
+  });
+
+  it('validates an already normalized E.164 phone for server requests', () => {
+    expect(isE164WhatsappPhone('+22997001122')).toBe(true);
+    expect(isE164WhatsappPhone('97001122')).toBe(false);
+    expect(isE164WhatsappPhone('+00012345678')).toBe(false);
   });
 });

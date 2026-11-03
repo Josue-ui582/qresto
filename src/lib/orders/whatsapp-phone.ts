@@ -16,6 +16,10 @@ export const WHATSAPP_PHONE_COUNTRIES = [
 
 const E164_PATTERN = /^\+[1-9]\d{7,14}$/;
 
+export function isE164WhatsappPhone(phone: string): boolean {
+  return E164_PATTERN.test(phone);
+}
+
 export function normalizeWhatsappPhone(
   input: string,
   callingCode: string
@@ -28,7 +32,7 @@ export function normalizeWhatsappPhone(
     ? `+${digits}`
     : `${callingCode}${digits.replace(/^0+/, '')}`;
 
-  return E164_PATTERN.test(normalized) ? normalized : null;
+  return isE164WhatsappPhone(normalized) ? normalized : null;
 }
 
 export function whatsappLinkDigits(phone: string | null | undefined): string | null {
