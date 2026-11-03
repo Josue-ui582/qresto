@@ -38,6 +38,7 @@ export const RestaurantDashboard: React.FC = () => {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [notificationRefreshToken, setNotificationRefreshToken] = useState(0);
 
   useEffect(() => {
     if (!currentRestaurant?.id) return;
@@ -72,7 +73,10 @@ export const RestaurantDashboard: React.FC = () => {
     };
     const startFallback = () => {
       if (!fallbackInterval) {
-        fallbackInterval = setInterval(() => void fetchOrders(), 10000);
+        fallbackInterval = setInterval(() => {
+          void fetchOrders();
+          setNotificationRefreshToken((token) => token + 1);
+        }, 10000);
       }
     };
 
@@ -82,6 +86,13 @@ export const RestaurantDashboard: React.FC = () => {
       try {
         const payload: { type?: string } = JSON.parse(event.data);
         if (payload.type?.startsWith('order.')) void fetchOrders();
+        if (
+          payload.type?.startsWith('order.') ||
+          payload.type === 'review.created' ||
+          payload.type === 'notification.created'
+        ) {
+          setNotificationRefreshToken((token) => token + 1);
+        }
       } catch (error: unknown) {
         console.error('Événement temps réel invalide reçu pour le dashboard.', error);
       }
@@ -247,8 +258,8 @@ export const RestaurantDashboard: React.FC = () => {
             setRestaurantDropdownOpen(false);
             router.push(`/restaurant/${currentRestaurant.slug}`);
           }}
-          pendingOrdersCount={pendingOrdersCount}
-          onNotificationClick={() => setDashboardTab('orders')}
+          restaurantId={restaurantId}
+          notificationRefreshToken={notificationRefreshToken}
         />
 
         <main className="flex-1 p-4 sm:p-8 overflow-y-auto">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { FaIcon } from '../common/Icon';
 import { Restaurant } from '../../types';
 
@@ -9,8 +9,17 @@ interface DashboardTopbarProps {
   dropdownOpen: boolean;
   setDropdownOpen: (open: boolean) => void;
   onViewMenu: () => void;
-  pendingOrdersCount: number;
-  onNotificationClick: () => void;
+  restaurantId: string;
+  notificationRefreshToken: number;
+}
+
+interface DashboardNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: string | null;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
@@ -20,9 +29,78 @@ export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
   dropdownOpen,
   setDropdownOpen,
   onViewMenu,
-  pendingOrdersCount,
-  onNotificationClick,
+  restaurantId,
+  notificationRefreshToken,
 }) => {
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
+  const [notificationsError, setNotificationsError] = useState<string | null>(null);
+
+  const fetchNotifications = useCallback(async () => {
+    const response = await fetch('/api/notifications', { cache: 'no-store' });
+    const result: {
+      success: boolean;
+      data?: DashboardNotification[];
+      unreadCount?: number;
+      error?: string;
+    } = await response.json();
+    if (!response.ok || !result.success || !result.data) {
+      throw new Error(result.error || 'Impossible de charger les notifications.');
+    }
+    return { notifications: result.data, unreadCount: result.unreadCount ?? 0 };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void fetchNotifications()
+      .then((result) => {
+        if (!active) return;
+        setNotifications(result.notifications);
+        setUnreadCount(result.unreadCount);
+        setNotificationsError(null);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        console.error('Erreur de chargement des notifications du dashboard.', error);
+        setNotificationsError(
+          error instanceof Error ? error.message : 'Impossible de charger les notifications.'
+        );
+      })
+      .finally(() => {
+        if (active) setNotificationsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [fetchNotifications, notificationRefreshToken, restaurantId]);
+
+  const toggleNotificationRead = async (notification: DashboardNotification) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: notification.id, isRead: !notification.isRead }),
+      });
+      const result: { success: boolean; error?: string } = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Impossible de modifier la notification.');
+      }
+      setNotifications((current) => current.map((item) => (
+        item.id === notification.id ? { ...item, isRead: !item.isRead } : item
+      )));
+      setUnreadCount((current) => current + (notification.isRead ? 1 : -1));
+      setNotificationsError(null);
+    } catch (error: unknown) {
+      console.error('Erreur lors de la modification d’une notification.', error);
+      setNotificationsError(
+        error instanceof Error ? error.message : 'Impossible de modifier la notification.'
+      );
+    }
+  };
+
   return (
     <header className="h-16 bg-surface border-b border-soft px-4 sm:px-8 flex items-center justify-between gap-4 sticky top-0 z-20">
       <div className="relative flex-1 max-w-sm">
@@ -69,17 +147,80 @@ export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={onNotificationClick}
-          className="relative p-2 text-stone-600 hover:text-stone-900 transition-colors"
-          title="Notifications"
-        >
-          <FaIcon name="fa-regular fa-bell" className="text-base" />
-          <span className="absolute top-1 right-1 w-4 h-4 bg-amber-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center">
-            {pendingOrdersCount}
-          </span>
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setNotificationsOpen((open) => !open)}
+            className="relative p-2 text-stone-600 hover:text-stone-900 transition-colors"
+            title="Notifications"
+            aria-label={`Notifications, ${unreadCount} non lue(s)`}
+            aria-expanded={notificationsOpen}
+          >
+            <FaIcon name="fa-regular fa-bell" className="text-base" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-4 h-4 px-1 bg-amber-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center animate-pulse">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {notificationsOpen && (
+            <div
+              role="region"
+              aria-label="Centre de notifications"
+              className="absolute right-0 mt-2 w-[min(22rem,calc(100vw-2rem))] bg-white rounded-2xl shadow-xl border border-stone-200 z-50 overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100">
+                <h2 className="text-sm font-bold text-stone-900">Notifications</h2>
+                <button
+                  type="button"
+                  onClick={() => setNotificationsOpen(false)}
+                  className="text-xs font-semibold text-stone-500 hover:text-stone-900"
+                >
+                  Fermer
+                </button>
+              </div>
+              <div className="max-h-96 overflow-y-auto p-3 space-y-2">
+                {notificationsError && (
+                  <p role="alert" className="text-xs text-red-700 bg-red-50 rounded-xl p-3">
+                    {notificationsError}
+                  </p>
+                )}
+                {notificationsLoading ? (
+                  <p className="text-xs text-stone-500 p-3">Chargement des notifications...</p>
+                ) : notifications.length === 0 ? (
+                  <p className="text-xs text-stone-500 p-3">Aucune notification.</p>
+                ) : notifications.map((notification) => (
+                  <article
+                    key={notification.id}
+                    className={`rounded-xl border p-3 ${
+                      notification.isRead
+                        ? 'border-stone-100 bg-white'
+                        : 'border-amber-200 bg-amber-50/70'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-xs font-bold text-stone-900">{notification.title}</h3>
+                        <p className="mt-1 text-xs text-stone-600">{notification.message}</p>
+                        <time className="block mt-2 text-[10px] text-stone-400">
+                          {new Date(notification.createdAt).toLocaleString('fr-FR')}
+                        </time>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void toggleNotificationRead(notification)}
+                        className="shrink-0 text-[10px] font-bold text-amber-800 hover:text-amber-950"
+                      >
+                        {notification.isRead ? 'Non lue' : 'Marquer comme lue'}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="w-8 h-8 rounded-full bg-stone-900 text-white text-xs font-bold flex items-center justify-center select-none">
           M

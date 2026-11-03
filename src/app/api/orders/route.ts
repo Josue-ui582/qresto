@@ -204,6 +204,14 @@ export async function POST(request: NextRequest) {
           comment: 'Commande enregistrée',
         },
       });
+      await transaction.notification.create({
+        data: {
+          restaurantId: restaurant.id,
+          title: 'Nouvelle commande',
+          message: `Commande ${order.trackingCode} reçue de ${input.customerName}.`,
+          type: 'NEW_ORDER',
+        },
+      });
 
       return order;
     });

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => {
     order: { create: vi.fn() },
     orderItem: { createMany: vi.fn() },
     orderStatusHistory: { create: vi.fn() },
+    notification: { create: vi.fn() },
   };
   return {
     transaction,
@@ -89,6 +90,7 @@ describe('POST /api/orders', () => {
     });
     mocks.transaction.orderItem.createMany.mockResolvedValue({ count: 1 });
     mocks.transaction.orderStatusHistory.create.mockResolvedValue({});
+    mocks.transaction.notification.create.mockResolvedValue({});
     mocks.prisma.$transaction.mockImplementation(
       (callback: (transaction: typeof mocks.transaction) => Promise<unknown>) =>
         callback(mocks.transaction)
@@ -123,6 +125,13 @@ describe('POST /api/orders', () => {
     });
     expect(mocks.transaction.orderStatusHistory.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ status: 'NEW' }),
+    });
+    expect(mocks.transaction.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        restaurantId: restaurant.id,
+        title: 'Nouvelle commande',
+        type: 'NEW_ORDER',
+      }),
     });
     expect(mocks.notifyOrderCreated).toHaveBeenCalledWith({
       id: 'order-1',
