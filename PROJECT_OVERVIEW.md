@@ -180,7 +180,7 @@ Légende : **✅ terminé dans le périmètre observé** ; **🟡 partiel / simu
 - Le stockage navigateur de données métier et ses constantes fictives de restaurants/plats ont été supprimés. Le panier reste un cache temporaire `localStorage`, revalidé côté serveur à la création de commande.
 - Le panier est mono-restaurant (confirmation avant remplacement), conserve les options choisies et le formulaire public exige WhatsApp E.164 avec consentement. Les prix/options sont revalidés côté serveur et commande/lignes/historique sont créés atomiquement.
 - Le code de suivi est généré côté serveur, visible et copiable sans dépendre de WhatsApp. Le contact client est stocké via `ContactMessage`; son abstraction `EmailService` existe, mais le fournisseur reste **à confirmer**.
-- Le `OrderNotifier` est appelé après validation de la transaction; son implémentation actuelle journalise uniquement et ses erreurs n’annulent pas la commande. Le calcul d’ouverture utilise `Africa/Porto-Novo`; rendre le fuseau paramétrable sera nécessaire si l’offre s’étend à d’autres pays (**à confirmer**).
+- Le `OrderNotifier` est appelé après validation de la transaction; ses erreurs n’annulent pas la commande. En staging, les événements WhatsApp/paiement simulés sont inscrits dans les notifications persistées du dashboard. Le calcul d’ouverture utilise `Africa/Porto-Novo`; rendre le fuseau paramétrable sera nécessaire si l’offre s’étend à d’autres pays (**à confirmer**).
 - Les analytics n’utilisent plus de champs inexistants ni de calculs par le composant : Prisma/PostgreSQL agrège les commandes, les plats, les modes et les heures, avec périodes locales et export CSV. Le défaut de fuseau est `Africa/Porto-Novo`; une préférence par restaurant est **à confirmer**.
 - Le dashboard et le suivi client sont branchés aux flux SSE avec reconnexion EventSource et polling de secours. Le bus en mémoire est mono-processus; confirmer la compatibilité des connexions persistantes et prévoir un pub/sub partagé pour plusieurs instances (**à confirmer**).
 - Les notifications de nouvelle commande, transition de statut et nouvel avis sont persistées et listées dans le dashboard avec état lu/non lu et badge animé. Les avis sont associés à une commande livrée, uniques par commande, publiés immédiatement, modérables, et leurs agrégats sont recalculés dans la transaction.
@@ -397,11 +397,22 @@ Noms observés seulement — **aucune valeur secrète ne doit être copiée dans
 
 | Nom | Rôle visible / réserve |
 |---|---|
-| `DATABASE_URL` | Connexion PostgreSQL utilisée par Prisma. |
-| `JWT_SECRET` | Obligatoire pour signer/vérifier les sessions; l’authentification renvoie une erreur de configuration si absent. |
-| `NEXT_PUBLIC_APP_URL` | Origine applicative prioritaire pour la génération des liens QR; la route peut sinon utiliser l’origine de la requête. |
+| `APP_ENV` | `development`, `staging` ou `production`; les valeurs sont validées au démarrage. |
+| `DATABASE_URL` | Connexion PostgreSQL Neon poolée utilisée par l’application. |
+| `DIRECT_URL` | Connexion PostgreSQL directe utilisée pour les migrations. |
+| `JWT_SECRET` | Obligatoire, au moins 32 caractères, pour signer/vérifier les sessions. |
+| `NEXT_PUBLIC_APP_URL` | Origine publique de l’application et des liens QR. |
+| `STORAGE_PROVIDER` | `local` en développement ou `cloudinary` en staging/production. |
+| `UPLOADS_DIRECTORY` | Répertoire local facultatif, réservé au stockage de développement. |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Identifiants requis avec Cloudinary; téléversement signé côté serveur. |
+| `WHATSAPP_PROVIDER`, `PAYMENT_PROVIDER` | `simulated` ou `real`; les deux sont forcés en simulation en staging. |
+| `ALLOW_REAL_PROVIDERS_IN_STAGING` | Autorisation explicite requise pour démarrer avec un fournisseur configuré en `real`; les providers staging restent simulés. |
+| `DEMO_OWNER_PASSWORD` | Mot de passe injecté pour le compte seed du restaurateur de démo en staging. |
+| `DEMO_OWNER_EMAIL` | E-mail facultatif du compte de démo. |
 
-Ces trois noms sont les entrées déclarées dans `.env.example`; leurs valeurs y sont laissées vides. Ne pas lire ou publier les valeurs de `.env` ; ce fichier est local et ne fait pas partie des instructions. Il n’existe plus de valeur de repli JWT.
+Les noms sont déclarés dans `.env.example` avec des valeurs vides. Ne pas lire ou publier les valeurs de `.env`; ce fichier est local et ne fait pas partie des instructions. Il n’existe pas de valeur de repli JWT.
+
+Les étapes de création des comptes, du déploiement et du seed de démonstration sont décrites dans [docs/DEPLOY_STAGING.md](./docs/DEPLOY_STAGING.md). La limite de débit et le bus SSE restent locaux au processus et doivent être considérés comme indicatifs sur une plateforme serverless.
 
 ### Conventions et points d’attention
 

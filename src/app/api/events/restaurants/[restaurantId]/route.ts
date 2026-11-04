@@ -5,6 +5,7 @@ import { createSseResponse } from '@/lib/realtime/sse-response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 10;
 
 type RouteContext = {
   params: Promise<{ restaurantId: string }>;

@@ -9,6 +9,7 @@ import { createSseResponse } from '@/lib/realtime/sse-response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 10;
 
 const trackingCodeSchema = z.string().trim().regex(TRACKING_CODE_PATTERN);
 
