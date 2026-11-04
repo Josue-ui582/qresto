@@ -71,11 +71,12 @@ export const CustomerInfoFields: React.FC<CustomerInfoFieldsProps> = ({
           <input
             type="tel"
             required
-            autoComplete="tel"
+            inputMode="tel"
+            autoComplete="tel-national"
             placeholder="Ex: 97 00 11 22"
             value={customerPhone}
             onChange={(e) => setCustomerPhone(e.target.value)}
-            className="input-field min-w-0"
+            className="input-field min-w-0 flex-1"
           />
         </div>
         <p className="mt-1 text-[0.6875rem] text-ink-500">
