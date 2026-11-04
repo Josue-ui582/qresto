@@ -133,7 +133,8 @@ describe('POST /api/uploads', () => {
     expect(body.imageUrl.length).toBeLessThan(2048);
     expect(mocks.store).toHaveBeenCalledWith(
       expect.any(Uint8Array),
-      expect.objectContaining({ contentType: 'image/png', extension: 'png' })
+      expect.objectContaining({ contentType: 'image/png', extension: 'png' }),
+      'restaurant-1'
     );
     expect(mocks.store.mock.calls[0][0]).toHaveLength(png.byteLength);
   });
