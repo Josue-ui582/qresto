@@ -360,3 +360,4 @@ QR Resto est une plateforme de commande et de gestion de restaurant via menu QR,
 ---
 
 Pour la direction produit, les limites connues et la feuille de route, consulter [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md).
+
