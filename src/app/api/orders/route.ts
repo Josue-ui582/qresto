@@ -15,6 +15,9 @@ import { publishOrderEvent } from '@/lib/realtime/event-bus';
 import { enforceSubscriptionWriteAccess } from '@/lib/subscription/service';
 import { calculateCouponDiscount, getCouponValidationError } from '@/lib/orders/coupons';
 import { aggregateRequestedQuantities, hasSufficientStock } from '@/lib/inventory/stock';
+import { recordSimulatedOrderProviders } from '@/lib/providers/mode';
+
+export const maxDuration = 10;
 
 class InsufficientStockError extends Error {
   constructor(dishName: string) {
@@ -331,6 +334,11 @@ export async function POST(request: NextRequest) {
           message: `Commande ${order.trackingCode} reçue de ${input.customerName}.`,
           type: 'NEW_ORDER',
         },
+      });
+      await recordSimulatedOrderProviders(transaction, {
+        restaurantId: restaurant.id,
+        trackingCode: order.trackingCode,
+        paymentMethod: input.paymentMethod,
       });
 
       return { order };

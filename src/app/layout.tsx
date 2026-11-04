@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     description:
       'Plateforme SaaS complète pour les restaurants au Bénin et en Afrique : menus digitaux QR interactifs, commandes sans inscription, suivi en temps réel, dashboard multi-tenant sécurisé.',
   },
+  robots: process.env.APP_ENV === 'staging'
+    ? { index: false, follow: false, noarchive: true }
+    : undefined,
 };
 
 export const viewport: Viewport = {
@@ -43,6 +46,11 @@ export default function RootLayout({
     <html lang="fr" className={`${plusJakartaSans.variable} scroll-smooth`}>
       <body className="bg-background text-text antialiased">
         <AppProviders>
+          {process.env.APP_ENV === 'staging' && (
+            <aside className="demo-banner" role="status">
+              Environnement de démonstration : WhatsApp et paiements simulés
+            </aside>
+          )}
           {children}
         </AppProviders>
       </body>

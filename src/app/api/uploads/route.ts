@@ -4,6 +4,7 @@ import { detectImageType, MAX_IMAGE_SIZE_BYTES, validateImageUrl } from '@/lib/u
 import { getStorageProvider } from '@/lib/uploads/storage';
 
 export const runtime = 'nodejs';
+export const maxDuration = 10;
 
 export async function POST(request: NextRequest) {
   const auth = await authorizeRequest(request, 'MENU_WRITE');
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const imageUrl = await getStorageProvider().store(bytes, imageType);
+    const imageUrl = await getStorageProvider().store(bytes, imageType, auth.session.restaurantId);
     if (!validateImageUrl(imageUrl)) {
       throw new Error('Le stockage a retourné une URL d’image invalide.');
     }

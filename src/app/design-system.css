@@ -33,6 +33,9 @@
   --qr-success: #1f9d6a;
   --qr-warning: #d97706;
   --qr-danger: #d44a4a;
+  --qr-demo-banner-background: var(--qr-accent-soft);
+  --qr-demo-banner-text: var(--qr-accent);
+  --qr-demo-banner-border: var(--qr-accent-outline);
 
   --space-unit: 0.25rem;
   --qr-font-sans: var(--font-plus-jakarta-sans), sans-serif;

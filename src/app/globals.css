@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @import './design-system.css';
 
+.demo-banner {
+  background: var(--qr-demo-banner-background);
+  border-bottom: var(--qr-border-width) solid var(--qr-demo-banner-border);
+  color: var(--qr-demo-banner-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--qr-font-weight-semibold);
+  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
+  text-align: center;
+}
+
 .restaurant-menu-brand[style] .restaurant-primary-button {
   background-color: var(--restaurant-primary-color);
   color: var(--restaurant-primary-foreground);

@@ -10,6 +10,8 @@ import { TRACKING_CODE_PATTERN } from '@/lib/orders/tracking-code';
 import { canReviewOrder } from '@/lib/reviews/review-policy';
 import { cleanReviewText, refreshRestaurantReviewAggregate } from '@/lib/reviews/review-service';
 
+export const maxDuration = 10;
+
 const createReviewSchema = z.object({
   trackingCode: z.string().trim().toUpperCase().regex(TRACKING_CODE_PATTERN),
   customerName: z.string().trim().max(80).optional(),
