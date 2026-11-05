@@ -202,6 +202,25 @@ describe('POST /api/orders', () => {
     });
   });
 
+  it('keeps the dish activated when an order depletes its stock', async () => {
+    mocks.transaction.dish.findFirst.mockResolvedValue({
+      id: dish.id,
+      name: dish.name,
+      stockQuantity: 2,
+      lowStockThreshold: 0,
+    });
+    mocks.transaction.dish.updateMany.mockResolvedValue({ count: 1 });
+
+    const response = await createOrder(request(validPayload()));
+
+    expect(response.status).toBe(201);
+    expect(mocks.transaction.dish.updateMany).toHaveBeenCalledOnce();
+    expect(mocks.transaction.dish.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({ id: dish.id, stockQuantity: { gte: 2 } }),
+      data: { stockQuantity: { decrement: 2 } },
+    });
+  });
+
   it('rejects orders that exceed tracked stock before creating the order', async () => {
     mocks.transaction.dish.findFirst.mockResolvedValue({
       id: dish.id,

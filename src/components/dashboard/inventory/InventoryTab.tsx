@@ -110,7 +110,7 @@ export const InventoryTab: React.FC<{ restaurantId: string }> = ({ restaurantId 
     <section className="space-y-5">
       <header className="rounded-3xl border border-ink-200/80 bg-paper-white p-6 sm:p-8">
         <h2 className="text-xl font-black text-ink-950">Gestion du stock</h2>
-        <p className="mt-1 text-xs text-ink-500">Le stock est décrémenté avec la commande. Les plats épuisés sont automatiquement désactivés.</p>
+        <p className="mt-1 text-xs text-ink-500">Le stock est décrémenté avec la commande. Un plat en rupture reste masqué aux clients jusqu’au réapprovisionnement, sans modifier son état d’activation.</p>
         <p className="mt-3 text-xs font-bold text-brand-800">{lowStockCount} plat(s) au seuil d’alerte ou en rupture.</p>
       </header>
       {error && <p role="alert" className="rounded-xl border border-negative-200 bg-negative-50 p-4 text-xs text-negative-800">{error}</p>}

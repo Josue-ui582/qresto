@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { isRestaurantOpenNow } from '@/lib/restaurants/opening-hours';
+import { publiclyAvailableDishWhere } from '@/lib/dishes/availability';
 
 export async function GET(
   req: NextRequest,
@@ -86,7 +87,7 @@ export async function GET(
                   },
                 },
               },
-              where: { isAvailable: true },
+              where: publiclyAvailableDishWhere,
             },
           },
           where: { active: true },

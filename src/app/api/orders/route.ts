@@ -16,6 +16,7 @@ import { enforceSubscriptionWriteAccess } from '@/lib/subscription/service';
 import { calculateCouponDiscount, getCouponValidationError } from '@/lib/orders/coupons';
 import { aggregateRequestedQuantities, hasSufficientStock } from '@/lib/inventory/stock';
 import { recordSimulatedOrderProviders } from '@/lib/providers/mode';
+import { publiclyAvailableDishWhere } from '@/lib/dishes/availability';
 
 export const maxDuration = 10;
 
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
       where: {
         id: { in: dishIds },
         restaurantId: restaurant.id,
-        isAvailable: true,
+        AND: [publiclyAvailableDishWhere],
       },
       select: {
         id: true,
@@ -244,12 +245,6 @@ export async function POST(request: NextRequest) {
         if (!deduction.count) throw new InsufficientStockError(dish.name);
 
         const remaining = dish.stockQuantity - quantity;
-        if (remaining === 0) {
-          await transaction.dish.updateMany({
-            where: { id: dish.id, restaurantId: restaurant.id },
-            data: { isAvailable: false },
-          });
-        }
         if (
           dish.lowStockThreshold !== null &&
           dish.stockQuantity > dish.lowStockThreshold &&

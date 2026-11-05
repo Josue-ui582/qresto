@@ -11,6 +11,7 @@ export interface DishData {
   imageUrl?: string | null;
   image?: string | null;
   isAvailable: boolean;
+  stockQuantity?: number | null;
   categoryId: string;
   restaurantId: string;
   category?: CategoryOption;
