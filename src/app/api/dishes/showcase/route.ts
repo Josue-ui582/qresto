@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleDatabaseError } from '@/lib/api/validation';
+import { publiclyAvailableDishWhere } from '@/lib/dishes/availability';
 
 export async function GET() {
   try {
     const dishes = await prisma.dish.findMany({
-      where: { isAvailable: true },
+      where: publiclyAvailableDishWhere,
       take: 24,
       orderBy: [{ isPopular: 'desc' }, { createdAt: 'desc' }],
       select: {

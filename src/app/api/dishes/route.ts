@@ -137,9 +137,6 @@ export async function PUT(request: NextRequest) {
       where: {
         id,
         restaurantId: auth.session.restaurantId,
-        ...(fields.isAvailable === true
-          ? { OR: [{ stockQuantity: null }, { stockQuantity: { gt: 0 } }] }
-          : {}),
       },
       data: {
         ...fields,
@@ -150,16 +147,6 @@ export async function PUT(request: NextRequest) {
       },
     });
     if (!result.count) {
-      const dish = await prisma.dish.findFirst({
-        where: { id, restaurantId: auth.session.restaurantId },
-        select: { stockQuantity: true },
-      });
-      if (dish && fields.isAvailable === true && dish.stockQuantity === 0) {
-        return NextResponse.json(
-          { error: 'Le stock est épuisé. Réapprovisionnez le plat avant de le rendre disponible.' },
-          { status: 409 }
-        );
-      }
       return NextResponse.json({ error: 'Plat introuvable.' }, { status: 404 });
     }
     const dish = await prisma.dish.findFirst({

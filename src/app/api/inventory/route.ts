@@ -62,7 +62,6 @@ export async function PUT(request: NextRequest) {
         data: {
           stockQuantity: parsed.data.quantity,
           lowStockThreshold: parsed.data.lowStockThreshold,
-          ...(parsed.data.quantity === 0 ? { isAvailable: false } : {}),
         },
       });
       if (!changed.count) {

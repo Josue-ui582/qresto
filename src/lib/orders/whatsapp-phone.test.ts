@@ -10,6 +10,16 @@ describe('normalizeWhatsappPhone', () => {
     expect(normalizeWhatsappPhone('97 00 11 22', '+229')).toBe('+22997001122');
   });
 
+  it('combines local numbers with the selected country calling code', () => {
+    expect(normalizeWhatsappPhone('06 12 34 56 78', '+33')).toBe('+33612345678');
+    expect(normalizeWhatsappPhone('24 123 4567', '+233')).toBe('+233241234567');
+  });
+
+  it('allows incomplete input while typing and validates it on completion', () => {
+    expect(normalizeWhatsappPhone('06 12', '+33')).toBeNull();
+    expect(normalizeWhatsappPhone('06 12 34 56 78', '+33')).toBe('+33612345678');
+  });
+
   describe('whatsappLinkDigits', () => {
     it('prepares local and international restaurant phones for wa.me', () => {
       expect(whatsappLinkDigits('97 00 11 22')).toBe('22997001122');

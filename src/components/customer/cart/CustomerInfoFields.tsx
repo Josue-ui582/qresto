@@ -38,7 +38,7 @@ export const CustomerInfoFields: React.FC<CustomerInfoFieldsProps> = ({
       2. Vos coordonnées (Sans inscription)
     </label>
 
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid-cols-2 gap-4">
       <div>
         <label className="form-label">Nom & Prénom *</label>
         <input
@@ -51,16 +51,17 @@ export const CustomerInfoFields: React.FC<CustomerInfoFieldsProps> = ({
         />
       </div>
 
-      <div>
+      <div className="w-full">
         <label className="form-label">
           Numéro WhatsApp *
         </label>
-        <div className="flex gap-2">
+
+        <div className="grid md:grid-cols-[150px_minmax(0,1fr)] grid-cols-[120px_minmax(0,1fr)] gap-2 w-full">
           <select
             aria-label="Pays du numéro WhatsApp"
             value={phoneCallingCode}
             onChange={(e) => setPhoneCallingCode(e.target.value)}
-            className="input-field w-auto shrink-0"
+            className="input-field w-full! min-w-0"
           >
             {WHATSAPP_PHONE_COUNTRIES.map(({ name, callingCode }) => (
               <option key={callingCode} value={callingCode}>
@@ -68,20 +69,24 @@ export const CustomerInfoFields: React.FC<CustomerInfoFieldsProps> = ({
               </option>
             ))}
           </select>
+
           <input
             type="tel"
             required
-            autoComplete="tel"
+            inputMode="tel"
+            autoComplete="tel-national"
             placeholder="Ex: 97 00 11 22"
             value={customerPhone}
             onChange={(e) => setCustomerPhone(e.target.value)}
-            className="input-field min-w-0"
+            className="input-field w-full! min-w-0"
           />
         </div>
+
         <p className="mt-1 text-[0.6875rem] text-ink-500">
           Votre code de suivi sera envoyé sur ce numéro WhatsApp.
         </p>
       </div>
+      
     </div>
 
     {orderType === 'DELIVERY' && (

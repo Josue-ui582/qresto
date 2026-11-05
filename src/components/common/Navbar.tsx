@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useNavigation } from '../../context/NavigationContext';
 import { useRouter } from 'next/navigation';
+import { AuthModal, AuthModalView } from '@/components/auth/AuthModal';
 
 export const Navbar: React.FC = () => {
   const { currentUser, currentRestaurant, logout } = useAuth();
@@ -28,6 +29,7 @@ export const Navbar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [authModalView, setAuthModalView] = useState<AuthModalView | null>(null);
 
   const router = useRouter();
 
@@ -192,13 +194,13 @@ export const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/login" className="hidden sm:inline-block px-3 py-1.5 text-xs font-semibold text-ink-700 hover:text-ink-950 hover:bg-ink-100 rounded-full transition-colors">
+                <button type="button" onClick={() => setAuthModalView('login')} className="hidden sm:inline-block px-3 py-1.5 text-xs font-semibold text-ink-700 hover:text-ink-950 hover:bg-ink-100 rounded-full transition-colors cursor-pointer">
                   Connexion
-                </Link>
-                <Link href="/register-restaurant" className="inline-flex items-center gap-2 rounded-full bg-ink-950 px-3.5 py-2 text-xs font-semibold text-paper-white transition-colors hover:bg-ink-800 sm:px-4">
+                </button>
+                <button type="button" onClick={() => setAuthModalView('register')} className="inline-flex items-center gap-2 rounded-full bg-ink-950 px-3.5 py-2 text-xs font-semibold text-paper-white transition-colors hover:bg-ink-800 sm:px-4 cursor-pointer">
                   <Store className="w-3.5 h-3.5 text-brand-400" />
                   <span>Inscrire mon resto</span>
-                </Link>
+                </button>
               </div>
             )}
 
@@ -278,15 +280,30 @@ export const Navbar: React.FC = () => {
 
             {!currentUser && (
               <div className="pt-2 border-t border-ink-100 flex flex-col gap-2">
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="w-full py-2.5 rounded-xl border border-ink-200 text-ink-800 font-bold text-xs text-center">
+                <button type="button" onClick={() => {
+                  setMobileMenuOpen(false);
+                  setAuthModalView('login');
+                }} className="w-full py-2.5 rounded-xl border border-ink-200 text-ink-800 font-bold text-xs text-center">
                   Connexion gérant
-                </Link>
-                <Link href="/register-restaurant" onClick={() => setMobileMenuOpen(false)} className="w-full rounded-full bg-ink-950 py-2.5 text-center text-xs font-bold text-paper-white">
+                </button>
+                <button type="button" onClick={() => {
+                  setMobileMenuOpen(false);
+                  setAuthModalView('register');
+                }} className="w-full rounded-full bg-ink-950 py-2.5 text-center text-xs font-bold text-paper-white">
                   Démarrer l’essai de 14 jours
-                </Link>
+                </button>
               </div>
             )}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {authModalView && (
+          <AuthModal
+            initialView={authModalView}
+            onClose={() => setAuthModalView(null)}
+          />
         )}
       </AnimatePresence>
     </header>
