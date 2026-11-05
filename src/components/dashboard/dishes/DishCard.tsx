@@ -68,7 +68,7 @@ export const DishCard: React.FC<DishCardProps> = ({
             </button>
           </div>
 
-          {dish.stockQuantity === 0 && (
+          {!dish.isAvailable && dish.stockQuantity === 0 && (
             <div className="absolute top-3 left-3 rounded-full bg-negative-700/90 px-2.5 py-1.5 text-[0.625rem] font-bold text-paper-white shadow-md">
               Stock épuisé
             </div>

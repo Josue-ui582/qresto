@@ -414,6 +414,14 @@ h6 {
   background: var(--qr-surface-96);
 }
 
+.auth-input-leading-icon {
+  padding-left: 3rem;
+}
+
+.auth-input-trailing-action {
+  padding-right: 3rem;
+}
+
 .section-title {
   display: flex;
   align-items: center;
