@@ -130,14 +130,20 @@ export const TablesTab: React.FC<TablesTabProps> = ({
       return;
     }
 
+    const capacity = formData.capacity.trim() ? Number(formData.capacity) : undefined;
+    if (capacity !== undefined && (!Number.isInteger(capacity) || capacity < 1 || capacity > 100)) {
+      setFormError('La capacité doit être un nombre entier compris entre 1 et 100.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setFormError(null);
 
       const method = editingTable ? 'PUT' : 'POST';
       const payload = editingTable
-        ? { id: editingTable.id, ...formData }
-        : { ...formData, restaurantId: restaurantId || '' };
+        ? { id: editingTable.id, ...formData, capacity }
+        : { ...formData, capacity, restaurantId: restaurantId || '' };
 
       const res = await fetch('/api/tables', {
         method,

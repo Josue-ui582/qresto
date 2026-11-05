@@ -9,7 +9,15 @@ import { RestaurantSection } from './register/RestaurantSection';
 import { RegisterFormData, UpdateFormFn } from '@/types';
 import { uploadImage } from '@/lib/uploads/client';
 
-export const RegisterRestaurantPage: React.FC = () => {
+interface RegisterRestaurantPageProps {
+  presentation?: 'page' | 'modal';
+  onLogin?: () => void;
+}
+
+export const RegisterRestaurantPage: React.FC<RegisterRestaurantPageProps> = ({
+  presentation = 'page',
+  onLogin,
+}) => {
   const { registerOwnerAndRestaurant } = useAuth();
   const router = useRouter();
 
@@ -151,11 +159,11 @@ export const RegisterRestaurantPage: React.FC = () => {
   };
 
   return (
-    <div
-      className="relative min-h-screen overflow-hidden bg-surface-cool px-4 py-10 sm:px-6"
-    >
-      <div className="absolute inset-0 auth-page-decoration" />
-      <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-[2rem] bg-paper-white shadow-auth-card">
+    <div className={presentation === 'modal'
+      ? 'w-full'
+      : 'relative min-h-screen overflow-hidden bg-surface-cool px-4 py-10 sm:px-6'}>
+      {presentation === 'page' && <div className="absolute inset-0 auth-page-decoration" />}
+      <div className={`relative mx-auto w-full max-w-3xl overflow-y-auto overflow-x-hidden rounded-[2rem] bg-paper-white shadow-auth-card ${presentation === 'modal' ? 'max-h-[calc(100dvh-7rem)]' : ''}`}>
         <div className="relative overflow-hidden bg-gradient-to-br from-brand-500 via-brand-500 to-brand-500 px-6 pb-12 pt-8 text-center sm:px-10">
           <div className="absolute -left-12 bottom-[-3rem] h-36 w-36 rounded-full bg-brand-200/50" />
           <div className="absolute -right-10 bottom-[-4rem] h-40 w-40 rounded-full bg-positive-300/45" />
@@ -221,7 +229,7 @@ export const RegisterRestaurantPage: React.FC = () => {
             Vous avez déjà un compte ?{' '}
             <button
               type="button"
-              onClick={() => router.push('/login')}
+              onClick={() => onLogin ? onLogin() : router.push('/login')}
               className="font-bold text-brand hover:underline cursor-pointer"
             >
               Se connecter

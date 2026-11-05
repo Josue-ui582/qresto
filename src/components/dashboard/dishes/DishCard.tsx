@@ -62,11 +62,17 @@ export const DishCard: React.FC<DishCardProps> = ({
               ) : (
                 <>
                   <EyeOff className="w-3 h-3 text-brand-400" />
-                  <span>Épuisé</span>
+                  <span>Désactivé</span>
                 </>
               )}
             </button>
           </div>
+
+          {!dish.isAvailable && dish.stockQuantity === 0 && (
+            <div className="absolute top-3 left-3 rounded-full bg-negative-700/90 px-2.5 py-1.5 text-[0.625rem] font-bold text-paper-white shadow-md">
+              Stock épuisé
+            </div>
+          )}
 
           {/* Badge Catégorie */}
           {dish.category && (
@@ -110,7 +116,7 @@ export const DishCard: React.FC<DishCardProps> = ({
           ) : (
             <>
               <Eye className="w-3.5 h-3.5 text-brand-600" />
-              <span>Réactiver</span>
+              <span>Activer</span>
             </>
           )}
         </button>

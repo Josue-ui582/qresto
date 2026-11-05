@@ -8,7 +8,11 @@ import { Prisma } from 'generated/prisma/client';
 
 const createTableSchema = z.object({
   number: z.union([z.string().trim().min(1).max(30), z.number().int().positive()]),
-  capacity: z.number().int().positive().max(100).optional(),
+  capacity: z.number({ error: 'La capacité doit être un nombre entier.' })
+    .int('La capacité doit être un nombre entier.')
+    .positive('La capacité doit être strictement positive.')
+    .max(100, 'La capacité ne peut pas dépasser 100.')
+    .optional(),
   name: z.string().trim().max(100).optional(),
   restaurantId: z.string().optional(),
 });
@@ -16,7 +20,11 @@ const createTableSchema = z.object({
 const updateTableSchema = z.object({
   id: z.string().min(1),
   number: z.union([z.string().trim().min(1).max(30), z.number().int().positive()]).optional(),
-  capacity: z.number().int().positive().max(100).optional(),
+  capacity: z.number({ error: 'La capacité doit être un nombre entier.' })
+    .int('La capacité doit être un nombre entier.')
+    .positive('La capacité doit être strictement positive.')
+    .max(100, 'La capacité ne peut pas dépasser 100.')
+    .optional(),
   name: z.string().trim().max(100).nullable().optional(),
 });
 

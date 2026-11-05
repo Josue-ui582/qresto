@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { handleDatabaseError } from '@/lib/api/validation';
+import { publiclyAvailableDishWhere } from '@/lib/dishes/availability';
 
 const moodSchema = z.string().trim().min(1).max(40);
 
@@ -16,8 +17,10 @@ export async function GET(request: NextRequest) {
   try {
     const dishes = await prisma.dish.findMany({
       where: {
-        isAvailable: true,
-        OR: [{ isSpecialty: true }, { isPopular: true }],
+        AND: [
+          publiclyAvailableDishWhere,
+          { OR: [{ isSpecialty: true }, { isPopular: true }] },
+        ],
       },
       take: 12,
       orderBy: [{ isSpecialty: 'desc' }, { isPopular: 'desc' }, { createdAt: 'desc' }],
