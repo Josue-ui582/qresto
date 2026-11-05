@@ -8,6 +8,7 @@ import { useToast } from '../../context/ToastContext';
 
 import { RestrictedAccess } from './RestrictedAccess';
 import { DashboardSidebar } from './DashboardSidebar';
+import { DashboardMobileNav } from './DashboardMobileNav';
 import { DashboardTopbar } from './DashboardTopbar';
 import { OverviewTab } from './OverviewTab';
 import { OrdersTab } from '@/components/dashboard/orders/OrdersTab';
@@ -238,7 +239,7 @@ export const RestaurantDashboard: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-paper-white flex flex-col md:flex-row text-ink-900"
+      className="min-h-screen bg-paper-white flex flex-col lg:flex-row text-ink-900"
     >
       <DashboardSidebar
         collapsed={sidebarCollapsed}
@@ -267,7 +268,7 @@ export const RestaurantDashboard: React.FC = () => {
           notificationRefreshToken={notificationRefreshToken}
         />
 
-        <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 pb-24 sm:p-8 sm:pb-24 lg:pb-8">
           {dashboardTab === 'overview' && (
             <OverviewTab
               restaurantName={currentRestaurant.name}
@@ -349,6 +350,11 @@ export const RestaurantDashboard: React.FC = () => {
           )}
         </main>
       </div>
+      <DashboardMobileNav
+        dashboardTab={dashboardTab as DashboardTab}
+        setDashboardTab={setDashboardTab}
+        navItems={navItems}
+      />
     </div>
   );
 };

@@ -28,7 +28,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 }) => {
   return (
     <aside
-      className={`hidden md:flex flex-col bg-surface border-r border-soft transition-all duration-300 shrink-0 z-30 ${
+      className={`hidden lg:flex flex-col bg-surface border-r border-soft transition-all duration-300 shrink-0 z-30 ${
         collapsed ? 'w-20' : 'w-64'
       }`}
     >
