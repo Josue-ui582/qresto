@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { QrCode } from 'lucide-react';
 import { TableData, QrCodesTabProps } from './types';
 import { QrCodesHeader } from './QrCodesHeader';
@@ -20,22 +20,13 @@ export const QrCodesTab: React.FC<QrCodesTabProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
-  const [qrOptions, setQrOptions] = useState<QrCodeOptions>({ size: 500 });
+  const [qrOptions, setQrOptions] = useState<QrCodeOptions>({
+    size: 500,
+    darkColor: '#1c1917',
+    lightColor: '#ffffff',
+  });
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
 
-  useEffect(() => {
-    const styles = getComputedStyle(document.documentElement);
-    const darkColor = styles.getPropertyValue('--color-ink-900').trim();
-    const lightColor = styles.getPropertyValue('--color-paper-white').trim();
-    if (!darkColor || !lightColor) {
-      throw new Error('QR design color tokens are unavailable.');
-    }
-    setQrOptions((options) => ({
-      ...options,
-      darkColor: options.darkColor ?? darkColor,
-      lightColor: options.lightColor ?? lightColor,
-    }));
-  }, []);
   // Filtrage par recherche
   const filteredTables = useMemo(() => {
     return tables.filter((t) => {
